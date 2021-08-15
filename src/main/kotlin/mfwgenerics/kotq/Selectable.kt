@@ -1,18 +1,42 @@
 package mfwgenerics.kotq
 
 sealed interface Queryable {
+    fun subquery() = Subquery(this)
+}
 
+sealed interface Lockable: Queryable {
+    fun forUpdate(): Queryable = LockQuery(this, LockMode.UPDATE)
+    fun forShare(): Queryable = LockQuery(this, LockMode.SHARE)
+}
+
+sealed interface Statement {
 }
 
 sealed interface Selectable {
-    fun select(vararg references: ReferenceGroup): Queryable = TODO()
+    fun select(vararg references: ReferenceGroup): Lockable =
+        Select(this, references.asList())
+
+    fun update(vararg assignments: Assignment<*>): Statement =
+        Update(this, assignments.asList())
+
+    /* Relation rather than Table e.g. self join delete may delete by alias */
+    fun delete(vararg relations: Relation): Statement =
+        Delete(this, relations.asList())
 }
 
-sealed interface Withable: Selectable {
-    fun with(query: Selectable) = WithQuery(this, query)
+sealed interface Limitable: Selectable {
+    fun limit(rows: Int) = Limit(this, rows)
 }
 
-sealed interface Unionable: Withable {
+sealed interface Offsetable: Limitable {
+    fun offset(rows: Int) = Offset(this, rows)
+}
+
+sealed interface Orderable: Offsetable {
+    fun orderBy(vararg ordinals: Ordinal<*>) = OrderBy(this, ordinals.asList())
+}
+
+sealed interface Unionable: Orderable {
     fun union(against: Unionable) =
         SetOperation(this, against, SetOperationType.UNION, SetDistinctness.DISTINCT)
     fun unionAll(against: Unionable) =
@@ -29,19 +53,10 @@ sealed interface Unionable: Withable {
         SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.ALL)
 }
 
-sealed interface Limitable: Unionable {
-    fun limit(rows: Int) = Limit(this, rows)
+sealed interface Windowable: Unionable {
 }
 
-sealed interface Offsetable: Limitable {
-    fun offset(rows: Int) = Offset(this, rows)
-}
-
-sealed interface Orderable: Offsetable {
-    fun orderBy(vararg ordinals: Ordinal<*>) = OrderBy(this, ordinals.asList())
-}
-
-sealed interface Havingable: Orderable {
+sealed interface Havingable: Windowable {
     fun having(having: Expr<Boolean>) = Having(this, having)
 }
 
@@ -70,11 +85,22 @@ sealed interface Joinable: Whereable {
         join(JoinType.OUTER, to, on)
 }
 
-sealed interface Relation: Joinable, ReferenceGroup
+sealed interface Withable: Joinable {
+    fun with(query: Selectable) =
+        WithQuery(this, WithMode.NOT_RECURSIVE, query)
+    fun withRecursive(query: Selectable) =
+        WithQuery(this, WithMode.RECURSIVE, query)
+}
+
+sealed interface Relation: Withable, ReferenceGroup
 
 sealed interface Aliasable: Relation {
     fun alias(alias: Alias) = Aliased(this, alias)
 }
+
+class Subquery(
+    val of: Queryable
+): Aliasable
 
 enum class SetOperationType {
     UNION,
@@ -87,8 +113,29 @@ enum class SetDistinctness {
     ALL
 }
 
+class Select(
+    val of: Selectable,
+    val references: List<ReferenceGroup>
+): Lockable
+
+class Update(
+    val of: Selectable,
+    val assignments: List<Assignment<*>>
+): Statement
+
+class Delete(
+    val of: Selectable,
+    val relations: List<Relation>
+): Statement
+
+class LockQuery(
+    val of: Lockable,
+    val mode: LockMode
+): Queryable
+
 class WithQuery(
     val of: Withable,
+    val mode: WithMode,
     val query: Selectable
 ): Withable
 

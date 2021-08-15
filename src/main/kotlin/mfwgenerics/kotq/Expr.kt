@@ -1,8 +1,7 @@
 package mfwgenerics.kotq
 
 sealed interface Ordinal<T : Any> {
-    val order: SortOrder
-    val expr: Expr<T>
+    fun toOrderKey(): OrderKey<T>
 }
 
 enum class SortOrder {
@@ -11,23 +10,26 @@ enum class SortOrder {
 }
 
 class OrderKey<T : Any>(
-    override val order: SortOrder,
-    override val expr: Expr<T>
-) : Ordinal<T>
-
-
-
-sealed class Expr<T : Any>: Ordinal<T> {
-    override val order: SortOrder get() = SortOrder.ASC
-    override val expr: Expr<T> get() = this
-
-    class Aliased<T : Any>(
-        val alias: Alias,
-        val reference: Reference<T>
-    ): Expr<T>()
+    val order: SortOrder,
+    val expr: Expr<T>
+) : Ordinal<T> {
+    override fun toOrderKey(): OrderKey<T> = this
 }
 
-sealed class Reference<T : Any>: Expr<T>(), ReferenceGroup
+sealed interface Expr<T : Any>: Ordinal<T> {
+    override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
-abstract class Column<T : Any>: Reference<T>()
-abstract class Select<T : Any>: Reference<T>()
+    fun asc() = OrderKey(SortOrder.ASC, this)
+    fun desc() = OrderKey(SortOrder.DESC, this)
+}
+
+sealed interface Reference<T : Any>: Expr<T>, ReferenceGroup
+
+class AliasedReference<T : Any>(
+    val of: Alias,
+    val reference: Reference<T>
+): Reference<T>
+
+abstract class Column<T : Any>: Reference<T>
+abstract class Projection<T : Any>: Reference<T>
+class Selected<T : Any>(val expr: Expr<T>): Reference<T>
