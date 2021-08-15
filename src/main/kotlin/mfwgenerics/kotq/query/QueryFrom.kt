@@ -1,6 +1,11 @@
 package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.*
+import mfwgenerics.kotq.expr.Expr
+import mfwgenerics.kotq.expr.NameGroup
+import mfwgenerics.kotq.expr.Ordinal
+
+sealed interface Statement
 
 data class QueryRelation(
     val relation: Relation,
@@ -16,15 +21,12 @@ data class QueryJoin(
     val on: Expr<Boolean>
 )
 
-data class QueryFrom(
+data class QueryWhere(
     var relation: QueryRelation? = null,
 
     val withs: MutableList<QueryWith> = arrayListOf(),
-    val joins: MutableList<QueryJoin> = arrayListOf()
-)
+    val joins: MutableList<QueryJoin> = arrayListOf(),
 
-data class QueryWhere(
-    val from: QueryFrom = QueryFrom(),
     var where: Expr<Boolean>? = null
 )
 
@@ -45,10 +47,9 @@ data class SelectQuery(
 
     var locking: LockMode? = null,
 
-    var selected: List<ReferenceGroup> = emptyList()
-)
+    var selected: List<NameGroup> = emptyList()
+): Statement
 
 data class DeleteStatement(
-    val from: QueryFrom = QueryFrom(),
-    var where: Expr<Boolean>? = null
-)
+    val from: QueryWhere = QueryWhere()
+): Statement

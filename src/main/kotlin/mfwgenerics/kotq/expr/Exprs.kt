@@ -1,4 +1,4 @@
-package mfwgenerics.kotq
+package mfwgenerics.kotq.expr
 
 enum class ComparisonType {
     EQ,
@@ -37,4 +37,3 @@ infix fun Expr<Boolean>.and(rhs: Expr<Boolean>): Expr<Boolean> = And(this, rhs)
 
 fun <T : Any> constant(value: T): Expr<T> = Constant(value)
 
-fun <T : Any> selected(expr: Expr<T>): Selected<T> = Selected(expr)

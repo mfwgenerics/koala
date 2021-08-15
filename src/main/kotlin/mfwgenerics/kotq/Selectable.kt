@@ -1,5 +1,9 @@
 package mfwgenerics.kotq
 
+import mfwgenerics.kotq.expr.Expr
+import mfwgenerics.kotq.expr.NameGroup
+import mfwgenerics.kotq.expr.Ordinal
+import mfwgenerics.kotq.expr.and
 import mfwgenerics.kotq.query.*
 
 interface Queryable {
@@ -8,7 +12,7 @@ interface Queryable {
     fun buildQuery(): SelectQuery
 }
 
-interface Statement {
+interface Statementable {
 }
 
 interface BuildsIntoSelect {
@@ -29,18 +33,11 @@ interface BuildsIntoWhereQuery: BuildsIntoSelectBody {
         buildIntoWhere(out.where)
 }
 
-interface BuildsIntoFromQuery: BuildsIntoWhereQuery {
-    fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery?
-
-    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? =
-        buildIntoFrom(out.from)
-}
-
 interface Selectable: BuildsIntoSelect {
-    fun select(vararg references: ReferenceGroup): Queryable =
+    fun select(vararg references: NameGroup): Queryable =
         Select(this, references.asList())
 
-    fun update(vararg assignments: Assignment<*>): Statement =
+    fun update(vararg assignments: Assignment<*>): Statementable =
         Update(this, assignments.asList())
 }
 
@@ -88,7 +85,7 @@ interface Groupable: Orderable, BuildsIntoWhereQuery {
     fun groupBy(vararg exprs: Expr<*>) = GroupBy(this, exprs.asList())
 
     /* Relation rather than Table e.g. self join delete may delete by alias */
-    fun delete(vararg relations: Relation): Statement =
+    fun delete(vararg relations: Relation): Statementable =
         Delete(this, relations.asList())
 }
 
@@ -96,7 +93,7 @@ interface Whereable: Groupable {
     fun where(where: Expr<Boolean>) = Where(this, where)
 }
 
-interface Joinable: Whereable, BuildsIntoFromQuery {
+interface Joinable: Whereable {
     fun join(type: JoinType, to: Relation, on: Expr<Boolean>) =
         Join(this, type, to, on)
 
@@ -122,20 +119,22 @@ interface Withable: Joinable {
     fun insertSelect(query: Selectable, vararg assignment: Assignment<*>): Nothing = TODO()
 }
 
-interface Relation: Withable, ReferenceGroup, BuildsIntoFromQuery {
-    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+interface Aliasable: Withable, NameGroup, BuildsIntoWhereQuery {
+    fun alias(alias: Alias): Aliased
+}
+
+sealed interface Relation: Aliasable {
+    override fun alias(alias: Alias): Aliased = Aliased(this, alias)
+
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.relation = QueryRelation(this, null)
         return null
     }
 }
 
-interface Aliasable: Relation {
-    fun alias(alias: Alias) = Aliased(this, alias)
-}
-
 class Subquery(
     val of: Queryable
-): Aliasable
+): Relation
 
 enum class SetOperationType {
     UNION,
@@ -150,7 +149,7 @@ enum class SetDistinctness {
 
 class Select(
     val of: Selectable,
-    val references: List<ReferenceGroup>
+    val references: List<NameGroup>
 ): Queryable {
     override fun buildQuery(): SelectQuery {
         val query = SelectQuery()
@@ -168,12 +167,12 @@ class Select(
 class Update(
     val of: Selectable,
     val assignments: List<Assignment<*>>
-): Statement
+): Statementable
 
 class Delete(
     val of: Selectable,
     val relations: List<Relation>
-): Statement
+): Statementable
 
 class LockQuery(
     val of: Lockable,
@@ -191,7 +190,7 @@ class WithQuery(
     val type: WithType,
     val query: Selectable
 ): Withable {
-    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.withs.add(QueryWith(type = type))
         return of
     }
@@ -276,7 +275,7 @@ class Join(
     val to: Relation,
     val on: Expr<Boolean>
 ): Joinable {
-    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.joins.add(QueryJoin(
             type = type,
             on = on
@@ -290,7 +289,7 @@ class Aliased(
     val of: Relation,
     val alias: Alias
 ): Relation {
-    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.relation = QueryRelation(of, alias)
         return null
     }
