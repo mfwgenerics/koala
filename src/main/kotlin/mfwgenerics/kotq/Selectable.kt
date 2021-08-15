@@ -1,42 +1,67 @@
 package mfwgenerics.kotq
 
-sealed interface Queryable {
+import mfwgenerics.kotq.query.*
+
+interface Queryable {
     fun subquery() = Subquery(this)
+
+    fun buildQuery(): SelectQuery
 }
 
-sealed interface Lockable: Queryable {
-    fun forUpdate(): Queryable = LockQuery(this, LockMode.UPDATE)
-    fun forShare(): Queryable = LockQuery(this, LockMode.SHARE)
+interface Statement {
 }
 
-sealed interface Statement {
+interface BuildsIntoSelect {
+    fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect?
 }
 
-sealed interface Selectable {
-    fun select(vararg references: ReferenceGroup): Lockable =
+interface BuildsIntoSelectBody: BuildsIntoSelect {
+    fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody?
+
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? =
+        buildIntoSelectBody(out.body)
+}
+
+interface BuildsIntoWhereQuery: BuildsIntoSelectBody {
+    fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery?
+
+    override fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody? =
+        buildIntoWhere(out.where)
+}
+
+interface BuildsIntoFromQuery: BuildsIntoWhereQuery {
+    fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery?
+
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? =
+        buildIntoFrom(out.from)
+}
+
+interface Selectable: BuildsIntoSelect {
+    fun select(vararg references: ReferenceGroup): Queryable =
         Select(this, references.asList())
 
     fun update(vararg assignments: Assignment<*>): Statement =
         Update(this, assignments.asList())
-
-    /* Relation rather than Table e.g. self join delete may delete by alias */
-    fun delete(vararg relations: Relation): Statement =
-        Delete(this, relations.asList())
 }
 
-sealed interface Limitable: Selectable {
+interface Lockable: Selectable {
+    fun forUpdate(): Selectable = LockQuery(this, LockMode.UPDATE)
+    fun forShare(): Selectable = LockQuery(this, LockMode.SHARE)
+}
+
+interface Limitable: Lockable {
     fun limit(rows: Int) = Limit(this, rows)
 }
 
-sealed interface Offsetable: Limitable {
+interface Offsetable: Limitable {
     fun offset(rows: Int) = Offset(this, rows)
 }
 
-sealed interface Orderable: Offsetable {
+interface Orderable: Offsetable {
     fun orderBy(vararg ordinals: Ordinal<*>) = OrderBy(this, ordinals.asList())
 }
 
-sealed interface Unionable: Orderable {
+interface Unionable: Orderable {
     fun union(against: Unionable) =
         SetOperation(this, against, SetOperationType.UNION, SetDistinctness.DISTINCT)
     fun unionAll(against: Unionable) =
@@ -53,22 +78,25 @@ sealed interface Unionable: Orderable {
         SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.ALL)
 }
 
-sealed interface Windowable: Unionable {
-}
+interface Windowable: Unionable, BuildsIntoSelectBody
 
-sealed interface Havingable: Windowable {
+interface Havingable: Windowable {
     fun having(having: Expr<Boolean>) = Having(this, having)
 }
 
-sealed interface Groupable: Orderable {
+interface Groupable: Orderable, BuildsIntoWhereQuery {
     fun groupBy(vararg exprs: Expr<*>) = GroupBy(this, exprs.asList())
+
+    /* Relation rather than Table e.g. self join delete may delete by alias */
+    fun delete(vararg relations: Relation): Statement =
+        Delete(this, relations.asList())
 }
 
-sealed interface Whereable: Groupable {
+interface Whereable: Groupable {
     fun where(where: Expr<Boolean>) = Where(this, where)
 }
 
-sealed interface Joinable: Whereable {
+interface Joinable: Whereable, BuildsIntoFromQuery {
     fun join(type: JoinType, to: Relation, on: Expr<Boolean>) =
         Join(this, type, to, on)
 
@@ -85,16 +113,23 @@ sealed interface Joinable: Whereable {
         join(JoinType.OUTER, to, on)
 }
 
-sealed interface Withable: Joinable {
+interface Withable: Joinable {
     fun with(query: Selectable) =
-        WithQuery(this, WithMode.NOT_RECURSIVE, query)
+        WithQuery(this, WithType.NOT_RECURSIVE, query)
     fun withRecursive(query: Selectable) =
-        WithQuery(this, WithMode.RECURSIVE, query)
+        WithQuery(this, WithType.RECURSIVE, query)
+
+    fun insertSelect(query: Selectable, vararg assignment: Assignment<*>): Nothing = TODO()
 }
 
-sealed interface Relation: Withable, ReferenceGroup
+interface Relation: Withable, ReferenceGroup, BuildsIntoFromQuery {
+    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+        out.relation = QueryRelation(this, null)
+        return null
+    }
+}
 
-sealed interface Aliasable: Relation {
+interface Aliasable: Relation {
     fun alias(alias: Alias) = Aliased(this, alias)
 }
 
@@ -116,7 +151,19 @@ enum class SetDistinctness {
 class Select(
     val of: Selectable,
     val references: List<ReferenceGroup>
-): Lockable
+): Queryable {
+    override fun buildQuery(): SelectQuery {
+        val query = SelectQuery()
+
+        var next = of.buildIntoSelect(query)
+
+        while (next != null) next = next.buildIntoSelect(query)
+
+        query.selected = references
+
+        return query
+    }
+}
 
 class Update(
     val of: Selectable,
@@ -131,60 +178,121 @@ class Delete(
 class LockQuery(
     val of: Lockable,
     val mode: LockMode
-): Queryable
+): Selectable {
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+        out.locking = mode
+
+        return of
+    }
+}
 
 class WithQuery(
     val of: Withable,
-    val mode: WithMode,
+    val type: WithType,
     val query: Selectable
-): Withable
+): Withable {
+    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+        out.withs.add(QueryWith(type = type))
+        return of
+    }
+}
 
 class SetOperation(
     val of: Unionable,
     val against: Unionable,
     val type: SetOperationType,
     val distinctness: SetDistinctness
-): Unionable
+): Unionable {
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+        error("not implemented")
+    }
+}
 
 class Limit(
     val of: Limitable,
     val rows: Int
-): Selectable
+): Lockable {
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+        out.limit = rows
+
+        return of
+    }
+}
 
 class Offset(
     val of: Offsetable,
     val rows: Int
-): Limitable
+): Limitable {
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+        out.offset = rows
+
+        return of
+    }
+}
 
 class OrderBy(
     val of: Orderable,
     val ordinals: List<Ordinal<*>>
-): Offsetable
+): Offsetable {
+    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+        out.orderBy = ordinals
+        return of
+    }
+}
 
 class Having(
     val of: Havingable,
     val having: Expr<Boolean>
-): Havingable
+): Havingable {
+    override fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody? {
+        out.having = out.having?.and(having)?:having
+        return of
+    }
+}
 
 class GroupBy(
     val of: Groupable,
     val on: List<Expr<*>>
-): Havingable
+): Havingable {
+    override fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody? {
+        out.groupBy = on
+        return of
+    }
+}
 
 class Where(
     val of: Whereable,
     val where: Expr<Boolean>
-): Whereable
+): Whereable {
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
+        out.where = out.where?.and(where)?:where
+        return of
+    }
+}
 
 class Join(
     val of: Joinable,
     val type: JoinType,
     val to: Relation,
     val on: Expr<Boolean>
-): Joinable
+): Joinable {
+    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+        out.joins.add(QueryJoin(
+            type = type,
+            on = on
+        ))
+
+        return of
+    }
+}
 
 class Aliased(
     val of: Relation,
     val alias: Alias
-): Relation
+): Relation {
+    override fun buildIntoFrom(out: QueryFrom): BuildsIntoFromQuery? {
+        out.relation = QueryRelation(of, alias)
+        return null
+    }
+}
 

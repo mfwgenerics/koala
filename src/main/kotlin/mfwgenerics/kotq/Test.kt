@@ -9,27 +9,21 @@ fun main() {
 
     val selected = selected(TestTable.column1)
 
-    TestTable
+    val test = TestTable
         .innerJoin(TestTable.alias(tableA), tableA[TestTable.column1] eq TestTable.column1)
         .groupBy(TestTable.column1)
         .having(TestTable.column1 eq TestTable.column1)
         .orderBy(TestTable.column1)
         .offset(20)
         .limit(5)
+        .forShare()
         .select(TestTable, TestTable.column1, tableA[TestTable.column1], selected)
-        .subquery()
 
+    println(test.buildQuery())
 
-    /*
-
-    val alias = Alias()
-
-    val select = object : Select() {
-        val test = of(constant(1) )
-    }
-
-    MyTable
-        .select(MyTable.star(), )
-
-     */
+    TestTable
+        .insertSelect(
+            TestTable,
+            TestTable.column1 setTo TestTable.column1
+        )
 }

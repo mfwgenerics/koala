@@ -15,6 +15,11 @@ class Comparison<T : Any>(
     val rhs: Expr<T>
 ): Expr<Boolean>
 
+class And(
+    val lhs: Expr<Boolean>,
+    val rhs: Expr<Boolean>
+): Expr<Boolean>
+
 class Constant<T : Any>(
     val value: T
 ): Expr<T>
@@ -27,6 +32,8 @@ infix fun <T : Any> Expr<T>.lessOrEq(rhs: Expr<T>): Expr<Boolean> = Comparison(C
 
 infix fun <T : Any> Expr<T>.greater(rhs: Expr<T>): Expr<Boolean> = Comparison(ComparisonType.GT, this, rhs)
 infix fun <T : Any> Expr<T>.greaterOrEq(rhs: Expr<T>): Expr<Boolean> = Comparison(ComparisonType.GTE, this, rhs)
+
+infix fun Expr<Boolean>.and(rhs: Expr<Boolean>): Expr<Boolean> = And(this, rhs)
 
 fun <T : Any> constant(value: T): Expr<T> = Constant(value)
 
