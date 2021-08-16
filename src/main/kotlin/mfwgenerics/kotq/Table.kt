@@ -2,13 +2,25 @@ package mfwgenerics.kotq
 
 import mfwgenerics.kotq.expr.Name
 import mfwgenerics.kotq.expr.Named
+import mfwgenerics.kotq.expr.SelectedExpr
 
 abstract class Table(
     val name: String
 ): Relation {
-    fun <T : Any> column(name: String, type: ColumnType<T>): Named<T> {
-        return object : Named<T> {
-            override val name: Name<T> = Name()
-        }
+    class Column<T : Any>(
+        override val name: Name<T>,
+        val symbol: String,
+        val type: ColumnType<T>
+    ): Named<T>
+
+    private val internalColumns = arrayListOf<Column<*>>()
+
+    val columns: List<Column<*>> get() = internalColumns
+
+    fun <T : Any> column(name: String, type: ColumnType<T>): Named<T> =
+        Column(Name(), name, type).also { internalColumns.add(it) }
+
+    override fun namedExprs(): List<SelectedExpr<*>> = columns.flatMap {
+        it.namedExprs()
     }
 }

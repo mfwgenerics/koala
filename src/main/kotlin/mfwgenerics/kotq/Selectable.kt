@@ -1,9 +1,6 @@
 package mfwgenerics.kotq
 
-import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.NameGroup
-import mfwgenerics.kotq.expr.Ordinal
-import mfwgenerics.kotq.expr.and
+import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
 
 interface Queryable {
@@ -20,6 +17,16 @@ interface BuildsIntoSelect {
 }
 
 interface BuildsIntoSelectBody: BuildsIntoSelect {
+    fun buildSelectBody(): SelectBody {
+        val body = SelectBody()
+
+        var next = buildIntoSelectBody(body)
+
+        while (next != null) next = next.buildIntoSelectBody(body)
+
+        return body
+    }
+
     fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody?
 
     override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? =
@@ -34,7 +41,7 @@ interface BuildsIntoWhereQuery: BuildsIntoSelectBody {
 }
 
 interface Selectable: BuildsIntoSelect {
-    fun select(vararg references: NameGroup): Queryable =
+    fun select(vararg references: NamedExprs): Queryable =
         Select(this, references.asList())
 
     fun update(vararg assignments: Assignment<*>): Statementable =
@@ -59,29 +66,31 @@ interface Orderable: Offsetable {
 }
 
 interface Unionable: Orderable {
-    fun union(against: Unionable) =
+    fun union(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.UNION, SetDistinctness.DISTINCT)
-    fun unionAll(against: Unionable) =
+    fun unionAll(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.UNION, SetDistinctness.ALL)
 
-    fun intersect(against: Unionable) =
+    fun intersect(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.INTERSECTION, SetDistinctness.DISTINCT)
-    fun intersectAll(against: Unionable) =
+    fun intersectAll(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.INTERSECTION, SetDistinctness.ALL)
 
-    fun except(against: Unionable) =
+    fun except(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.DISTINCT)
-    fun exceptAll(against: Unionable) =
+    fun exceptAll(against: UnionOperandable): Unionable =
         SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.ALL)
 }
 
-interface Windowable: Unionable, BuildsIntoSelectBody
+interface UnionOperandable: Unionable, BuildsIntoSelectBody
+
+interface Windowable: UnionOperandable
 
 interface Havingable: Windowable {
     fun having(having: Expr<Boolean>) = Having(this, having)
 }
 
-interface Groupable: Orderable, BuildsIntoWhereQuery {
+interface Groupable: Windowable, Orderable, BuildsIntoWhereQuery {
     fun groupBy(vararg exprs: Expr<*>) = GroupBy(this, exprs.asList())
 
     /* Relation rather than Table e.g. self join delete may delete by alias */
@@ -90,20 +99,20 @@ interface Groupable: Orderable, BuildsIntoWhereQuery {
 }
 
 interface Whereable: Groupable {
-    fun where(where: Expr<Boolean>) = Where(this, where)
+    fun where(where: Expr<Boolean>): Whereable = Where(this, where)
 }
 
 interface Joinable: Whereable {
-    fun join(type: JoinType, to: Relation, on: Expr<Boolean>) =
+    fun join(type: JoinType, to: Relation, on: Expr<Boolean>): Joinable =
         Join(this, type, to, on)
 
-    fun innerJoin(to: Relation, on: Expr<Boolean>) =
+    fun innerJoin(to: Relation, on: Expr<Boolean>): Joinable =
         join(JoinType.INNER, to, on)
 
-    fun leftJoin(to: Relation, on: Expr<Boolean>) =
+    fun leftJoin(to: Relation, on: Expr<Boolean>): Joinable =
         join(JoinType.LEFT, to, on)
 
-    fun rightJoin(to: Relation, on: Expr<Boolean>) =
+    fun rightJoin(to: Relation, on: Expr<Boolean>): Joinable =
         join(JoinType.RIGHT, to, on)
 
     fun outerJoin(to: Relation, on: Expr<Boolean>) =
@@ -111,15 +120,15 @@ interface Joinable: Whereable {
 }
 
 interface Withable: Joinable {
-    fun with(query: Selectable) =
+    fun with(query: NamedExprs) =
         WithQuery(this, WithType.NOT_RECURSIVE, query)
-    fun withRecursive(query: Selectable) =
+    fun withRecursive(query: NamedExprs) =
         WithQuery(this, WithType.RECURSIVE, query)
 
-    fun insertSelect(query: Selectable, vararg assignment: Assignment<*>): Nothing = TODO()
+    fun insertSelect(query: NamedExprs, vararg assignment: Assignment<*>): Nothing = TODO()
 }
 
-interface Aliasable: Withable, NameGroup, BuildsIntoWhereQuery {
+interface Aliasable: Withable, NamedExprs, BuildsIntoWhereQuery {
     fun alias(alias: Alias): Aliased
 }
 
@@ -134,7 +143,11 @@ sealed interface Relation: Aliasable {
 
 class Subquery(
     val of: Queryable
-): Relation
+): Relation {
+    override fun namedExprs(): List<SelectedExpr<*>> {
+        error("not implemented")
+    }
+}
 
 enum class SetOperationType {
     UNION,
@@ -149,7 +162,7 @@ enum class SetDistinctness {
 
 class Select(
     val of: Selectable,
-    val references: List<NameGroup>
+    val references: List<NamedExprs>
 ): Queryable {
     override fun buildQuery(): SelectQuery {
         val query = SelectQuery()
@@ -188,7 +201,7 @@ class LockQuery(
 class WithQuery(
     val of: Withable,
     val type: WithType,
-    val query: Selectable
+    val query: NamedExprs
 ): Withable {
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.withs.add(QueryWith(type = type))
@@ -198,12 +211,18 @@ class WithQuery(
 
 class SetOperation(
     val of: Unionable,
-    val against: Unionable,
+    val against: UnionOperandable,
     val type: SetOperationType,
     val distinctness: SetDistinctness
 ): Unionable {
     override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
-        error("not implemented")
+        out.setOperations.add(SetOperationQuery(
+            type = type,
+            distinctness = distinctness,
+            body = against.buildSelectBody()
+        ))
+
+        return of
     }
 }
 
@@ -288,7 +307,7 @@ class Join(
 class Aliased(
     val of: Relation,
     val alias: Alias
-): Relation {
+): Relation, NamedExprs by of {
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.relation = QueryRelation(of, alias)
         return null
