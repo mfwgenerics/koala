@@ -19,7 +19,7 @@ abstract class Table(
     val columns: List<Column<*>> get() = internalColumns
 
     fun <T : Any> column(name: String, type: ColumnType<T>): Named<T> =
-        Column(Name(name), name, type).also { internalColumns.add(it) }
+        Column(Name(type.type, name), name, type).also { internalColumns.add(it) }
 
     override fun namedExprs(): List<Labeled<*>> = columns.flatMap {
         it.namedExprs()

@@ -1,5 +1,9 @@
 package mfwgenerics.kotq
 
-sealed class ColumnType<T : Any> {
-    object INT : ColumnType<Int>()
+import kotlin.reflect.KClass
+
+sealed class ColumnType<T : Any>(
+    val type: KClass<T>
+) {
+    object INT : ColumnType<Int>(Int::class)
 }

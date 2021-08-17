@@ -1,6 +1,9 @@
 package mfwgenerics.kotq.expr
 
+import kotlin.reflect.KClass
+
 class Name<T : Any>(
+    val type: KClass<T>,
     val identifier: String? = null
 ): Named<T> {
     override val name: Name<T> get() = this

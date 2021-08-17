@@ -19,48 +19,48 @@ class MysqlDialect: SqlDialect {
             sql.addSql(names[name])
         }
 
-        fun compileExpr(expr: Expr<*>) {
+        fun compileExpr(expr: Expr<*>, enclosed: Boolean = true) {
             when (expr) {
                 is OperationExpr -> {
                     when (expr.type.fixity) {
                         OperationFixity.PREFIX -> {
-                            sql.addSql("(")
+                            if (enclosed) sql.addSql("(")
                             sql.addSql(expr.type.sql)
                             sql.addSql(" ")
-                            compileExpr(expr.args.single())
-                            sql.addSql(")")
+                            compileExpr(expr.args.single(), false)
+                            if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.POSTFIX -> {
-                            sql.addSql("(")
-                            compileExpr(expr.args.single())
+                            if (enclosed) sql.addSql("(")
+                            compileExpr(expr.args.single(), false)
                             sql.addSql(" ")
                             sql.addSql(expr.type.sql)
-                            sql.addSql(")")
+                            if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.INFIX -> {
                             var sep = ""
-                            sql.addSql("(")
+                            if (enclosed) sql.addSql("(")
                             expr.args.forEach {
                                 sql.addSql(sep)
                                 compileExpr(it)
                                 sep = " ${expr.type.sql} "
                             }
-                            sql.addSql(")")
+                            if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.APPLY -> {
                             var sep = ""
                             sql.addSql(expr.type.sql)
-                            sql.addSql("(")
+                            if (enclosed) sql.addSql("(")
                             expr.args.forEach {
                                 sql.addSql(sep)
-                                compileExpr(it)
+                                compileExpr(it, false)
                                 sep = ", "
                             }
-                            sql.addSql(")")
+                            if (enclosed) sql.addSql(")")
                         }
                     }
                 }
-                is Constant -> sql.addValue(expr.value)
+                is Literal -> sql.addValue(expr.value)
                 is Reference -> {
                     compileReference(expr.buildAliased())
                 }
@@ -89,12 +89,12 @@ class MysqlDialect: SqlDialect {
                 sql.addSql(" ")
                 compileRelation(join.to)
                 sql.addSql(" ON ")
-                compileExpr(join.on)
+                compileExpr(join.on, false)
             }
 
             query.where?.let {
                 sql.addSql("\nWHERE ")
-                compileExpr(it)
+                compileExpr(it, false)
             }
         }
 
@@ -108,14 +108,14 @@ class MysqlDialect: SqlDialect {
 
                 groupBy.forEach {
                     sql.addSql(sep)
-                    compileExpr(it)
+                    compileExpr(it, false)
                     sep = ", "
                 }
             }
 
             body.having?.let {
                 sql.addSql("\nHAVING ")
-                compileExpr(it)
+                compileExpr(it, false)
             }
         }
 
@@ -134,7 +134,7 @@ class MysqlDialect: SqlDialect {
 
                     when (it) {
                         is LabeledExpr -> {
-                            compileExpr(it.expr)
+                            compileExpr(it.expr, false)
                             sql.addSql(" ")
                             sql.addSql(registry[it.name])
                         }
@@ -149,7 +149,7 @@ class MysqlDialect: SqlDialect {
                             }
                         }
                     }
-                    sep = ", "
+                    sep = ","
                 }
 
             sql.addSql("\nFROM ")
@@ -166,7 +166,7 @@ class MysqlDialect: SqlDialect {
 
                     val orderKey = it.toOrderKey()
 
-                    compileExpr(orderKey.expr)
+                    compileExpr(orderKey.expr, false)
 
                     sql.addSql(" ${orderKey.order.sql}")
 

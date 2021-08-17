@@ -1,7 +1,6 @@
 package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.Alias
-import mfwgenerics.kotq.BuildAliased
 
 sealed interface Expr<T : Any>: Ordinal<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
