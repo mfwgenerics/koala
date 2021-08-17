@@ -1,8 +1,9 @@
 package mfwgenerics.kotq
 
+import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.Name
 import mfwgenerics.kotq.expr.Named
-import mfwgenerics.kotq.expr.SelectedExpr
+import mfwgenerics.kotq.expr.LabeledExpr
 
 abstract class Table(
     val name: String
@@ -18,9 +19,9 @@ abstract class Table(
     val columns: List<Column<*>> get() = internalColumns
 
     fun <T : Any> column(name: String, type: ColumnType<T>): Named<T> =
-        Column(Name(), name, type).also { internalColumns.add(it) }
+        Column(Name(name), name, type).also { internalColumns.add(it) }
 
-    override fun namedExprs(): List<SelectedExpr<*>> = columns.flatMap {
+    override fun namedExprs(): List<Labeled<*>> = columns.flatMap {
         it.namedExprs()
     }
 }

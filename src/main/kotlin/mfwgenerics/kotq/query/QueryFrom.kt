@@ -1,9 +1,7 @@
 package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.*
-import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.NamedExprs
-import mfwgenerics.kotq.expr.Ordinal
+import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.sql.Scope
 
 sealed interface Statement
@@ -12,14 +10,28 @@ data class QueryRelation(
     val relation: Relation,
     val alias: Alias?
 ) {
-    fun intoNameSet(scope: Scope) {
+    val computedAlias = alias?:Alias()
+
+    fun populateScope(scope: Scope) {
+        val innerScope = Scope(scope.names)
+
         when (relation) {
             is Table -> {
                 relation.columns.forEach {
-                    scope.insert(it.name, it.symbol)
+                    val aliased = it.name.buildAliased()
+
+                    if (alias == null) {
+                        scope.insert(aliased, aliased, computedAlias)
+                    } else {
+                        scope.insert(aliased.copyWithPrefix(computedAlias), aliased, computedAlias)
+                    }
+
+                    innerScope.insert(aliased, aliased, computedAlias)
                 }
             }
         }
+
+        scope.register(computedAlias, innerScope)
     }
 }
 
@@ -29,8 +41,13 @@ data class QueryWith(
 
 data class QueryJoin(
     val type: JoinType,
+    val to: QueryRelation,
     val on: Expr<Boolean>
-)
+) {
+    fun populateScope(scope: Scope) {
+        to.populateScope(scope)
+    }
+}
 
 class QueryWhere {
     lateinit var relation: QueryRelation
@@ -40,8 +57,10 @@ class QueryWhere {
 
     var where: Expr<Boolean>? = null
 
-    fun intoNameSet(scope: Scope) {
-        relation.intoNameSet(scope)
+    fun populateScope(scope: Scope) {
+        relation.populateScope(scope)
+
+        joins.forEach { it.populateScope(scope) }
     }
 }
 
@@ -52,8 +71,8 @@ data class SelectBody(
     var groupBy: List<Expr<*>> = arrayListOf(),
     var having: Expr<Boolean>? = null
 ) {
-    fun intoNameSet(scope: Scope) {
-        where.intoNameSet(scope)
+    fun populateScope(scope: Scope) {
+        where.populateScope(scope)
     }
 }
 
@@ -77,8 +96,19 @@ data class SelectQuery(
 
     var selected: List<NamedExprs> = emptyList()
 ): Statement {
-    fun intoNameSet(scope: Scope) {
-        body.intoNameSet(scope)
+    fun populateScope(scope: Scope) {
+        selected.forEach {
+            it.namedExprs().forEach { labeled ->
+                when (labeled) {
+                    is LabeledExpr -> {
+                        scope.insert(labeled.name)
+                    }
+                    else -> { }
+                }
+            }
+        }
+
+        body.populateScope(scope)
     }
 }
 

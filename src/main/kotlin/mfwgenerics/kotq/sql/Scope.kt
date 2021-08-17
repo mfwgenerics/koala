@@ -1,20 +1,62 @@
 package mfwgenerics.kotq.sql
 
+import mfwgenerics.kotq.Alias
 import mfwgenerics.kotq.expr.AliasedName
-import mfwgenerics.kotq.expr.Name
 
 /* TODO restrict names to identifier characters */
-class Scope {
-    private val registered = hashMapOf<AliasedName<*>, String>()
-    private var anonymous: Int = 0
+class Scope(
+    val names: NameRegistry
+) {
+    private sealed interface Registered
 
-    fun insert(name: Name<*>, value: String) {
-        check(registered.put(name.toAliasedName(), value) == null)
+    private data class UnderAlias(
+        val alias: Alias,
+        val innerName: AliasedName<*>
+    ): Registered
+
+    private object Internal: Registered
+
+    private val registered = hashMapOf<AliasedName<*>, Registered>()
+    private val aliases = hashMapOf<Alias, String>()
+
+    private var aliasCount: Int = 0
+
+    fun insert(
+        name: AliasedName<*>,
+        innerName: AliasedName<*>,
+        alias: Alias
+    ) {
+        val value = UnderAlias(
+            alias = alias,
+            innerName = innerName
+        )
+
+        check(registered.put(name, value) == null)
+            { "$name already in scope. value $value" }
     }
 
-    private fun generate(): String =
-        "nm${anonymous++}"
+    fun insert(
+        name: AliasedName<*>
+    ) {
+        check(registered.put(name, Internal) == null)
+            { "$name already in scope" }
+    }
 
-    operator fun get(name: AliasedName<*>): String =
-        registered.getOrPut(name) { generate() }
+    private fun generateAlias(): String = "T${aliasCount++}"
+
+    fun register(alias: Alias, scope: Scope) {
+        aliases[alias] = generateAlias()
+    }
+
+    operator fun get(name: AliasedName<*>): String {
+        val registered = registered.getValue(name)
+
+        return when (registered) {
+            is UnderAlias -> "${aliases[registered.alias]}.${names[registered.innerName]}"
+            Internal -> names[name]
+        }
+    }
+
+    operator fun get(alias: Alias): String =
+        aliases.getValue(alias)
 }

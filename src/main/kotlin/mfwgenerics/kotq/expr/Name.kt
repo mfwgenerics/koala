@@ -16,5 +16,5 @@ class Name<T : Any>(
     override fun hashCode(): Int =
         identifier?.hashCode()?:System.identityHashCode(this)
 
-    override fun toString(): String = "$identifier"
+    override fun toString(): String = if (identifier != null) "$identifier" else "name"
 }

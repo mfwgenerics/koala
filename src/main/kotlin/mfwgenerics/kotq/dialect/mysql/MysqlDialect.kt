@@ -5,14 +5,20 @@ import mfwgenerics.kotq.sql.Scope
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
+import mfwgenerics.kotq.sql.NameRegistry
 import mfwgenerics.kotq.sql.SqlText
 import mfwgenerics.kotq.sql.SqlTextBuilder
 
 class MysqlDialect: SqlDialect {
     private class Compilation(
-        val names: Scope = Scope(),
+        val registry: NameRegistry = NameRegistry(),
+        val names: Scope = Scope(registry),
         val sql: SqlTextBuilder = SqlTextBuilder()
     ) {
+        fun compileReference(name: AliasedName<*>) {
+            sql.addSql(names[name])
+        }
+
         fun compileExpr(expr: Expr<*>) {
             when (expr) {
                 is OperationExpr -> {
@@ -56,25 +62,32 @@ class MysqlDialect: SqlDialect {
                 }
                 is Constant -> sql.addValue(expr.value)
                 is Reference -> {
-                    val aliased = expr.toAliasedName()
-
-                    sql.addSql(names[aliased])
+                    compileReference(expr.buildAliased())
                 }
             }
         }
 
-        fun compileQueryWhere(query: QueryWhere) {
-            val relation = query.relation!!.relation
-
-            when (relation) {
-                is Table -> sql.addSql(relation.name)
-                is Subquery -> compileSelect(relation.of.buildQuery())
+        fun compileRelation(relation: QueryRelation) {
+            when (val baseRelation = relation.relation) {
+                is Table -> {
+                    sql.addSql(baseRelation.name)
+                    sql.addSql(" ")
+                }
+                is Subquery -> compileSelect(baseRelation.of.buildQuery())
             }
+
+            sql.addSql(names[relation.computedAlias])
+        }
+
+        fun compileQueryWhere(query: QueryWhere) {
+            compileRelation(query.relation)
 
             sql.addSql("\n")
 
             query.joins.forEach { join ->
                 sql.addSql(join.type.sql)
+                sql.addSql(" ")
+                compileRelation(join.to)
                 sql.addSql(" ON ")
                 compileExpr(join.on)
             }
@@ -107,7 +120,7 @@ class MysqlDialect: SqlDialect {
         }
 
         fun compileSelect(select: SelectQuery) {
-            select.intoNameSet(names)
+            select.populateScope(names)
 
             sql.addSql("SELECT")
 
@@ -118,9 +131,24 @@ class MysqlDialect: SqlDialect {
                 .flatMap { it.namedExprs() }
                 .forEach {
                     sql.addSql("$sep\n")
-                    compileExpr(it.expr)
-                    sql.addSql(" ")
-                    sql.addSql(names[it.name])
+
+                    when (it) {
+                        is LabeledExpr -> {
+                            compileExpr(it.expr)
+                            sql.addSql(" ")
+                            sql.addSql(registry[it.name])
+                        }
+                        is LabeledName -> {
+                            val name = it.name
+
+                            compileReference(name)
+
+                            if (name.aliases.isNotEmpty()) {
+                                sql.addSql(" ")
+                                sql.addSql(registry[it.name])
+                            }
+                        }
+                    }
                     sep = ", "
                 }
 

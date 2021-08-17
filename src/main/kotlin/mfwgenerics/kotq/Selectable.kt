@@ -103,19 +103,19 @@ interface Whereable: Groupable {
 }
 
 interface Joinable: Whereable {
-    fun join(type: JoinType, to: Relation, on: Expr<Boolean>): Joinable =
+    fun join(type: JoinType, to: AliasedRelation, on: Expr<Boolean>): Joinable =
         Join(this, type, to, on)
 
-    fun innerJoin(to: Relation, on: Expr<Boolean>): Joinable =
+    fun innerJoin(to: AliasedRelation, on: Expr<Boolean>): Joinable =
         join(JoinType.INNER, to, on)
 
-    fun leftJoin(to: Relation, on: Expr<Boolean>): Joinable =
+    fun leftJoin(to: AliasedRelation, on: Expr<Boolean>): Joinable =
         join(JoinType.LEFT, to, on)
 
-    fun rightJoin(to: Relation, on: Expr<Boolean>): Joinable =
+    fun rightJoin(to: AliasedRelation, on: Expr<Boolean>): Joinable =
         join(JoinType.RIGHT, to, on)
 
-    fun outerJoin(to: Relation, on: Expr<Boolean>) =
+    fun outerJoin(to: AliasedRelation, on: Expr<Boolean>) =
         join(JoinType.OUTER, to, on)
 }
 
@@ -128,23 +128,26 @@ interface Withable: Joinable {
     fun insertSelect(query: NamedExprs, vararg assignment: Assignment<*>): Nothing = TODO()
 }
 
-interface Aliasable: Withable, NamedExprs, BuildsIntoWhereQuery {
-    fun alias(alias: Alias): Aliased
-}
-
-sealed interface Relation: Aliasable {
-    override fun alias(alias: Alias): Aliased = Aliased(this, alias)
+interface AliasedRelation: Withable, NamedExprs, BuildsIntoWhereQuery {
+    fun buildQueryRelation(): QueryRelation
 
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
-        out.relation = QueryRelation(this, null)
+        out.relation = buildQueryRelation()
         return null
     }
+}
+
+sealed interface Relation: AliasedRelation {
+    fun alias(alias: Alias): AliasedRelation = Aliased(this, alias)
+
+    override fun buildQueryRelation(): QueryRelation
+        = QueryRelation(this, null)
 }
 
 class Subquery(
     val of: Queryable
 ): Relation {
-    override fun namedExprs(): List<SelectedExpr<*>> {
+    override fun namedExprs(): List<LabeledExpr<*>> {
         error("not implemented")
     }
 }
@@ -291,12 +294,13 @@ class Where(
 class Join(
     val of: Joinable,
     val type: JoinType,
-    val to: Relation,
+    val to: AliasedRelation,
     val on: Expr<Boolean>
 ): Joinable {
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
         out.joins.add(QueryJoin(
             type = type,
+            to = to.buildQueryRelation(),
             on = on
         ))
 
@@ -307,10 +311,7 @@ class Join(
 class Aliased(
     val of: Relation,
     val alias: Alias
-): Relation, NamedExprs by of {
-    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
-        out.relation = QueryRelation(of, alias)
-        return null
-    }
+): AliasedRelation, NamedExprs by of {
+    override fun buildQueryRelation(): QueryRelation
+        = QueryRelation(of, alias)
 }
-
