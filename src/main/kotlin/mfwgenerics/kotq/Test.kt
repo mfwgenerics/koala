@@ -17,7 +17,7 @@ fun main() {
 
     val test = TestTable
         .innerJoin(TestTable.alias(selfJoined), selfJoined[TestTable.column1] eq TestTable.column1)
-        .where(literal(true).or(TestTable.column1 eq literal(1)))
+        .where(literal(true).or(TestTable.column1 eq 1))
         .groupBy(TestTable.column1)
         .having(TestTable.column1 eq TestTable.column1)
         .orderBy(TestTable.column1, TestTable.column1.desc())
