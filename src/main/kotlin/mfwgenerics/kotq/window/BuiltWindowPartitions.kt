@@ -9,7 +9,7 @@ class BuiltWindowPartitions {
 }
 
 class BuiltWindow {
-    val window = BuiltWindowPartitions()
+    val partitions = BuiltWindowPartitions()
 
     var type: FrameClauseType? = null
 

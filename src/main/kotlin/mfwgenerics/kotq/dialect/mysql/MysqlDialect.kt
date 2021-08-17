@@ -8,6 +8,7 @@ import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.sql.NameRegistry
 import mfwgenerics.kotq.sql.SqlText
 import mfwgenerics.kotq.sql.SqlTextBuilder
+import mfwgenerics.kotq.window.*
 
 class MysqlDialect: SqlDialect {
     private class Compilation(
@@ -17,6 +18,86 @@ class MysqlDialect: SqlDialect {
     ) {
         fun compileReference(name: AliasedName<*>) {
             sql.addSql(names[name])
+        }
+
+        fun compileOrderBy(ordinals: List<Ordinal<*>>) {
+            ordinals.takeIf { it.isNotEmpty() }?.let { orderBy ->
+                sql.addSql("ORDER BY ")
+
+                var sep = ""
+
+                orderBy.forEach {
+                    sql.addSql(sep)
+
+                    val orderKey = it.toOrderKey()
+
+                    compileExpr(orderKey.expr, false)
+
+                    sql.addSql(" ${orderKey.order.sql}")
+
+                    sep = ", "
+                }
+            }
+        }
+
+        fun compileAggregatable(aggregatable: BuiltAggregatable) {
+            if (aggregatable.distinct == Distinctness.DISTINCT) sql.addSql("DISTINCT ")
+
+            compileExpr(aggregatable.expr, false)
+
+            if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
+        }
+
+        fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) {
+            when (marker) {
+                CurrentRow -> sql.addSql("CURRENT ROW")
+                is Following<*> -> {
+                    compileExpr(marker.offset)
+                }
+                is Preceding<*> -> {
+                    compileExpr(marker.offset)
+                }
+                Unbounded -> sql.addSql("UNBOUNDED $direction")
+            }
+        }
+
+        fun compileWindow(window: BuiltWindow) {
+            val partitionedBy = window.partitions.partitions
+            val orderBy = window.partitions.orderBy
+
+            if (!partitionedBy.isNullOrEmpty()) {
+                sql.addSql("PARTITION BY ")
+                var sep = ""
+                partitionedBy.forEach {
+                    sql.addSql(sep)
+                    compileExpr(it, false)
+                    sep = ", "
+                }
+            }
+
+            if (orderBy.isNotEmpty()) {
+                sql.addSql(" ")
+                compileOrderBy(orderBy)
+            }
+
+            window.type?.let { windowType ->
+                sql.addSql(" ")
+                sql.addSql(windowType.sql)
+                sql.addSql(" ")
+
+                val until = window.until
+
+                if (until == null) {
+                    compileRangeMarker("PRECEDING", window.from)
+                } else {
+                    sql.addSql("BETWEEN ")
+                    compileRangeMarker("PRECEDING", window.from)
+                    sql.addSql(" AND ")
+                    compileRangeMarker("FOLLOWING", until)
+                }
+            }
+
+            window.type
         }
 
         fun compileExpr(expr: Expr<*>, enclosed: Boolean = true) {
@@ -50,19 +131,44 @@ class MysqlDialect: SqlDialect {
                         OperationFixity.APPLY -> {
                             var sep = ""
                             sql.addSql(expr.type.sql)
-                            if (enclosed) sql.addSql("(")
+                            sql.addSql("(")
                             expr.args.forEach {
                                 sql.addSql(sep)
                                 compileExpr(it, false)
                                 sep = ", "
                             }
-                            if (enclosed) sql.addSql(")")
+                            sql.addSql(")")
                         }
                     }
                 }
                 is Literal -> sql.addValue(expr.value)
                 is Reference -> {
                     compileReference(expr.buildAliased())
+                }
+                is AggregatedExpr -> {
+                    val built = expr.buildAggregated()
+
+                    var sep = ""
+                    sql.addSql(built.expr.type.sql)
+                    sql.addSql("(")
+                    built.expr.args.forEach {
+                        sql.addSql(sep)
+                        compileAggregatable(it)
+                        sep = ", "
+                    }
+                    sql.addSql(")")
+
+                    built.filter?.let { filter ->
+                        sql.addSql(" FILTER(WHERE ")
+                        compileExpr(filter, false)
+                        sql.addSql(")")
+                    }
+
+                    built.over?.let { window ->
+                        sql.addSql(" OVER (")
+                        compileWindow(window)
+                        sql.addSql(")")
+                    }
                 }
             }
         }
@@ -156,23 +262,8 @@ class MysqlDialect: SqlDialect {
 
             compileSelectBody(select.body)
 
-            select.orderBy.takeIf { it.isNotEmpty() }?.let { orderBy ->
-                sql.addSql("\nORDER BY ")
-
-                var sep = ""
-
-                orderBy.forEach {
-                    sql.addSql(sep)
-
-                    val orderKey = it.toOrderKey()
-
-                    compileExpr(orderKey.expr, false)
-
-                    sql.addSql(" ${orderKey.order.sql}")
-
-                    sep = ", "
-                }
-            }
+            sql.addSql("\n")
+            compileOrderBy(select.orderBy)
 
             select.limit?.let {
                 sql.addSql("\nLIMIT ")

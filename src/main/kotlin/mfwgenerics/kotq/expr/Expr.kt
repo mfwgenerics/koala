@@ -1,12 +1,18 @@
 package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.Alias
+import mfwgenerics.kotq.unfoldBuilder
 
-sealed interface Expr<T : Any>: Ordinal<T> {
+sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
     fun asc() = OrderKey(SortOrder.ASC, this)
     fun desc() = OrderKey(SortOrder.DESC, this)
+
+    override fun buildIntoAggregatable(into: BuiltAggregatable): BuildsIntoAggregatable? {
+        into.expr = this
+        return null
+    }
 }
 
 class AliasedName<T : Any>(
@@ -48,15 +54,8 @@ sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
     override fun namedExprs(): List<Labeled<*>> =
         listOf(LabeledName(buildAliased()))
 
-    fun buildAliased(): AliasedName<T> {
-        val result = AliasedName<T>()
-
-        var next = buildIntoAliased(result)
-
-        while (next != null) next = next.buildIntoAliased(result)
-
-        return result
-    }
+    fun buildAliased(): AliasedName<T> =
+        unfoldBuilder(AliasedName<T>()) { buildIntoAliased(it) }
 
     fun buildIntoAliased(out: AliasedName<T>): Reference<T>?
 }

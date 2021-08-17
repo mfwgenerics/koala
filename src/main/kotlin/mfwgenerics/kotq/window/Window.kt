@@ -2,17 +2,11 @@ package mfwgenerics.kotq.window
 
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Ordinal
+import mfwgenerics.kotq.unfoldBuilder
 
 interface BuildsIntoWindow {
-    fun buildWindow(): BuiltWindow {
-        val result = BuiltWindow()
-
-        var next = buildIntoWindow(result)
-
-        while (next != null) next = next.buildIntoWindow(result)
-
-        return result
-    }
+    fun buildWindow(): BuiltWindow =
+        unfoldBuilder(BuiltWindow()) { buildIntoWindow(it) }
 
     fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow?
 }
@@ -21,7 +15,7 @@ interface BuildsIntoWindowPartitions: BuildsIntoWindow {
     fun buildIntoWindowPartitions(partitions: BuiltWindowPartitions): BuildsIntoWindowPartitions?
 
     override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow? =
-        buildIntoWindowPartitions(window.window)
+        buildIntoWindowPartitions(window.partitions)
 }
 
 interface Window: BuildsIntoWindow {
@@ -47,13 +41,13 @@ private class RangedBetweenable<T>(
 }
 
 interface Rowable: Window, BuildsIntoWindowPartitions {
-    fun rows(): Betweenable<Int> =
+    fun rows(): Betweenable<Expr<Int>> =
         FrameClauseWindow(this, FrameClauseType.ROWS)
-    fun groups(): Betweenable<Int> =
+    fun groups(): Betweenable<Expr<Int>> =
         FrameClauseWindow(this, FrameClauseType.GROUPS)
 }
 
-interface Rangeable: Window, BuildsIntoWindowPartitions {
+interface Rangeable: Rowable, BuildsIntoWindowPartitions {
     fun range(): Betweenable<Expr<*>> =
         FrameClauseWindow(this, FrameClauseType.RANGE)
 }
@@ -78,7 +72,7 @@ interface OrderableWindow: Rowable {
 private class OrderBy(
     val lhs: OrderableWindow,
     val orderBy: List<Ordinal<*>>
-): Rangeable, Rowable {
+): Rangeable {
     override fun buildIntoWindowPartitions(partitions: BuiltWindowPartitions): OrderableWindow? {
         partitions.orderBy = orderBy
         return lhs

@@ -1,9 +1,16 @@
 package mfwgenerics.kotq.window
 
+import mfwgenerics.kotq.expr.Expr
+
 sealed interface FrameRangeMarker<out T>
 
 object Unbounded: FrameRangeMarker<Nothing>
 object CurrentRow: FrameRangeMarker<Nothing>
 
-data class Preceding<T>(val rows: T): FrameRangeMarker<T>
-data class Following<T>(val rows: T): FrameRangeMarker<T>
+class Preceding<T : Any>(
+    val offset: Expr<T>
+): FrameRangeMarker<Expr<T>>
+
+class Following<T : Any>(
+    val offset: Expr<T>
+): FrameRangeMarker<Expr<T>>

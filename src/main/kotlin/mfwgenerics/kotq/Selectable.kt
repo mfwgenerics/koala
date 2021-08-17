@@ -17,15 +17,8 @@ interface BuildsIntoSelect {
 }
 
 interface BuildsIntoSelectBody: BuildsIntoSelect {
-    fun buildSelectBody(): SelectBody {
-        val body = SelectBody()
-
-        var next = buildIntoSelectBody(body)
-
-        while (next != null) next = next.buildIntoSelectBody(body)
-
-        return body
-    }
+    fun buildSelectBody(): SelectBody =
+        unfoldBuilder(SelectBody()) { buildIntoSelectBody(it) }
 
     fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody?
 
@@ -67,19 +60,19 @@ interface Orderable: Offsetable {
 
 interface Unionable: Orderable {
     fun union(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.UNION, SetDistinctness.DISTINCT)
+        SetOperation(this, against, SetOperationType.UNION, Distinctness.DISTINCT)
     fun unionAll(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.UNION, SetDistinctness.ALL)
+        SetOperation(this, against, SetOperationType.UNION, Distinctness.ALL)
 
     fun intersect(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.INTERSECTION, SetDistinctness.DISTINCT)
+        SetOperation(this, against, SetOperationType.INTERSECTION, Distinctness.DISTINCT)
     fun intersectAll(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.INTERSECTION, SetDistinctness.ALL)
+        SetOperation(this, against, SetOperationType.INTERSECTION, Distinctness.ALL)
 
     fun except(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.DISTINCT)
+        SetOperation(this, against, SetOperationType.DIFFERENCE, Distinctness.DISTINCT)
     fun exceptAll(against: UnionOperandable): Unionable =
-        SetOperation(this, against, SetOperationType.DIFFERENCE, SetDistinctness.ALL)
+        SetOperation(this, against, SetOperationType.DIFFERENCE, Distinctness.ALL)
 }
 
 interface UnionOperandable: Unionable, BuildsIntoSelectBody
@@ -158,7 +151,7 @@ enum class SetOperationType {
     DIFFERENCE
 }
 
-enum class SetDistinctness {
+enum class Distinctness {
     DISTINCT,
     ALL
 }
@@ -216,7 +209,7 @@ class SetOperation(
     val of: Unionable,
     val against: UnionOperandable,
     val type: SetOperationType,
-    val distinctness: SetDistinctness
+    val distinctness: Distinctness
 ): Unionable {
     override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
         out.setOperations.add(SetOperationQuery(

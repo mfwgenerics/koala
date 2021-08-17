@@ -78,7 +78,7 @@ data class SelectBody(
 
 data class SetOperationQuery(
     val type: SetOperationType,
-    val distinctness: SetDistinctness,
+    val distinctness: Distinctness,
     val body: SelectBody
 )
 

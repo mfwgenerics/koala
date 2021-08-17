@@ -2,6 +2,9 @@ package mfwgenerics.kotq
 
 import mfwgenerics.kotq.dialect.mysql.MysqlDialect
 import mfwgenerics.kotq.expr.*
+import mfwgenerics.kotq.window.all
+import mfwgenerics.kotq.window.preceding
+import mfwgenerics.kotq.window.unbounded
 
 object TestTable : Table("Test") {
     val column1 = column("test0", ColumnType.INT)
@@ -14,6 +17,7 @@ fun main() {
 
     val selfJoined = Alias()
     val renamed = name<Int>()
+    val grouped = name<Int>()
 
     val test = TestTable
         .innerJoin(TestTable.alias(selfJoined), selfJoined[TestTable.column1] eq TestTable.column1)
@@ -25,6 +29,15 @@ fun main() {
         .limit(5)
         .forShare()
         .select(
+            max(distinct(TestTable.column1))
+                .filter(literal(1) eq 1)
+                .over(all()
+                    .partitionBy(literal(1))
+                    .orderBy(TestTable.column1)
+                    .rows()
+                    .between(preceding(10), unbounded())
+                )
+                named grouped,
             TestTable,
             selfJoined[TestTable.column1],
             TestTable.column1 named renamed
