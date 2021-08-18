@@ -3,6 +3,7 @@ package mfwgenerics.kotq.query
 import mfwgenerics.kotq.*
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.sql.Scope
+import mfwgenerics.kotq.window.LabeledWindow
 
 sealed interface Statement
 
@@ -69,7 +70,9 @@ data class SelectBody(
     val where: QueryWhere = QueryWhere(),
 
     var groupBy: List<Expr<*>> = arrayListOf(),
-    var having: Expr<Boolean>? = null
+    var having: Expr<Boolean>? = null,
+
+    var windows: List<LabeledWindow> = emptyList()
 ) {
     fun populateScope(scope: Scope) {
         where.populateScope(scope)

@@ -1,23 +1,17 @@
 package mfwgenerics.kotq.expr
 
+import mfwgenerics.kotq.IdentifierName
 import kotlin.reflect.KClass
 
 class Name<T : Any>(
     val type: KClass<T>,
-    val identifier: String? = null
+    val identifier: IdentifierName
 ): Named<T> {
     override val name: Name<T> get() = this
 
-    override fun equals(other: Any?): Boolean {
-        if (other !is Name<*>) return false
+    override fun equals(other: Any?): Boolean =
+        other is Name<*> && identifier == other.identifier
 
-        if (identifier == null && other.identifier == null) return this === other
-
-        return identifier == other.identifier
-    }
-
-    override fun hashCode(): Int =
-        identifier?.hashCode()?:System.identityHashCode(this)
-
-    override fun toString(): String = if (identifier != null) "$identifier" else "name"
+    override fun hashCode(): Int = identifier.hashCode()
+    override fun toString(): String = "$identifier"
 }

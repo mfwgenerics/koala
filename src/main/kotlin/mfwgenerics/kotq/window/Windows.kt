@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.window
 
+import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.literal
 
@@ -20,3 +21,14 @@ fun <T : Any> following(offset: Expr<T>): FrameRangeMarker<Expr<T>> =
     Following(offset)
 inline fun <reified T : Any> following(offset: T): FrameRangeMarker<Expr<T>> =
     Following(literal(offset))
+
+fun window(identifier: String? = null): WindowLabel =
+    WindowLabel(IdentifierName(identifier))
+
+class LabeledWindow(
+    val window: Window,
+    val label: WindowLabel
+)
+
+infix fun Window.named(label: WindowLabel): LabeledWindow =
+    LabeledWindow(this, label)

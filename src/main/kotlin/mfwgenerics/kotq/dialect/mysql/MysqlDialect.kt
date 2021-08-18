@@ -1,17 +1,15 @@
 package mfwgenerics.kotq.dialect.mysql
 
 import mfwgenerics.kotq.*
-import mfwgenerics.kotq.sql.Scope
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
-import mfwgenerics.kotq.sql.NameRegistry
-import mfwgenerics.kotq.sql.SqlText
-import mfwgenerics.kotq.sql.SqlTextBuilder
+import mfwgenerics.kotq.sql.*
 import mfwgenerics.kotq.window.*
 
 class MysqlDialect: SqlDialect {
     private class Compilation(
+        val windowLabels: WindowLabelRegistry = WindowLabelRegistry(),
         val registry: NameRegistry = NameRegistry(),
         val names: Scope = Scope(registry),
         val sql: SqlTextBuilder = SqlTextBuilder()
@@ -65,23 +63,35 @@ class MysqlDialect: SqlDialect {
             val partitionedBy = window.partitions.partitions
             val orderBy = window.partitions.orderBy
 
+            var prefix = ""
+
+            window.partitions.from?.let {
+                sql.addSql(windowLabels[it])
+
+                prefix = " "
+            }
+
             if (!partitionedBy.isNullOrEmpty()) {
-                sql.addSql("PARTITION BY ")
+                sql.addSql("${prefix}PARTITION BY ")
                 var sep = ""
                 partitionedBy.forEach {
                     sql.addSql(sep)
                     compileExpr(it, false)
                     sep = ", "
                 }
+
+                prefix = " "
             }
 
             if (orderBy.isNotEmpty()) {
-                sql.addSql(" ")
+                sql.addSql(prefix)
                 compileOrderBy(orderBy)
+
+                prefix = " "
             }
 
             window.type?.let { windowType ->
-                sql.addSql(" ")
+                sql.addSql(prefix)
                 sql.addSql(windowType.sql)
                 sql.addSql(" ")
 
@@ -96,8 +106,6 @@ class MysqlDialect: SqlDialect {
                     compileRangeMarker("FOLLOWING", until)
                 }
             }
-
-            window.type
         }
 
         fun compileExpr(expr: Expr<*>, enclosed: Boolean = true) {
@@ -158,6 +166,7 @@ class MysqlDialect: SqlDialect {
                     }
                     sql.addSql(")")
 
+                    // mysql doesn't actually support this - maybe have convert to a CASE
                     built.filter?.let { filter ->
                         sql.addSql(" FILTER(WHERE ")
                         compileExpr(filter, false)
@@ -222,6 +231,21 @@ class MysqlDialect: SqlDialect {
             body.having?.let {
                 sql.addSql("\nHAVING ")
                 compileExpr(it, false)
+            }
+
+            body.windows.takeIf { it.isNotEmpty() }?.let { windows ->
+                var sep = "\nWINDOW "
+
+                windows.forEach {
+                    sql.addSql(sep)
+
+                    sql.addSql(windowLabels[it.label])
+                    sql.addSql(" AS ")
+                    sql.addSql("(")
+                    compileWindow(it.window.buildWindow())
+                    sql.addSql(")")
+                    sep = ",\n"
+                }
             }
         }
 

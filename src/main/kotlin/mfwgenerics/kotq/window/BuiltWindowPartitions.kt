@@ -4,6 +4,8 @@ import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Ordinal
 
 class BuiltWindowPartitions {
+    var from: WindowLabel? = null
+
     var partitions: List<Expr<*>> = emptyList()
     var orderBy: List<Ordinal<*>> = emptyList()
 }

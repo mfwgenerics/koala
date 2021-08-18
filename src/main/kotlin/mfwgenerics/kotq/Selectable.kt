@@ -2,6 +2,8 @@ package mfwgenerics.kotq
 
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
+import mfwgenerics.kotq.window.LabeledWindow
+import mfwgenerics.kotq.window.Window
 
 interface Queryable {
     fun subquery() = Subquery(this)
@@ -77,7 +79,20 @@ interface Unionable: Orderable {
 
 interface UnionOperandable: Unionable, BuildsIntoSelectBody
 
-interface Windowable: UnionOperandable
+interface Windowable: UnionOperandable {
+    fun window(vararg windows: LabeledWindow): UnionOperandable =
+        WindowedQuery(this, windows.asList())
+}
+
+private class WindowedQuery(
+    val lhs: Windowable,
+    val windows: List<LabeledWindow>
+): UnionOperandable {
+    override fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody? {
+        out.windows = windows
+        return lhs
+    }
+}
 
 interface Havingable: Windowable {
     fun having(having: Expr<Boolean>) = Having(this, having)
