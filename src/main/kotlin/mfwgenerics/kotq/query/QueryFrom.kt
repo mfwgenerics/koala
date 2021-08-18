@@ -14,7 +14,7 @@ data class QueryRelation(
     val computedAlias = alias?:Alias()
 
     fun populateScope(scope: Scope) {
-        val innerScope = Scope(scope.names)
+        val innerScope = scope.innerScope()
 
         when (relation) {
             is Table -> {
@@ -30,15 +30,12 @@ data class QueryRelation(
                     innerScope.insert(aliased, aliased, computedAlias)
                 }
             }
+            is Subquery -> TODO()
         }
 
         scope.register(computedAlias, innerScope)
     }
 }
-
-data class QueryWith(
-    val type: WithType
-)
 
 data class QueryJoin(
     val type: JoinType,
@@ -50,10 +47,17 @@ data class QueryJoin(
     }
 }
 
+class BuiltWith(
+    val alias: Alias,
+    val query: BuiltSelectQuery
+)
+
 class QueryWhere {
     lateinit var relation: QueryRelation
 
-    val withs: MutableList<QueryWith> = arrayListOf()
+    var withType = WithType.NOT_RECURSIVE
+    var withs: List<BuiltWith> = emptyList()
+
     val joins: MutableList<QueryJoin> = arrayListOf()
 
     var where: Expr<Boolean>? = null
@@ -62,10 +66,21 @@ class QueryWhere {
         relation.populateScope(scope)
 
         joins.forEach { it.populateScope(scope) }
+
+        withs.forEach {
+            val innerScope = scope.innerScope()
+
+            it.query.populateScope(innerScope)
+
+            innerScope.allNames().forEach { name ->
+                scope.insert(name.copyWithPrefix(it.alias), name, it.alias)
+            }
+
+            scope.register(it.alias, innerScope)
+        }
     }
 }
 
-/* TODO add WINDOWs here */
 data class SelectBody(
     val where: QueryWhere = QueryWhere(),
 
@@ -85,7 +100,7 @@ data class SetOperationQuery(
     val body: SelectBody
 )
 
-data class SelectQuery(
+data class BuiltSelectQuery(
     val body: SelectBody = SelectBody(),
 
     val setOperations: MutableList<SetOperationQuery> = arrayListOf(),

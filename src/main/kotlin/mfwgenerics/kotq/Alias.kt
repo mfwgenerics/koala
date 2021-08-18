@@ -4,7 +4,7 @@ import mfwgenerics.kotq.expr.AliasedReference
 import mfwgenerics.kotq.expr.Reference
 
 class Alias(
-    private val identifier: IdentifierName = IdentifierName()
+    val identifier: IdentifierName = IdentifierName()
 ) {
     operator fun <T : Any> get(reference: Reference<T>) = AliasedReference(this, reference)
 

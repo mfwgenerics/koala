@@ -3,19 +3,18 @@ package mfwgenerics.kotq
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.window.LabeledWindow
-import mfwgenerics.kotq.window.Window
 
 interface Queryable {
     fun subquery() = Subquery(this)
 
-    fun buildQuery(): SelectQuery
+    fun buildQuery(): BuiltSelectQuery
 }
 
 interface Statementable {
 }
 
 interface BuildsIntoSelect {
-    fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect?
+    fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect?
 }
 
 interface BuildsIntoSelectBody: BuildsIntoSelect {
@@ -24,7 +23,7 @@ interface BuildsIntoSelectBody: BuildsIntoSelect {
 
     fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody?
 
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? =
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? =
         buildIntoSelectBody(out.body)
 }
 
@@ -128,10 +127,10 @@ interface Joinable: Whereable {
 }
 
 interface Withable: Joinable {
-    fun with(query: NamedExprs) =
-        WithQuery(this, WithType.NOT_RECURSIVE, query)
-    fun withRecursive(query: NamedExprs) =
-        WithQuery(this, WithType.RECURSIVE, query)
+    fun with(vararg queries: AliasedQueryable) =
+        WithQuery(this, WithType.NOT_RECURSIVE, queries.asList())
+    fun withRecursive(vararg queries: AliasedQueryable) =
+        WithQuery(this, WithType.RECURSIVE, queries.asList())
 
     fun insertSelect(query: NamedExprs, vararg assignment: Assignment<*>): Nothing = TODO()
 }
@@ -175,8 +174,8 @@ class Select(
     val of: Selectable,
     val references: List<NamedExprs>
 ): Queryable {
-    override fun buildQuery(): SelectQuery {
-        val query = SelectQuery()
+    override fun buildQuery(): BuiltSelectQuery {
+        val query = BuiltSelectQuery()
 
         var next = of.buildIntoSelect(query)
 
@@ -202,7 +201,7 @@ class LockQuery(
     val of: Lockable,
     val mode: LockMode
 ): Selectable {
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.locking = mode
 
         return of
@@ -212,10 +211,17 @@ class LockQuery(
 class WithQuery(
     val of: Withable,
     val type: WithType,
-    val query: NamedExprs
+    val queries: List<AliasedQueryable>
 ): Withable {
-    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
-        out.withs.add(QueryWith(type = type))
+    override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery {
+        out.withType = type
+        out.withs = queries.map {
+            BuiltWith(
+                it.alias,
+                it.queryable.buildQuery()
+            )
+        }
+
         return of
     }
 }
@@ -226,7 +232,7 @@ class SetOperation(
     val type: SetOperationType,
     val distinctness: Distinctness
 ): Unionable {
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.setOperations.add(SetOperationQuery(
             type = type,
             distinctness = distinctness,
@@ -241,7 +247,7 @@ class Limit(
     val of: Limitable,
     val rows: Int
 ): Lockable {
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.limit = rows
 
         return of
@@ -252,7 +258,7 @@ class Offset(
     val of: Offsetable,
     val rows: Int
 ): Limitable {
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.offset = rows
 
         return of
@@ -263,7 +269,7 @@ class OrderBy(
     val of: Orderable,
     val ordinals: List<Ordinal<*>>
 ): Offsetable {
-    override fun buildIntoSelect(out: SelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.orderBy = ordinals
         return of
     }

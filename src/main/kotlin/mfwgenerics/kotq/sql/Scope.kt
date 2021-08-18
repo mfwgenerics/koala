@@ -2,11 +2,16 @@ package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.Alias
 import mfwgenerics.kotq.expr.AliasedName
+import mfwgenerics.kotq.window.WindowLabel
 
 /* TODO restrict names to identifier characters */
 class Scope(
-    val names: NameRegistry
+    private val names: NameRegistry,
+    private val enclosing: Scope? = null
 ) {
+    fun innerScope(): Scope =
+        Scope(names, this)
+
     private sealed interface Registered
 
     private data class UnderAlias(
@@ -16,10 +21,15 @@ class Scope(
 
     private object Internal: Registered
 
-    private val registered = hashMapOf<AliasedName<*>, Registered>()
-    private val aliases = hashMapOf<Alias, String>()
+    class RegisteredAlias(
+        val ident: String,
+        val scope: Scope
+    ) {
+        override fun toString(): String = error("")
+    }
 
-    private var aliasCount: Int = 0
+    private val registered = hashMapOf<AliasedName<*>, Registered>()
+    private val aliases = hashMapOf<Alias, RegisteredAlias>()
 
     fun insert(
         name: AliasedName<*>,
@@ -42,21 +52,28 @@ class Scope(
             { "$name already in scope" }
     }
 
-    private fun generateAlias(): String = "T${aliasCount++}"
-
     fun register(alias: Alias, scope: Scope) {
-        aliases[alias] = generateAlias()
+        aliases[alias] = RegisteredAlias(
+            names[alias],
+            scope
+        )
     }
 
     operator fun get(name: AliasedName<*>): String {
-        val registered = registered.getValue(name)
+        val registered = registered[name]
+            ?: return enclosing?.get(name)!!
 
         return when (registered) {
-            is UnderAlias -> "${aliases[registered.alias]}.${names[registered.innerName]}"
+            is UnderAlias -> "${aliases.getValue(registered.alias).ident}.${names[registered.innerName]}"
             Internal -> names[name]
         }
     }
 
-    operator fun get(alias: Alias): String =
-        aliases.getValue(alias)
+    operator fun get(alias: Alias): RegisteredAlias =
+        aliases[alias]?:enclosing?.get(alias)!!
+
+    fun nameOf(name: AliasedName<*>): String = names[name]
+    fun nameOf(label: WindowLabel): String = names[label]
+
+    fun allNames(): Collection<AliasedName<*>> = registered.keys
 }

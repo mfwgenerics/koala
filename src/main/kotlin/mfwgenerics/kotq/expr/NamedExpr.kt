@@ -13,5 +13,5 @@ data class LabeledName<T : Any>(
     val name: AliasedName<T>
 ): Labeled<T>
 
-infix fun <T : Any> Expr<T>.named(name: Name<T>): LabeledExpr<T> =
+infix fun <T : Any> Expr<T>.`as`(name: Name<T>): LabeledExpr<T> =
     LabeledExpr(this, name.buildAliased())

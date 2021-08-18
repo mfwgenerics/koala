@@ -13,7 +13,7 @@ interface BuildsIntoAggregatedExpr {
 interface AggregatedExpr<T : Any>: Expr<T>, BuildsIntoAggregatedExpr
 
 interface OverableExpr<T : Any>: AggregatedExpr<T> {
-    fun over(window: Window): AggregatedExpr<T> =
+    infix fun over(window: Window): AggregatedExpr<T> =
         OverWindow(this, window)
 }
 

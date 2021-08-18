@@ -30,5 +30,5 @@ class LabeledWindow(
     val label: WindowLabel
 )
 
-infix fun Window.named(label: WindowLabel): LabeledWindow =
-    LabeledWindow(this, label)
+infix fun WindowLabel.`as`(window: Window): LabeledWindow =
+    LabeledWindow(window, this)

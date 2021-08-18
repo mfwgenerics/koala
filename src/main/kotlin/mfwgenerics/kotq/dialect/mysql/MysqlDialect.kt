@@ -9,9 +9,7 @@ import mfwgenerics.kotq.window.*
 
 class MysqlDialect: SqlDialect {
     private class Compilation(
-        val windowLabels: WindowLabelRegistry = WindowLabelRegistry(),
-        val registry: NameRegistry = NameRegistry(),
-        val names: Scope = Scope(registry),
+        val names: Scope,
         val sql: SqlTextBuilder = SqlTextBuilder()
     ) {
         fun compileReference(name: AliasedName<*>) {
@@ -66,7 +64,7 @@ class MysqlDialect: SqlDialect {
             var prefix = ""
 
             window.partitions.from?.let {
-                sql.addSql(windowLabels[it])
+                sql.addSql(names.nameOf(it))
 
                 prefix = " "
             }
@@ -191,7 +189,7 @@ class MysqlDialect: SqlDialect {
                 is Subquery -> compileSelect(baseRelation.of.buildQuery())
             }
 
-            sql.addSql(names[relation.computedAlias])
+            sql.addSql(names[relation.computedAlias].ident)
         }
 
         fun compileQueryWhere(query: QueryWhere) {
@@ -200,6 +198,7 @@ class MysqlDialect: SqlDialect {
             sql.addSql("\n")
 
             query.joins.forEach { join ->
+                sql.addSql("\n")
                 sql.addSql(join.type.sql)
                 sql.addSql(" ")
                 compileRelation(join.to)
@@ -239,7 +238,7 @@ class MysqlDialect: SqlDialect {
                 windows.forEach {
                     sql.addSql(sep)
 
-                    sql.addSql(windowLabels[it.label])
+                    sql.addSql(names.nameOf(it.label))
                     sql.addSql(" AS ")
                     sql.addSql("(")
                     compileWindow(it.window.buildWindow())
@@ -249,8 +248,35 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileSelect(select: SelectQuery) {
-            select.populateScope(names)
+        fun compileSelect(select: BuiltSelectQuery) {
+            val withs = select.body.where.withs
+
+            if (withs.isNotEmpty()) {
+                var sep = when (select.body.where.withType) {
+                    WithType.RECURSIVE -> "WITH RECURSIVE "
+                    WithType.NOT_RECURSIVE -> "WITH "
+                }
+
+                withs.forEach {
+                    sql.addSql(sep)
+
+                    val subquery = names[it.alias]
+
+                    sql.addSql(subquery.ident)
+                    sql.addSql(" AS (")
+
+                    Compilation(
+                        names = subquery.scope,
+                        sql = sql
+                    ).compileSelect(it.query)
+
+                    sql.addSql(")")
+
+                    sep = ", "
+                }
+
+                sql.addSql("\n")
+            }
 
             sql.addSql("SELECT")
 
@@ -266,7 +292,7 @@ class MysqlDialect: SqlDialect {
                         is LabeledExpr -> {
                             compileExpr(it.expr, false)
                             sql.addSql(" ")
-                            sql.addSql(registry[it.name])
+                            sql.addSql(names.nameOf(it.name))
                         }
                         is LabeledName -> {
                             val name = it.name
@@ -275,7 +301,7 @@ class MysqlDialect: SqlDialect {
 
                             if (name.aliases.isNotEmpty()) {
                                 sql.addSql(" ")
-                                sql.addSql(registry[it.name])
+                                sql.addSql(names.nameOf(it.name))
                             }
                         }
                     }
@@ -311,12 +337,22 @@ class MysqlDialect: SqlDialect {
     }
 
     override fun compile(statement: Statement): SqlText {
-        val compilation = Compilation()
+        if (statement is BuiltSelectQuery) {
+            val registry = NameRegistry()
 
-        if (statement is SelectQuery) {
+            val scope = Scope(registry)
+
+            statement.populateScope(scope)
+
+            val compilation = Compilation(
+                names = scope
+            )
+
             compilation.compileSelect(statement)
+
+            return compilation.sql.toSql()
         }
 
-        return compilation.sql.toSql()
+        error("can't compile $statement")
     }
 }
