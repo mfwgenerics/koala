@@ -10,10 +10,14 @@ class NameRegistry {
 
     private fun generate(prefix: String): String = "$prefix${generated++}"
 
+    fun external(name: AliasedName<*>, symbol: String) {
+        registered[name] = symbol
+    }
+
     operator fun get(name: AliasedName<*>): String =
         registered.getOrPut(name) { name
             .takeIf { it.aliases.isEmpty() }
-            ?.identifier?.identifier?.asString
+            ?.identifier?.asString
             ?: generate("n")
         }
 

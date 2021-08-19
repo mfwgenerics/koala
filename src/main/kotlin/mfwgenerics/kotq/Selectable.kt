@@ -173,7 +173,7 @@ sealed interface Relation: AliasedRelation {
 class Subquery(
     val of: Queryable
 ): Relation {
-    override fun namedExprs(): List<LabeledExpr<*>> {
+    override fun namedExprs(): List<Labeled<*>> {
         error("not implemented")
     }
 }

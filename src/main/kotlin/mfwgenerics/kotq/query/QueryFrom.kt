@@ -14,26 +14,28 @@ data class QueryRelation(
     val computedAlias = alias?:Alias()
 
     fun populateScope(scope: Scope) {
-        val innerScope = scope.innerScope()
-
         when (relation) {
             is Table -> {
+                val innerScope = scope.innerScope()
+
                 relation.columns.forEach {
-                    val aliased = it.name.buildAliased()
+                    val aliased = it.buildAliased()
 
-                    if (alias == null) {
-                        scope.insert(aliased, aliased, computedAlias)
-                    } else {
-                        scope.insert(aliased.copyWithPrefix(computedAlias), aliased, computedAlias)
-                    }
-
-                    innerScope.insert(aliased, aliased, computedAlias)
+                    innerScope.external(aliased, it.symbol)
                 }
+
+                innerScope.allNames().forEach { name ->
+                    if (alias == null) {
+                        scope.insert(name, name, computedAlias)
+                    } else {
+                        scope.insert(name.copyWithPrefix(computedAlias), name, computedAlias)
+                    }
+                }
+
+                scope.register(computedAlias, innerScope)
             }
             is Subquery -> TODO()
         }
-
-        scope.register(computedAlias, innerScope)
     }
 }
 
@@ -115,18 +117,13 @@ data class BuiltSelectQuery(
     var selected: List<Labeled<*>> = emptyList()
 ): Statement {
     fun populateScope(scope: Scope) {
+        body.populateScope(scope)
+
         selected.forEach {
             it.namedExprs().forEach { labeled ->
-                when (labeled) {
-                    is LabeledExpr -> {
-                        scope.insert(labeled.name)
-                    }
-                    else -> { }
-                }
+                scope.insert(labeled.name)
             }
         }
-
-        body.populateScope(scope)
     }
 }
 

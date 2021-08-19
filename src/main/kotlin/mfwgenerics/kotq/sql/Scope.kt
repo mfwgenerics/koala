@@ -14,12 +14,16 @@ class Scope(
 
     private sealed interface Registered
 
-    private data class UnderAlias(
+    private class UnderAlias(
         val alias: Alias,
         val innerName: AliasedName<*>
     ): Registered
 
     private object Internal: Registered
+
+    private class External(
+        val symbol: String
+    ): Registered
 
     class RegisteredAlias(
         val ident: String,
@@ -41,15 +45,20 @@ class Scope(
             innerName = innerName
         )
 
-        check(registered.put(name, value) == null)
-            { "$name already in scope. value $value" }
+        registered.putIfAbsent(name, value)
     }
 
     fun insert(
         name: AliasedName<*>
     ) {
-        check(registered.put(name, Internal) == null)
-            { "$name already in scope" }
+        registered.putIfAbsent(name, Internal)
+    }
+
+    fun external(
+        name: AliasedName<*>,
+        symbol: String
+    ) {
+        registered.putIfAbsent(name, External(symbol))
     }
 
     fun register(alias: Alias, scope: Scope) {
@@ -64,7 +73,12 @@ class Scope(
             ?: return enclosing?.get(name)!!
 
         return when (registered) {
-            is UnderAlias -> "${aliases.getValue(registered.alias).ident}.${names[registered.innerName]}"
+            is UnderAlias -> {
+                val alias = aliases.getValue(registered.alias)
+
+                "${alias.ident}.${alias.scope[registered.innerName]}"
+            }
+            is External -> registered.symbol
             Internal -> names[name]
         }
     }

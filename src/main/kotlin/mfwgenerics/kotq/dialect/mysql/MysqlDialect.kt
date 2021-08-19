@@ -231,7 +231,7 @@ class MysqlDialect: SqlDialect {
                         WithType.RECURSIVE -> "WITH RECURSIVE "
                         WithType.NOT_RECURSIVE -> "WITH "
                     },
-                    ", "
+                    "\n, "
                 )
                 .forEach(withs) {
                     val subquery = names[it.alias]
@@ -254,23 +254,9 @@ class MysqlDialect: SqlDialect {
             (select.selected.takeIf { it.isNotEmpty() }?:outerSelect)
                 .forEach {
                     selectPrefix.next {
-                        when (it) {
-                            is LabeledExpr -> {
-                                compileExpr(it.expr, false)
-                                sql.addSql(" ")
-                                sql.addSql(names.nameOf(it.name))
-                            }
-                            is LabeledName -> {
-                                val name = it.name
-
-                                compileReference(name)
-
-                                if (name.aliases.isNotEmpty()) {
-                                    sql.addSql(" ")
-                                    sql.addSql(names.nameOf(it.name))
-                                }
-                            }
-                        }
+                        compileExpr(it.expr, false)
+                        sql.addSql(" ")
+                        sql.addSql(names.nameOf(it.name))
                     }
                 }
 

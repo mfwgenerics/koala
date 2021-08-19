@@ -16,8 +16,9 @@ fun main() {
     val cte = Alias(IdentifierName("cte0"))
     val cte2 = Alias(IdentifierName("cte1"))
 
-    val selfJoined = Alias()
+    val selfJoined = Alias(IdentifierName("selfJoined"))
     val renamed = name<Int>("renamed")
+    val renamed2 = name<Int>("renamed2")
     val grouped = name<Int>()
 
     val window = window()
@@ -30,9 +31,9 @@ fun main() {
             .where(TestTable.column1 eq 1)
             .where(selfJoined[TestTable.column1] eq 1)
             .orderBy(TestTable.column1)
-            .select(TestTable.column1),
+            .select(TestTable.column1 `as` TestTable.column1),
             cte2 `as` TestTable
-            .select(TestTable.column1)
+            .select(TestTable.column1 `as` renamed2)
         )
         .innerJoin(TestTable.alias(selfJoined), selfJoined[TestTable.column1] eq TestTable.column1)
         .where(literal(true).or(TestTable.column1 eq 1))
