@@ -17,4 +17,17 @@ class SqlTextBuilder {
         "$contents",
         params
     )
+
+    fun prefix(initial: String, after: String): SqlPrefix {
+        var pref = initial
+
+        return object : SqlPrefix {
+            override fun next(block: () -> Unit) {
+                addSql(pref)
+                block()
+                pref = after
+            }
+        }
+    }
+
 }

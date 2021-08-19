@@ -17,22 +17,12 @@ class MysqlDialect: SqlDialect {
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
-            ordinals.takeIf { it.isNotEmpty() }?.let { orderBy ->
-                sql.addSql("ORDER BY ")
+            sql.prefix("ORDER BY ", ", ").forEach(ordinals) {
+                val orderKey = it.toOrderKey()
 
-                var sep = ""
+                compileExpr(orderKey.expr, false)
 
-                orderBy.forEach {
-                    sql.addSql(sep)
-
-                    val orderKey = it.toOrderKey()
-
-                    compileExpr(orderKey.expr, false)
-
-                    sql.addSql(" ${orderKey.order.sql}")
-
-                    sep = ", "
-                }
+                sql.addSql(" ${orderKey.order.sql}")
             }
         }
 
@@ -61,47 +51,39 @@ class MysqlDialect: SqlDialect {
             val partitionedBy = window.partitions.partitions
             val orderBy = window.partitions.orderBy
 
-            var prefix = ""
+            val prefix = sql.prefix("", " ")
 
             window.partitions.from?.let {
-                sql.addSql(names.nameOf(it))
-
-                prefix = " "
-            }
-
-            if (!partitionedBy.isNullOrEmpty()) {
-                sql.addSql("${prefix}PARTITION BY ")
-                var sep = ""
-                partitionedBy.forEach {
-                    sql.addSql(sep)
-                    compileExpr(it, false)
-                    sep = ", "
+                prefix.next {
+                    sql.addSql(names.nameOf(it))
                 }
-
-                prefix = " "
             }
 
-            if (orderBy.isNotEmpty()) {
-                sql.addSql(prefix)
-                compileOrderBy(orderBy)
+            if (partitionedBy.isNotEmpty()) prefix.next {
+                sql.prefix("PARTITION BY ", ", ").forEach(partitionedBy) {
+                    compileExpr(it, false)
+                }
+            }
 
-                prefix = " "
+            if (orderBy.isNotEmpty()) prefix.next {
+                compileOrderBy(orderBy)
             }
 
             window.type?.let { windowType ->
-                sql.addSql(prefix)
-                sql.addSql(windowType.sql)
-                sql.addSql(" ")
+                prefix.next {
+                    sql.addSql(windowType.sql)
+                    sql.addSql(" ")
 
-                val until = window.until
+                    val until = window.until
 
-                if (until == null) {
-                    compileRangeMarker("PRECEDING", window.from)
-                } else {
-                    sql.addSql("BETWEEN ")
-                    compileRangeMarker("PRECEDING", window.from)
-                    sql.addSql(" AND ")
-                    compileRangeMarker("FOLLOWING", until)
+                    if (until == null) {
+                        compileRangeMarker("PRECEDING", window.from)
+                    } else {
+                        sql.addSql("BETWEEN ")
+                        compileRangeMarker("PRECEDING", window.from)
+                        sql.addSql(" AND ")
+                        compileRangeMarker("FOLLOWING", until)
+                    }
                 }
             }
         }
@@ -125,23 +107,19 @@ class MysqlDialect: SqlDialect {
                             if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.INFIX -> {
-                            var sep = ""
                             if (enclosed) sql.addSql("(")
-                            expr.args.forEach {
-                                sql.addSql(sep)
+
+                            sql.prefix("", " ${expr.type.sql} ").forEach(expr.args) {
                                 compileExpr(it)
-                                sep = " ${expr.type.sql} "
                             }
+
                             if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.APPLY -> {
-                            var sep = ""
                             sql.addSql(expr.type.sql)
                             sql.addSql("(")
-                            expr.args.forEach {
-                                sql.addSql(sep)
+                            sql.prefix("", ", ").forEach(expr.args) {
                                 compileExpr(it, false)
-                                sep = ", "
                             }
                             sql.addSql(")")
                         }
@@ -154,13 +132,10 @@ class MysqlDialect: SqlDialect {
                 is AggregatedExpr -> {
                     val built = expr.buildAggregated()
 
-                    var sep = ""
                     sql.addSql(built.expr.type.sql)
                     sql.addSql("(")
-                    built.expr.args.forEach {
-                        sql.addSql(sep)
+                    sql.prefix("", ", ").forEach(built.expr.args) {
                         compileAggregatable(it)
-                        sep = ", "
                     }
                     sql.addSql(")")
 
@@ -186,7 +161,7 @@ class MysqlDialect: SqlDialect {
                     sql.addSql(baseRelation.name)
                     sql.addSql(" ")
                 }
-                is Subquery -> compileSelect(baseRelation.of.buildQuery())
+                is Subquery -> compileSelect(baseRelation.of.buildSelect())
             }
 
             sql.addSql(names[relation.computedAlias].ident)
@@ -194,8 +169,6 @@ class MysqlDialect: SqlDialect {
 
         fun compileQueryWhere(query: QueryWhere) {
             compileRelation(query.relation)
-
-            sql.addSql("\n")
 
             query.joins.forEach { join ->
                 sql.addSql("\n")
@@ -215,16 +188,8 @@ class MysqlDialect: SqlDialect {
         fun compileSelectBody(body: SelectBody) {
             compileQueryWhere(body.where)
 
-            body.groupBy.takeIf { it.isNotEmpty() }?.let { groupBy ->
-                sql.addSql("\nGROUP BY ")
-
-                var sep = ""
-
-                groupBy.forEach {
-                    sql.addSql(sep)
-                    compileExpr(it, false)
-                    sep = ", "
-                }
+            sql.prefix("\nGROUP BY", ", ").forEach(body.groupBy) {
+                compileExpr(it, false)
             }
 
             body.having?.let {
@@ -232,34 +197,27 @@ class MysqlDialect: SqlDialect {
                 compileExpr(it, false)
             }
 
-            body.windows.takeIf { it.isNotEmpty() }?.let { windows ->
-                var sep = "\nWINDOW "
-
-                windows.forEach {
-                    sql.addSql(sep)
-
-                    sql.addSql(names.nameOf(it.label))
-                    sql.addSql(" AS ")
-                    sql.addSql("(")
-                    compileWindow(it.window.buildWindow())
-                    sql.addSql(")")
-                    sep = ",\n"
-                }
+            sql.prefix("\nWINDOW ", "\n, ").forEach(body.windows) {
+                sql.addSql(names.nameOf(it.label))
+                sql.addSql(" AS ")
+                sql.addSql("(")
+                compileWindow(it.window.buildWindow())
+                sql.addSql(")")
             }
         }
 
         fun compileSelect(select: BuiltSelectQuery) {
             val withs = select.body.where.withs
 
-            if (withs.isNotEmpty()) {
-                var sep = when (select.body.where.withType) {
-                    WithType.RECURSIVE -> "WITH RECURSIVE "
-                    WithType.NOT_RECURSIVE -> "WITH "
-                }
-
-                withs.forEach {
-                    sql.addSql(sep)
-
+            sql
+                .prefix(
+                    when (select.body.where.withType) {
+                        WithType.RECURSIVE -> "WITH RECURSIVE "
+                        WithType.NOT_RECURSIVE -> "WITH "
+                    },
+                    ", "
+                )
+                .forEach(withs) {
                     val subquery = names[it.alias]
 
                     sql.addSql(subquery.ident)
@@ -271,41 +229,35 @@ class MysqlDialect: SqlDialect {
                     ).compileSelect(it.query)
 
                     sql.addSql(")")
-
-                    sep = ", "
                 }
 
-                sql.addSql("\n")
-            }
+            if (withs.isNotEmpty()) sql.addSql("\n")
 
-            sql.addSql("SELECT")
-
-            var sep = ""
+            val selectPrefix = sql.prefix("SELECT ", "\n, ")
 
             select.selected
                 .asSequence()
                 .flatMap { it.namedExprs() }
                 .forEach {
-                    sql.addSql("$sep\n")
-
-                    when (it) {
-                        is LabeledExpr -> {
-                            compileExpr(it.expr, false)
-                            sql.addSql(" ")
-                            sql.addSql(names.nameOf(it.name))
-                        }
-                        is LabeledName -> {
-                            val name = it.name
-
-                            compileReference(name)
-
-                            if (name.aliases.isNotEmpty()) {
+                    selectPrefix.next {
+                        when (it) {
+                            is LabeledExpr -> {
+                                compileExpr(it.expr, false)
                                 sql.addSql(" ")
                                 sql.addSql(names.nameOf(it.name))
                             }
+                            is LabeledName -> {
+                                val name = it.name
+
+                                compileReference(name)
+
+                                if (name.aliases.isNotEmpty()) {
+                                    sql.addSql(" ")
+                                    sql.addSql(names.nameOf(it.name))
+                                }
+                            }
                         }
                     }
-                    sep = ","
                 }
 
             sql.addSql("\nFROM ")

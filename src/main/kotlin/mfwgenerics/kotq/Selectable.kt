@@ -4,17 +4,18 @@ import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.window.LabeledWindow
 
-interface Queryable {
-    fun subquery() = Subquery(this)
+interface BuildsIntoSelect {
+    fun buildSelect(): BuiltSelectQuery =
+        unfoldBuilder(BuiltSelectQuery()) { buildIntoSelect(it) }
 
-    fun buildQuery(): BuiltSelectQuery
+    fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect?
+}
+
+interface Queryable: BuildsIntoSelect {
+    fun subquery() = Subquery(this)
 }
 
 interface Statementable {
-}
-
-interface BuildsIntoSelect {
-    fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect?
 }
 
 interface BuildsIntoSelectBody: BuildsIntoSelect {
@@ -59,34 +60,51 @@ interface Orderable: Offsetable {
     fun orderBy(vararg ordinals: Ordinal<*>) = OrderBy(this, ordinals.asList())
 }
 
+interface UnionOperand: BuildsIntoSelect
+
 interface Unionable: Orderable {
-    fun union(against: UnionOperandable): Unionable =
+    fun union(against: UnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.UNION, Distinctness.DISTINCT)
-    fun unionAll(against: UnionOperandable): Unionable =
+    fun unionAll(against: UnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.UNION, Distinctness.ALL)
 
-    fun intersect(against: UnionOperandable): Unionable =
+    fun intersect(against: UnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.INTERSECTION, Distinctness.DISTINCT)
-    fun intersectAll(against: UnionOperandable): Unionable =
+    fun intersectAll(against: UnionableUnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.INTERSECTION, Distinctness.ALL)
 
-    fun except(against: UnionOperandable): Unionable =
+    fun except(against: UnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.DIFFERENCE, Distinctness.DISTINCT)
-    fun exceptAll(against: UnionOperandable): Unionable =
+    fun exceptAll(against: UnionableUnionOperand): Unionable =
         SetOperation(this, against, SetOperationType.DIFFERENCE, Distinctness.ALL)
 }
 
-interface UnionOperandable: Unionable, BuildsIntoSelectBody
+interface SelectedUnionOperand: Queryable, UnionOperand
 
-interface Windowable: UnionOperandable {
-    fun window(vararg windows: LabeledWindow): UnionOperandable =
+interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoSelectBody {
+    override fun select(vararg references: NamedExprs): SelectedUnionOperand =
+        SelectUnionableUnionOperand(this, references.asList())
+}
+
+private class SelectUnionableUnionOperand(
+    val of: UnionableUnionOperand,
+    val references: List<NamedExprs>
+): SelectedUnionOperand {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+        out.selected = references
+        return of
+    }
+}
+
+interface Windowable: UnionableUnionOperand {
+    fun window(vararg windows: LabeledWindow): UnionableUnionOperand =
         WindowedQuery(this, windows.asList())
 }
 
 private class WindowedQuery(
     val lhs: Windowable,
     val windows: List<LabeledWindow>
-): UnionOperandable {
+): UnionableUnionOperand {
     override fun buildIntoSelectBody(out: SelectBody): BuildsIntoSelectBody? {
         out.windows = windows
         return lhs
@@ -174,16 +192,9 @@ class Select(
     val of: Selectable,
     val references: List<NamedExprs>
 ): Queryable {
-    override fun buildQuery(): BuiltSelectQuery {
-        val query = BuiltSelectQuery()
-
-        var next = of.buildIntoSelect(query)
-
-        while (next != null) next = next.buildIntoSelect(query)
-
-        query.selected = references
-
-        return query
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+        out.selected = references
+        return of
     }
 }
 
@@ -218,7 +229,7 @@ class WithQuery(
         out.withs = queries.map {
             BuiltWith(
                 it.alias,
-                it.queryable.buildQuery()
+                it.queryable.buildSelect()
             )
         }
 
@@ -228,7 +239,7 @@ class WithQuery(
 
 class SetOperation(
     val of: Unionable,
-    val against: UnionOperandable,
+    val against: UnionOperand,
     val type: SetOperationType,
     val distinctness: Distinctness
 ): Unionable {
@@ -236,7 +247,7 @@ class SetOperation(
         out.setOperations.add(SetOperationQuery(
             type = type,
             distinctness = distinctness,
-            body = against.buildSelectBody()
+            body = against.buildSelect()
         ))
 
         return of

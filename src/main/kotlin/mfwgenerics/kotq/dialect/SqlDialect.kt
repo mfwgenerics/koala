@@ -8,5 +8,5 @@ interface SqlDialect {
     fun compile(statement: Statement): SqlText
 
     fun compileQueryable(queryable: Queryable): SqlText =
-        compile(queryable.buildQuery())
+        compile(queryable.buildSelect())
 }
