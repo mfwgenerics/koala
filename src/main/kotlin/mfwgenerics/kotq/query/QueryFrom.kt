@@ -19,16 +19,14 @@ data class QueryRelation(
                 val innerScope = scope.innerScope()
 
                 relation.columns.forEach {
-                    val aliased = it.buildAliased()
-
-                    innerScope.external(aliased, it.symbol)
+                    innerScope.external(it, it.symbol)
                 }
 
                 innerScope.allNames().forEach { name ->
                     if (alias == null) {
                         scope.insert(name, name, computedAlias)
                     } else {
-                        scope.insert(name.copyWithPrefix(computedAlias), name, computedAlias)
+                        scope.insert(computedAlias[name], name, computedAlias)
                     }
                 }
 
@@ -75,7 +73,7 @@ class QueryWhere {
             it.query.populateScope(innerScope)
 
             innerScope.allNames().forEach { name ->
-                scope.insert(name.copyWithPrefix(it.alias), name, it.alias)
+                scope.insert(it.alias[name], name, it.alias)
             }
 
             scope.register(it.alias, innerScope)

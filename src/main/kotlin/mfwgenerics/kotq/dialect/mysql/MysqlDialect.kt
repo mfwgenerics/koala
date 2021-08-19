@@ -12,7 +12,7 @@ class MysqlDialect: SqlDialect {
         val names: Scope,
         val sql: SqlTextBuilder = SqlTextBuilder()
     ) {
-        fun compileReference(name: AliasedName<*>) {
+        fun compileReference(name: Reference<*>) {
             sql.addSql(names[name])
         }
 
@@ -127,7 +127,7 @@ class MysqlDialect: SqlDialect {
                 }
                 is Literal -> sql.addValue(expr.value)
                 is Reference -> {
-                    compileReference(expr.buildAliased())
+                    compileReference(expr)
                 }
                 is AggregatedExpr -> {
                     val built = expr.buildAggregated()

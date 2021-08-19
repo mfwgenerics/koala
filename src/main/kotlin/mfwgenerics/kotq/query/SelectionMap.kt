@@ -1,11 +1,11 @@
 package mfwgenerics.kotq.query
 
-import mfwgenerics.kotq.expr.AliasedName
+import mfwgenerics.kotq.expr.Reference
 
 class LabelList(
-    val values: List<AliasedName<*>>
+    val values: List<Reference<*>>
 ) {
-    private val positions = hashMapOf<AliasedName<*>, Int>()
+    private val positions = hashMapOf<Reference<*>, Int>()
 
     init {
         values.forEachIndexed { ix, it ->

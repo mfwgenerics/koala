@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.Alias
-import mfwgenerics.kotq.expr.AliasedName
+import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.window.WindowLabel
 
 /* TODO restrict names to identifier characters */
@@ -16,7 +16,7 @@ class Scope(
 
     private class UnderAlias(
         val alias: Alias,
-        val innerName: AliasedName<*>
+        val innerName: Reference<*>
     ): Registered
 
     private object Internal: Registered
@@ -32,12 +32,12 @@ class Scope(
         override fun toString(): String = error("")
     }
 
-    private val registered = hashMapOf<AliasedName<*>, Registered>()
+    private val registered = hashMapOf<Reference<*>, Registered>()
     private val aliases = hashMapOf<Alias, RegisteredAlias>()
 
     fun insert(
-        name: AliasedName<*>,
-        innerName: AliasedName<*>,
+        name: Reference<*>,
+        innerName: Reference<*>,
         alias: Alias
     ) {
         val value = UnderAlias(
@@ -49,13 +49,13 @@ class Scope(
     }
 
     fun insert(
-        name: AliasedName<*>
+        name: Reference<*>
     ) {
         registered.putIfAbsent(name, Internal)
     }
 
     fun external(
-        name: AliasedName<*>,
+        name: Reference<*>,
         symbol: String
     ) {
         registered.putIfAbsent(name, External(symbol))
@@ -68,7 +68,7 @@ class Scope(
         )
     }
 
-    operator fun get(name: AliasedName<*>): String {
+    operator fun get(name: Reference<*>): String {
         val registered = registered[name]
             ?: return enclosing?.get(name)!!
 
@@ -86,8 +86,8 @@ class Scope(
     operator fun get(alias: Alias): RegisteredAlias =
         aliases[alias]?:enclosing?.get(alias)!!
 
-    fun nameOf(name: AliasedName<*>): String = names[name]
+    fun nameOf(name: Reference<*>): String = names[name]
     fun nameOf(label: WindowLabel): String = names[label]
 
-    fun allNames(): Collection<AliasedName<*>> = registered.keys
+    fun allNames(): Collection<Reference<*>> = registered.keys
 }

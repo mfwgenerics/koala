@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.Alias
-import mfwgenerics.kotq.expr.AliasedName
+import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.window.WindowLabel
 
 class NameRegistry {
@@ -10,13 +10,8 @@ class NameRegistry {
 
     private fun generate(prefix: String): String = "$prefix${generated++}"
 
-    fun external(name: AliasedName<*>, symbol: String) {
-        registered[name] = symbol
-    }
-
-    operator fun get(name: AliasedName<*>): String =
+    operator fun get(name: Reference<*>): String =
         registered.getOrPut(name) { name
-            .takeIf { it.aliases.isEmpty() }
             ?.identifier?.asString
             ?: generate("n")
         }
