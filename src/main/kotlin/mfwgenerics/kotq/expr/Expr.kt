@@ -2,6 +2,7 @@ package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.Alias
 import mfwgenerics.kotq.unfoldBuilder
+import kotlin.reflect.KClass
 
 sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
@@ -18,14 +19,14 @@ sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {
 class AliasedName<T : Any>(
     val aliases: MutableList<Alias> = arrayListOf(),
 ) {
-    lateinit var name: Name<T>
+    lateinit var identifier: Name<T>
 
     fun copyWithPrefix(alias: Alias) = AliasedName<T>(
         arrayListOf(alias).apply { addAll(aliases) }
-    ).also { it.name = name }
+    ).also { it.identifier = identifier }
 
     override fun hashCode(): Int {
-        var result = name.hashCode()
+        var result = identifier.hashCode()
 
         aliases.forEach { result = result xor it.hashCode() }
 
@@ -40,17 +41,19 @@ class AliasedName<T : Any>(
             if (aliases[it] != other.aliases[it]) return false
         }
 
-        return name == other.name
+        return identifier == other.identifier
     }
 
     override fun toString(): String = if (aliases.isNotEmpty()) {
-        "${aliases.joinToString(".")}.$name"
+        "${aliases.joinToString(".")}.$identifier"
     } else {
-        "$name"
+        "$identifier"
     }
 }
 
 sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
+    val type: KClass<T>
+
     override fun namedExprs(): List<Labeled<*>> =
         listOf(LabeledName(buildAliased()))
 
@@ -61,6 +64,7 @@ sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
 }
 
 class AliasedReference<T : Any>(
+    override val type: KClass<T>,
     val of: Alias,
     val reference: Reference<T>
 ): Reference<T>, NamedExprs {

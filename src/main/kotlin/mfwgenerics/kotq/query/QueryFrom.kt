@@ -112,7 +112,7 @@ data class BuiltSelectQuery(
 
     var locking: LockMode? = null,
 
-    var selected: List<NamedExprs> = emptyList()
+    var selected: List<Labeled<*>> = emptyList()
 ): Statement {
     fun populateScope(scope: Scope) {
         selected.forEach {

@@ -2,6 +2,7 @@ package mfwgenerics.kotq
 
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.*
+import mfwgenerics.kotq.sql.StandardSql
 import mfwgenerics.kotq.window.LabeledWindow
 
 interface BuildsIntoSelect {
@@ -37,7 +38,7 @@ interface BuildsIntoWhereQuery: BuildsIntoSelectBody {
 
 interface Selectable: BuildsIntoSelect {
     fun select(vararg references: NamedExprs): Queryable =
-        Select(this, references.asList())
+        Select(this, references.asSequence().flatMap { it.namedExprs() }.toList())
 
     fun update(vararg assignments: Assignment<*>): Statementable =
         Update(this, assignments.asList())
@@ -83,12 +84,12 @@ interface SelectedUnionOperand: Queryable, UnionOperand
 
 interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoSelectBody {
     override fun select(vararg references: NamedExprs): SelectedUnionOperand =
-        SelectUnionableUnionOperand(this, references.asList())
+        SelectUnionableUnionOperand(this, references.asSequence().flatMap { it.namedExprs() }.toList())
 }
 
 private class SelectUnionableUnionOperand(
     val of: UnionableUnionOperand,
-    val references: List<NamedExprs>
+    val references: List<Labeled<*>>
 ): SelectedUnionOperand {
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references
@@ -177,10 +178,12 @@ class Subquery(
     }
 }
 
-enum class SetOperationType {
-    UNION,
-    INTERSECTION,
-    DIFFERENCE
+enum class SetOperationType(
+    override val sql: String
+): StandardSql {
+    UNION("UNION"),
+    INTERSECTION("INTERSECT"),
+    DIFFERENCE("EXCEPT")
 }
 
 enum class Distinctness {
@@ -190,7 +193,7 @@ enum class Distinctness {
 
 class Select(
     val of: Selectable,
-    val references: List<NamedExprs>
+    val references: List<Labeled<*>>
 ): Queryable {
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references

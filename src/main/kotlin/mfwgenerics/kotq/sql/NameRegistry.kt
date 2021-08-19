@@ -13,7 +13,7 @@ class NameRegistry {
     operator fun get(name: AliasedName<*>): String =
         registered.getOrPut(name) { name
             .takeIf { it.aliases.isEmpty() }
-            ?.name?.identifier?.asString
+            ?.identifier?.identifier?.asString
             ?: generate("n")
         }
 

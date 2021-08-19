@@ -4,9 +4,9 @@ import mfwgenerics.kotq.IdentifierName
 import kotlin.reflect.KClass
 
 class Name<T : Any>(
-    val type: KClass<T>,
+    override val type: KClass<T>,
     val identifier: IdentifierName
-): Named<T> {
+): Named<T>() {
     override val name: Name<T> get() = this
 
     override fun equals(other: Any?): Boolean =

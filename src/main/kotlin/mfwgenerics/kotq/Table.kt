@@ -4,6 +4,7 @@ import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.Name
 import mfwgenerics.kotq.expr.Named
 import mfwgenerics.kotq.expr.LabeledExpr
+import kotlin.reflect.KClass
 
 abstract class Table(
     val name: String
@@ -11,8 +12,10 @@ abstract class Table(
     class Column<T : Any>(
         override val name: Name<T>,
         val symbol: String,
-        val type: ColumnType<T>
-    ): Named<T>
+        val columnType: ColumnType<T>
+    ): Named<T>() {
+        override val type: KClass<T> get() = name.type
+    }
 
     private val internalColumns = arrayListOf<Column<*>>()
 

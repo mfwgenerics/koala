@@ -161,7 +161,7 @@ class MysqlDialect: SqlDialect {
                     sql.addSql(baseRelation.name)
                     sql.addSql(" ")
                 }
-                is Subquery -> compileSelect(baseRelation.of.buildSelect())
+                is Subquery -> compileSelect(emptyList(), baseRelation.of.buildSelect())
             }
 
             sql.addSql(names[relation.computedAlias].ident)
@@ -206,7 +206,23 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileSelect(select: BuiltSelectQuery) {
+        fun compileSetOperation(
+            outerSelect: List<Labeled<*>>,
+            operation: SetOperationQuery
+        ) {
+            sql.addSql("\n")
+            sql.addSql(operation.type.sql)
+            sql.addSql("\n")
+
+            Compilation(
+                names.innerScope().also {
+                    operation.body.populateScope(it)
+                },
+                sql
+            ).compileSelect(outerSelect, operation.body)
+        }
+
+        fun compileSelect(outerSelect: List<Labeled<*>>, select: BuiltSelectQuery) {
             val withs = select.body.where.withs
 
             sql
@@ -226,7 +242,7 @@ class MysqlDialect: SqlDialect {
                     Compilation(
                         names = subquery.scope,
                         sql = sql
-                    ).compileSelect(it.query)
+                    ).compileSelect(emptyList(), it.query)
 
                     sql.addSql(")")
                 }
@@ -235,9 +251,7 @@ class MysqlDialect: SqlDialect {
 
             val selectPrefix = sql.prefix("SELECT ", "\n, ")
 
-            select.selected
-                .asSequence()
-                .flatMap { it.namedExprs() }
+            (select.selected.takeIf { it.isNotEmpty() }?:outerSelect)
                 .forEach {
                     selectPrefix.next {
                         when (it) {
@@ -264,7 +278,11 @@ class MysqlDialect: SqlDialect {
 
             compileSelectBody(select.body)
 
-            sql.addSql("\n")
+            select.setOperations.forEach {
+                compileSetOperation(select.selected, it)
+            }
+
+            if (select.orderBy.isNotEmpty()) sql.addSql("\n")
             compileOrderBy(select.orderBy)
 
             select.limit?.let {
@@ -300,7 +318,7 @@ class MysqlDialect: SqlDialect {
                 names = scope
             )
 
-            compilation.compileSelect(statement)
+            compilation.compileSelect(emptyList(), statement)
 
             return compilation.sql.toSql()
         }

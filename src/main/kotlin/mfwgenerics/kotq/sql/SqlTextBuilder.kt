@@ -9,8 +9,12 @@ class SqlTextBuilder {
     }
 
     fun addValue(value: Any?) {
-        contents.append("?")
-        params.add(value)
+        if (value == null) {
+            addSql("NULL")
+        } else {
+            contents.append("?")
+            params.add(value)
+        }
     }
 
     fun toSql(): SqlText = SqlText(
