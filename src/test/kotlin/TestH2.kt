@@ -1,13 +1,11 @@
-import mfwgenerics.kotq.Alias
 import mfwgenerics.kotq.ColumnType
-import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.Table
 import mfwgenerics.kotq.dialect.h2.H2Dialect
-import mfwgenerics.kotq.expr.*
+import mfwgenerics.kotq.dsl.*
+import mfwgenerics.kotq.expr.DataType
+import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
 import mfwgenerics.kotq.jdbc.performWith
-import mfwgenerics.kotq.values.values
-import mfwgenerics.kotq.window.all
 import java.sql.DriverManager
 import kotlin.test.Test
 
@@ -61,7 +59,7 @@ class TestH2 {
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
         val castNumber = cast(number, DataType.INTEGER)
 
-        val alias = Alias(IdentifierName("A"))
+        val alias = alias("A")
 
         val results = values((1..20).asSequence(), number)
             { value(number, it) }

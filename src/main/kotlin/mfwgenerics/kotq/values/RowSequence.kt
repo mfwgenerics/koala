@@ -1,9 +1,9 @@
 package mfwgenerics.kotq.values
 
-import mfwgenerics.kotq.Queryable
-import mfwgenerics.kotq.query.BuiltQuery
-import mfwgenerics.kotq.query.BuiltValuesQuery
-import mfwgenerics.kotq.query.LabelList
+import mfwgenerics.kotq.dsl.LabelList
+import mfwgenerics.kotq.dsl.Queryable
+import mfwgenerics.kotq.query.built.BuiltQuery
+import mfwgenerics.kotq.query.built.BuiltValuesQuery
 
 interface RowSequence: Sequence<ValuesRow>, Queryable {
     val columns: LabelList

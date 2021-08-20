@@ -1,5 +1,6 @@
 package mfwgenerics.kotq
 
+import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.Name
 import mfwgenerics.kotq.expr.NamedReference

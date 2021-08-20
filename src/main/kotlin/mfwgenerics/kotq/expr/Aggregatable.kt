@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.expr
 
+import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.unfoldBuilder
 
 interface BuildsIntoAggregatable {

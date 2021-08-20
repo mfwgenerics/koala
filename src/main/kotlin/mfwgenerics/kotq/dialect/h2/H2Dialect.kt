@@ -1,11 +1,20 @@
 package mfwgenerics.kotq.dialect.h2
 
-import mfwgenerics.kotq.*
 import mfwgenerics.kotq.dialect.SqlDialect
+import mfwgenerics.kotq.dsl.Relvar
+import mfwgenerics.kotq.dsl.Subquery
+import mfwgenerics.kotq.dsl.WithType
 import mfwgenerics.kotq.expr.*
-import mfwgenerics.kotq.query.*
-import mfwgenerics.kotq.sql.*
+import mfwgenerics.kotq.expr.built.BuiltAggregatable
+import mfwgenerics.kotq.query.Distinctness
+import mfwgenerics.kotq.query.LockMode
+import mfwgenerics.kotq.query.built.*
+import mfwgenerics.kotq.sql.NameRegistry
+import mfwgenerics.kotq.sql.Scope
+import mfwgenerics.kotq.sql.SqlText
+import mfwgenerics.kotq.sql.SqlTextBuilder
 import mfwgenerics.kotq.window.*
+import mfwgenerics.kotq.window.built.BuiltWindow
 
 class H2Dialect: SqlDialect {
     private class Compilation(
@@ -159,7 +168,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileRelation(relation: QueryRelation) {
+        fun compileRelation(relation: BuiltRelation) {
             val relationScope = scope[relation.computedAlias]
 
             val explicitLabels = when (val baseRelation = relation.relation) {
@@ -195,7 +204,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQueryWhere(query: QueryWhere) {
+        fun compileQueryWhere(query: BuiltWhere) {
             compileRelation(query.relation)
 
             query.joins.forEach { join ->
@@ -213,7 +222,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileSelectBody(body: SelectBody) {
+        fun compileSelectBody(body: BuiltSelectBody) {
             compileQueryWhere(body.where)
 
             sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
@@ -236,7 +245,7 @@ class H2Dialect: SqlDialect {
 
         fun compileSetOperation(
             outerSelect: List<Labeled<*>>,
-            operation: SetOperationQuery
+            operation: BuiltSetOperation
         ) {
             sql.addSql("\n")
             sql.addSql(operation.type.sql)
@@ -385,7 +394,7 @@ class H2Dialect: SqlDialect {
         }
     }
 
-    override fun compile(statement: Statement): SqlText {
+    override fun compile(statement: BuiltStatement): SqlText {
         if (statement is BuiltSelectQuery) {
             val registry = NameRegistry()
 

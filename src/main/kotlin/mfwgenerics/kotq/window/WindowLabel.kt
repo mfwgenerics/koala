@@ -1,6 +1,8 @@
 package mfwgenerics.kotq.window
 
 import mfwgenerics.kotq.IdentifierName
+import mfwgenerics.kotq.window.built.BuildsIntoWindow
+import mfwgenerics.kotq.window.built.BuiltWindow
 
 class WindowLabel(
     val identifier: IdentifierName = IdentifierName()

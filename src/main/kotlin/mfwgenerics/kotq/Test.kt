@@ -1,9 +1,8 @@
 package mfwgenerics.kotq
 
 import mfwgenerics.kotq.dialect.h2.H2Dialect
-import mfwgenerics.kotq.expr.*
-import mfwgenerics.kotq.values.values
-import mfwgenerics.kotq.window.*
+import mfwgenerics.kotq.dsl.*
+import mfwgenerics.kotq.expr.`as`
 
 object TestTable : Table("Test") {
     val column1 = column("test0", ColumnType.INT)

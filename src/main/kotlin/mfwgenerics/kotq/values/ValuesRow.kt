@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.values
 
+import mfwgenerics.kotq.dsl.LabelList
 import mfwgenerics.kotq.expr.Reference
-import mfwgenerics.kotq.query.LabelList
 
 interface ValuesRow {
     val labels: LabelList
