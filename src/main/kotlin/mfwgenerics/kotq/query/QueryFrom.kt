@@ -3,9 +3,23 @@ package mfwgenerics.kotq.query
 import mfwgenerics.kotq.*
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.sql.Scope
+import mfwgenerics.kotq.values.RowSequence
 import mfwgenerics.kotq.window.LabeledWindow
 
 sealed interface Statement
+
+class BuiltInsert: Statement {
+    lateinit var relation: QueryRelation
+
+    var withType: WithType = WithType.NOT_RECURSIVE
+    var withs: List<BuiltWith> = emptyList()
+
+    lateinit var query: BuiltQuery
+
+    fun populateScope(scope: Scope) {
+
+    }
+}
 
 data class QueryRelation(
     val relation: Relation,
@@ -15,7 +29,7 @@ data class QueryRelation(
 
     fun populateScope(scope: Scope) {
         when (relation) {
-            is Table -> {
+            is Relvar -> {
                 val innerScope = scope.innerScope()
 
                 relation.columns.forEach {
@@ -49,7 +63,7 @@ data class QueryJoin(
 
 class BuiltWith(
     val alias: Alias,
-    val query: BuiltSelectQuery
+    val query: BuiltQuery
 )
 
 class QueryWhere {
@@ -100,6 +114,22 @@ data class SetOperationQuery(
     val body: BuiltSelectQuery
 )
 
+sealed interface BuiltQuery: Statement {
+    val columns: LabelList
+
+    fun populateScope(scope: Scope)
+}
+
+data class BuiltValuesQuery(
+    val values: RowSequence
+): BuiltQuery {
+    override val columns: LabelList get() = values.columns
+
+    override fun populateScope(scope: Scope) {
+
+    }
+}
+
 data class BuiltSelectQuery(
     val body: SelectBody = SelectBody(),
 
@@ -113,8 +143,11 @@ data class BuiltSelectQuery(
     var locking: LockMode? = null,
 
     var selected: List<Labeled<*>> = emptyList()
-): Statement {
-    fun populateScope(scope: Scope) {
+): BuiltQuery, Statement {
+    override val columns: LabelList
+        get() = error("not implemented")
+
+    override fun populateScope(scope: Scope) {
         body.populateScope(scope)
 
         selected.forEach {

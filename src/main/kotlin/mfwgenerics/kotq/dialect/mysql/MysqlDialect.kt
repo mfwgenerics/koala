@@ -157,11 +157,11 @@ class MysqlDialect: SqlDialect {
 
         fun compileRelation(relation: QueryRelation) {
             when (val baseRelation = relation.relation) {
-                is Table -> {
+                is Relvar -> {
                     sql.addSql(baseRelation.name)
                     sql.addSql(" ")
                 }
-                is Subquery -> compileSelect(emptyList(), baseRelation.of.buildSelect())
+                is Subquery -> compileQuery(emptyList(), baseRelation.of.buildQuery())
             }
 
             sql.addSql(names[relation.computedAlias].ident)
@@ -222,12 +222,10 @@ class MysqlDialect: SqlDialect {
             ).compileSelect(outerSelect, operation.body)
         }
 
-        fun compileSelect(outerSelect: List<Labeled<*>>, select: BuiltSelectQuery) {
-            val withs = select.body.where.withs
-
+        fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
             sql
                 .prefix(
-                    when (select.body.where.withType) {
+                    when (withType) {
                         WithType.RECURSIVE -> "WITH RECURSIVE "
                         WithType.NOT_RECURSIVE -> "WITH "
                     },
@@ -242,10 +240,16 @@ class MysqlDialect: SqlDialect {
                     Compilation(
                         names = subquery.scope,
                         sql = sql
-                    ).compileSelect(emptyList(), it.query)
+                    ).compileQuery(emptyList(), it.query)
 
                     sql.addSql(")")
                 }
+        }
+
+        fun compileSelect(outerSelect: List<Labeled<*>>, select: BuiltSelectQuery) {
+            val withs = select.body.where.withs
+
+            compileWiths(select.body.where.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
 
@@ -290,6 +294,67 @@ class MysqlDialect: SqlDialect {
                 }
             }
         }
+
+        fun compileValues(query: BuiltValuesQuery) {
+            val values = query.values
+
+            val columns = values.columns
+            val iter = values.rowIterator()
+
+            val rowPrefix = sql.prefix("VALUES ", "\n, ")
+
+            while (iter.next()) {
+                rowPrefix.next {
+                    sql.addSql("(")
+                    sql.prefix("", ", ").forEach(columns.values) {
+                        sql.addValue(iter[it])
+                    }
+                    sql.addSql(")")
+                }
+            }
+        }
+
+        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltQuery) {
+            when (query) {
+                is BuiltSelectQuery -> compileSelect(outerSelect, query)
+                is BuiltValuesQuery -> compileValues(
+                    query
+                )
+            }
+        }
+
+        fun compileInsert(insert: BuiltInsert) {
+            compileWiths(insert.withType, insert.withs)
+
+            if (insert.withs.isNotEmpty()) sql.addSql("\n")
+
+            sql.addSql("INSERT INTO ")
+
+            val relvar = when (val relation = insert.relation.relation) {
+                is Relvar -> relation
+                is Subquery -> error("can not insert into subquery")
+            }
+
+            val tableColumnMap = relvar.columns.associateBy { it }
+            val columns = insert.query.columns
+
+            sql.addSql(relvar.name)
+            sql.addSql(" ")
+
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(columns.values) {
+                    val column = checkNotNull(tableColumnMap[it]) {
+                        "can't insert $it into ${relvar.name}"
+                    }
+
+                    sql.addSql(column.symbol)
+                }
+            }
+
+            sql.addSql("\n")
+
+            compileQuery(emptyList(), insert.query)
+        }
     }
 
     override fun compile(statement: Statement): SqlText {
@@ -305,6 +370,34 @@ class MysqlDialect: SqlDialect {
             )
 
             compilation.compileSelect(emptyList(), statement)
+
+            return compilation.sql.toSql()
+        } else if (statement is BuiltValuesQuery) {
+            val registry = NameRegistry()
+
+            val scope = Scope(registry)
+
+            statement.populateScope(scope)
+
+            val compilation = Compilation(
+                names = scope
+            )
+
+            compilation.compileValues(statement)
+
+            return compilation.sql.toSql()
+        } else if (statement is BuiltInsert) {
+            val registry = NameRegistry()
+
+            val scope = Scope(registry)
+
+            statement.populateScope(scope)
+
+            val compilation = Compilation(
+                names = scope
+            )
+
+            compilation.compileInsert(statement)
 
             return compilation.sql.toSql()
         }

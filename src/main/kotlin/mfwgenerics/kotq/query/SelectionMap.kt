@@ -13,4 +13,7 @@ class LabelList(
                 { "duplicate label $it" }
         }
     }
+
+    fun positionOf(reference: Reference<*>): Int? =
+        positions[reference]
 }

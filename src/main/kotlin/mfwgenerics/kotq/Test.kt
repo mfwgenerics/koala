@@ -2,6 +2,8 @@ package mfwgenerics.kotq
 
 import mfwgenerics.kotq.dialect.mysql.MysqlDialect
 import mfwgenerics.kotq.expr.*
+import mfwgenerics.kotq.values.rowOf
+import mfwgenerics.kotq.values.values
 import mfwgenerics.kotq.window.*
 
 object TestTable : Table("Test") {
@@ -67,5 +69,16 @@ fun main() {
             TestTable.column1 `as` renamed
         )
 
+    val values = values(listOf(1,2,3,4,7,7,10).asSequence(), TestTable.column1) {
+        value(TestTable.column1, it)
+    }
+
+    println(MysqlDialect().compile(TestTable
+        .insert(values)
+        .buildInsert())
+    )
+    println()
+    println()
+    println()
     println(MysqlDialect().compileQueryable(test))
 }

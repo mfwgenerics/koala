@@ -3,3 +3,4 @@
 * Support VALUES (how to bind value colums to fields?)
 * Correlated subquery support
 * backtick escape names
+* do not attempt to represent NULLability as Kotlin optional. poor fit to SQL semantics

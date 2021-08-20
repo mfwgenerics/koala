@@ -22,6 +22,14 @@ class SqlTextBuilder {
         params
     )
 
+    fun parenthesize(noop: Boolean = false, block: () -> Unit) {
+        if (noop) return block()
+
+        addSql("(")
+        block()
+        addSql(")")
+    }
+
     fun prefix(initial: String, after: String): SqlPrefix {
         var pref = initial
 
@@ -33,5 +41,4 @@ class SqlTextBuilder {
             }
         }
     }
-
 }

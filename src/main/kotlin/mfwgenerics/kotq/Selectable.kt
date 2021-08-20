@@ -12,7 +12,16 @@ interface BuildsIntoSelect {
     fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect?
 }
 
-interface Queryable: BuildsIntoSelect {
+interface BuildsIntoInsert {
+    fun buildInsert(): BuiltInsert =
+        unfoldBuilder(BuiltInsert()) { buildIntoInsert(it) }
+
+    fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert?
+}
+
+interface Queryable {
+    fun buildQuery(): BuiltQuery
+
     fun subquery() = Subquery(this)
 }
 
@@ -91,6 +100,8 @@ private class SelectUnionableUnionOperand(
     val of: UnionableUnionOperand,
     val references: List<Labeled<*>>
 ): SelectedUnionOperand {
+    override fun buildQuery(): BuiltQuery = buildSelect()
+
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references
         return of
@@ -145,19 +156,39 @@ interface Joinable: Whereable {
         join(JoinType.OUTER, to, on)
 }
 
-interface Withable: Joinable {
-    fun with(vararg queries: AliasedQueryable) =
-        WithQuery(this, WithType.NOT_RECURSIVE, queries.asList())
-    fun withRecursive(vararg queries: AliasedQueryable) =
-        WithQuery(this, WithType.RECURSIVE, queries.asList())
-
-    fun insertSelect(query: NamedExprs, vararg assignment: Assignment<*>): Nothing = TODO()
+interface Withed: BuildsIntoInsert, Joinable {
+    fun insert(queryable: Queryable): Inserted =
+        Insert(this, queryable.buildQuery())
 }
 
-interface AliasedRelation: Withable, NamedExprs, BuildsIntoWhereQuery {
+interface Withable: Withed {
+    fun with(vararg queries: AliasedQueryable): Withed =
+        WithQuery(this, WithType.NOT_RECURSIVE, queries.asList())
+    fun withRecursive(vararg queries: AliasedQueryable): Withed =
+        WithQuery(this, WithType.RECURSIVE, queries.asList())
+}
+
+interface Inserted: BuildsIntoInsert
+
+private class Insert(
+    val of: Withed,
+    val query: BuiltQuery
+): Inserted {
+    override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
+        out.query = query
+        return of
+    }
+}
+
+interface AliasedRelation: Withable, NamedExprs {
     fun buildQueryRelation(): QueryRelation
 
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery? {
+        out.relation = buildQueryRelation()
+        return null
+    }
+
+    override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
         out.relation = buildQueryRelation()
         return null
     }
@@ -168,6 +199,12 @@ sealed interface Relation: AliasedRelation {
 
     override fun buildQueryRelation(): QueryRelation
         = QueryRelation(this, null)
+}
+
+interface Relvar: Relation {
+    val name: String
+
+    val columns: List<RelvarColumn<*>>
 }
 
 class Subquery(
@@ -194,7 +231,9 @@ enum class Distinctness {
 class Select(
     val of: Selectable,
     val references: List<Labeled<*>>
-): Queryable {
+): Queryable, BuildsIntoSelect {
+    override fun buildQuery(): BuiltQuery = buildSelect()
+
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references
         return of
@@ -226,13 +265,25 @@ class WithQuery(
     val of: Withable,
     val type: WithType,
     val queries: List<AliasedQueryable>
-): Withable {
+): Withed, BuildsIntoSelect {
+    override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
+        out.withType = type
+        out.withs = queries.map {
+            BuiltWith(
+                it.alias,
+                it.queryable.buildQuery()
+            )
+        }
+
+        return of
+    }
+
     override fun buildIntoWhere(out: QueryWhere): BuildsIntoWhereQuery {
         out.withType = type
         out.withs = queries.map {
             BuiltWith(
                 it.alias,
-                it.queryable.buildSelect()
+                it.queryable.buildQuery()
             )
         }
 
