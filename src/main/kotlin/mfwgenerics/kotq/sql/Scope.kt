@@ -21,21 +21,21 @@ class Scope(
 
     private object Internal: Registered
 
-    private class External(
-        val symbol: String
-    ): Registered
-
     class RegisteredAlias(
         val ident: String,
         val scope: Scope
-    ) {
-        override fun toString(): String = error("")
-    }
+    )
 
-    private val registered = hashMapOf<Reference<*>, Registered>()
+    private val external = hashMapOf<Reference<*>, String>()
+    private val internal = hashMapOf<Reference<*>, Registered>()
+
     private val aliases = hashMapOf<Alias, RegisteredAlias>()
 
-    fun insert(
+    fun external(name: Reference<*>, symbol: String? = null) {
+        check (external.putIfAbsent(name, symbol?:names[name]) == null)
+    }
+
+    fun internal(
         name: Reference<*>,
         innerName: Reference<*>,
         alias: Alias
@@ -45,20 +45,11 @@ class Scope(
             innerName = innerName
         )
 
-        registered.putIfAbsent(name, value)
+        internal.putIfAbsent(name, value)
     }
 
-    fun insert(
-        name: Reference<*>
-    ) {
-        registered.putIfAbsent(name, Internal)
-    }
-
-    fun external(
-        name: Reference<*>,
-        symbol: String
-    ) {
-        registered.putIfAbsent(name, External(symbol))
+    fun internal(name: Reference<*>) {
+        check (internal.putIfAbsent(name, Internal) == null)
     }
 
     fun register(alias: Alias, scope: Scope) {
@@ -69,25 +60,27 @@ class Scope(
     }
 
     operator fun get(name: Reference<*>): String {
-        val registered = registered[name]
-            ?: return enclosing?.get(name)!!
+        val registered = internal[name]
+            ?: return checkNotNull(enclosing?.get(name)) {
+                "$name not in scope ${System.identityHashCode(this)}"
+            }
 
         return when (registered) {
             is UnderAlias -> {
                 val alias = aliases.getValue(registered.alias)
 
-                "${alias.ident}.${alias.scope[registered.innerName]}"
+                "${alias.ident}.${alias.scope.nameOf(registered.innerName)}"
             }
-            is External -> registered.symbol
             Internal -> names[name]
         }
     }
 
     operator fun get(alias: Alias): RegisteredAlias =
-        aliases[alias]?:enclosing?.get(alias)!!
+        checkNotNull(aliases[alias]?:enclosing?.get(alias))
+        { "alias $alias not found in scope ${System.identityHashCode(this)}" }
 
-    fun nameOf(name: Reference<*>): String = names[name]
+    fun nameOf(name: Reference<*>): String = external[name]!!
     fun nameOf(label: WindowLabel): String = names[label]
 
-    fun allNames(): Collection<Reference<*>> = registered.keys
+    fun externals(): Collection<Reference<*>> = external.keys
 }

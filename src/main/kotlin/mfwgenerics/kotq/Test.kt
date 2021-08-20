@@ -1,8 +1,7 @@
 package mfwgenerics.kotq
 
-import mfwgenerics.kotq.dialect.mysql.MysqlDialect
+import mfwgenerics.kotq.dialect.h2.H2Dialect
 import mfwgenerics.kotq.expr.*
-import mfwgenerics.kotq.values.rowOf
 import mfwgenerics.kotq.values.values
 import mfwgenerics.kotq.window.*
 
@@ -69,16 +68,18 @@ fun main() {
             TestTable.column1 `as` renamed
         )
 
-    val values = values(listOf(1,2,3,4,7,7,10).asSequence(), TestTable.column1) {
-        value(TestTable.column1, it)
-    }
+    //println(H2Dialect().compileQueryable(test))
 
-    println(MysqlDialect().compile(TestTable
-        .insert(values)
-        .buildInsert())
+    val alias = Alias(IdentifierName("Y"))
+
+    println(
+        H2Dialect().compile(
+            TestTable
+                .select(TestTable.column1)
+                .subquery()
+                .alias(alias)
+                .select(alias[TestTable.column1])
+                .buildQuery()
+        )
     )
-    println()
-    println()
-    println()
-    println(MysqlDialect().compileQueryable(test))
 }

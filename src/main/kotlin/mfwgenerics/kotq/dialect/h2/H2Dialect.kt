@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.dialect.mysql
+package mfwgenerics.kotq.dialect.h2
 
 import mfwgenerics.kotq.*
 import mfwgenerics.kotq.dialect.SqlDialect
@@ -7,13 +7,13 @@ import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.sql.*
 import mfwgenerics.kotq.window.*
 
-class MysqlDialect: SqlDialect {
+class H2Dialect: SqlDialect {
     private class Compilation(
-        val names: Scope,
+        val scope: Scope,
         val sql: SqlTextBuilder = SqlTextBuilder()
     ) {
         fun compileReference(name: Reference<*>) {
-            sql.addSql(names[name])
+            sql.addSql(scope[name])
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
@@ -55,7 +55,7 @@ class MysqlDialect: SqlDialect {
 
             window.partitions.from?.let {
                 prefix.next {
-                    sql.addSql(names.nameOf(it))
+                    sql.addSql(scope.nameOf(it))
                 }
             }
 
@@ -88,58 +88,54 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileExpr(expr: Expr<*>, enclosed: Boolean = true) {
+        fun compileExpr(expr: Expr<*>, emitParens: Boolean = true) {
             when (expr) {
                 is OperationExpr -> {
                     when (expr.type.fixity) {
                         OperationFixity.PREFIX -> {
-                            if (enclosed) sql.addSql("(")
-                            sql.addSql(expr.type.sql)
-                            sql.addSql(" ")
-                            compileExpr(expr.args.single(), false)
-                            if (enclosed) sql.addSql(")")
+                            sql.parenthesize(emitParens) {
+                                sql.addSql(expr.type.sql)
+                                sql.addSql(" ")
+                                compileExpr(expr.args.single(), false)
+                            }
                         }
                         OperationFixity.POSTFIX -> {
-                            if (enclosed) sql.addSql("(")
-                            compileExpr(expr.args.single(), false)
-                            sql.addSql(" ")
-                            sql.addSql(expr.type.sql)
-                            if (enclosed) sql.addSql(")")
+                            sql.parenthesize(emitParens) {
+                                compileExpr(expr.args.single(), false)
+                                sql.addSql(" ")
+                                sql.addSql(expr.type.sql)
+                            }
                         }
                         OperationFixity.INFIX -> {
-                            if (enclosed) sql.addSql("(")
-
-                            sql.prefix("", " ${expr.type.sql} ").forEach(expr.args) {
-                                compileExpr(it)
+                            sql.parenthesize(emitParens) {
+                                sql.prefix("", " ${expr.type.sql} ").forEach(expr.args) {
+                                    compileExpr(it)
+                                }
                             }
-
-                            if (enclosed) sql.addSql(")")
                         }
                         OperationFixity.APPLY -> {
                             sql.addSql(expr.type.sql)
-                            sql.addSql("(")
-                            sql.prefix("", ", ").forEach(expr.args) {
-                                compileExpr(it, false)
+                            sql.parenthesize {
+                                sql.prefix("", ", ").forEach(expr.args) {
+                                    compileExpr(it, false)
+                                }
                             }
-                            sql.addSql(")")
                         }
                     }
                 }
                 is Literal -> sql.addValue(expr.value)
-                is Reference -> {
-                    compileReference(expr)
-                }
+                is Reference -> { compileReference(expr) }
                 is AggregatedExpr -> {
                     val built = expr.buildAggregated()
 
                     sql.addSql(built.expr.type.sql)
-                    sql.addSql("(")
-                    sql.prefix("", ", ").forEach(built.expr.args) {
-                        compileAggregatable(it)
+                    sql.parenthesize {
+                        sql.prefix("", ", ").forEach(built.expr.args) {
+                            compileAggregatable(it)
+                        }
                     }
-                    sql.addSql(")")
 
-                    // mysql doesn't actually support this - maybe have convert to a CASE
+                    // h2 doesn't actually support this - maybe have convert to a CASE
                     built.filter?.let { filter ->
                         sql.addSql(" FILTER(WHERE ")
                         compileExpr(filter, false)
@@ -152,19 +148,51 @@ class MysqlDialect: SqlDialect {
                         sql.addSql(")")
                     }
                 }
+                is CastExpr -> {
+                    sql.addSql("CAST")
+                    sql.parenthesize {
+                        compileExpr(expr.of, false)
+                        sql.addSql(" AS ")
+                        sql.addSql(expr.type.sql)
+                    }
+                }
             }
         }
 
         fun compileRelation(relation: QueryRelation) {
-            when (val baseRelation = relation.relation) {
+            val relationScope = scope[relation.computedAlias]
+
+            val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
                     sql.addSql(baseRelation.name)
-                    sql.addSql(" ")
+                    null
                 }
-                is Subquery -> compileQuery(emptyList(), baseRelation.of.buildQuery())
+                is Subquery -> {
+                    sql.parenthesize {
+                        Compilation(
+                            relationScope.scope,
+                            sql = sql
+                        ).compileQuery(emptyList(), baseRelation.of)
+                    }
+
+                    if (baseRelation.of is BuiltValuesQuery) {
+                        baseRelation.of.columns
+                    } else {
+                        null
+                    }
+                }
             }
 
-            sql.addSql(names[relation.computedAlias].ident)
+            sql.addSql(" ")
+            sql.addSql(relationScope.ident)
+
+            explicitLabels?.let { labels ->
+                sql.parenthesize {
+                    sql.prefix("", ", ").forEach(labels.values) {
+                        sql.addSql(scope.nameOf(it))
+                    }
+                }
+            }
         }
 
         fun compileQueryWhere(query: QueryWhere) {
@@ -188,7 +216,7 @@ class MysqlDialect: SqlDialect {
         fun compileSelectBody(body: SelectBody) {
             compileQueryWhere(body.where)
 
-            sql.prefix("\nGROUP BY", ", ").forEach(body.groupBy) {
+            sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
                 compileExpr(it, false)
             }
 
@@ -198,7 +226,7 @@ class MysqlDialect: SqlDialect {
             }
 
             sql.prefix("\nWINDOW ", "\n, ").forEach(body.windows) {
-                sql.addSql(names.nameOf(it.label))
+                sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
                 compileWindow(it.window.buildWindow())
@@ -215,7 +243,7 @@ class MysqlDialect: SqlDialect {
             sql.addSql("\n")
 
             Compilation(
-                names.innerScope().also {
+                scope.innerScope().also {
                     operation.body.populateScope(it)
                 },
                 sql
@@ -232,13 +260,13 @@ class MysqlDialect: SqlDialect {
                     "\n, "
                 )
                 .forEach(withs) {
-                    val subquery = names[it.alias]
+                    val subquery = scope[it.alias]
 
                     sql.addSql(subquery.ident)
                     sql.addSql(" AS (")
 
                     Compilation(
-                        names = subquery.scope,
+                        scope = subquery.scope,
                         sql = sql
                     ).compileQuery(emptyList(), it.query)
 
@@ -260,7 +288,7 @@ class MysqlDialect: SqlDialect {
                     selectPrefix.next {
                         compileExpr(it.expr, false)
                         sql.addSql(" ")
-                        sql.addSql(names.nameOf(it.name))
+                        sql.addSql(scope.nameOf(it.name))
                     }
                 }
 
@@ -366,7 +394,7 @@ class MysqlDialect: SqlDialect {
             statement.populateScope(scope)
 
             val compilation = Compilation(
-                names = scope
+                scope = scope
             )
 
             compilation.compileSelect(emptyList(), statement)
@@ -380,7 +408,7 @@ class MysqlDialect: SqlDialect {
             statement.populateScope(scope)
 
             val compilation = Compilation(
-                names = scope
+                scope = scope
             )
 
             compilation.compileValues(statement)
@@ -394,7 +422,7 @@ class MysqlDialect: SqlDialect {
             statement.populateScope(scope)
 
             val compilation = Compilation(
-                names = scope
+                scope = scope
             )
 
             compilation.compileInsert(statement)

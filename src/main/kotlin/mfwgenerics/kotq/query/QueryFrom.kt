@@ -36,17 +36,31 @@ data class QueryRelation(
                     innerScope.external(it, it.symbol)
                 }
 
-                innerScope.allNames().forEach { name ->
+                innerScope.externals().forEach { name ->
                     if (alias == null) {
-                        scope.insert(name, name, computedAlias)
+                        scope.internal(name, name, computedAlias)
                     } else {
-                        scope.insert(computedAlias[name], name, computedAlias)
+                        scope.internal(computedAlias[name], name, computedAlias)
                     }
                 }
 
                 scope.register(computedAlias, innerScope)
             }
-            is Subquery -> TODO()
+            is Subquery -> {
+                val innerScope = scope.innerScope()
+
+                relation.of.populateScope(innerScope)
+
+                innerScope.externals().forEach { name ->
+                    if (alias == null) {
+                        scope.internal(name, name, computedAlias)
+                    } else {
+                        scope.internal(computedAlias[name], name, computedAlias)
+                    }
+                }
+
+                scope.register(computedAlias, innerScope)
+            }
         }
     }
 }
@@ -86,8 +100,8 @@ class QueryWhere {
 
             it.query.populateScope(innerScope)
 
-            innerScope.allNames().forEach { name ->
-                scope.insert(it.alias[name], name, it.alias)
+            innerScope.externals().forEach { name ->
+                scope.internal(it.alias[name], name, it.alias)
             }
 
             scope.register(it.alias, innerScope)
@@ -126,7 +140,7 @@ data class BuiltValuesQuery(
     override val columns: LabelList get() = values.columns
 
     override fun populateScope(scope: Scope) {
-
+        columns.values.forEach { scope.external(it) }
     }
 }
 
@@ -144,15 +158,15 @@ data class BuiltSelectQuery(
 
     var selected: List<Labeled<*>> = emptyList()
 ): BuiltQuery, Statement {
-    override val columns: LabelList
-        get() = error("not implemented")
+    override lateinit var columns: LabelList
 
     override fun populateScope(scope: Scope) {
         body.populateScope(scope)
 
         selected.forEach {
             it.namedExprs().forEach { labeled ->
-                scope.insert(labeled.name)
+                if (labeled.expr != labeled.name) scope.internal(labeled.name)
+                scope.external(labeled.name)
             }
         }
     }

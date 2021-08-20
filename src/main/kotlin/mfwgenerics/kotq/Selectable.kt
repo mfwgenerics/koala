@@ -22,7 +22,7 @@ interface BuildsIntoInsert {
 interface Queryable {
     fun buildQuery(): BuiltQuery
 
-    fun subquery() = Subquery(this)
+    fun subquery() = Subquery(buildQuery())
 }
 
 interface Statementable {
@@ -104,6 +104,7 @@ private class SelectUnionableUnionOperand(
 
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references
+        out.columns = LabelList(references.map { it.name })
         return of
     }
 }
@@ -208,7 +209,7 @@ interface Relvar: Relation {
 }
 
 class Subquery(
-    val of: Queryable
+    val of: BuiltQuery
 ): Relation {
     override fun namedExprs(): List<Labeled<*>> {
         error("not implemented")
@@ -236,6 +237,7 @@ class Select(
 
     override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.selected = references
+        out.columns = LabelList(references.map { it.name })
         return of
     }
 }

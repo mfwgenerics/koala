@@ -15,5 +15,5 @@ class IdentifierName(
         asString?.hashCode()?:System.identityHashCode(this)
 
     override fun toString(): String =
-        if (asString != null) "$asString" else "<anonymous>"
+        if (asString != null) "$asString" else "<anonymous-${System.identityHashCode(this)}>"
 }

@@ -33,6 +33,9 @@ fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationExpr(OperationType.NOT, l
 fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationExpr(OperationType.IS_NULL, listOf(this))
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationExpr(OperationType.IS_NOT_NULL, listOf(this))
 
+fun <T : Any> cast(from: Expr<*>, to: DataType<T>): Expr<T> =
+    CastExpr(from, to)
+
 inline fun <reified T : Any> literal(value: T): Expr<T> =
     Literal(T::class, value)
 

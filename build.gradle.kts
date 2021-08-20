@@ -10,5 +10,6 @@ dependencies {
     api(kotlin("stdlib"))
     api(kotlin("reflect"))
 
+    testImplementation(kotlin("test"))
     testImplementation("com.h2database:h2:1.4.200")
 }

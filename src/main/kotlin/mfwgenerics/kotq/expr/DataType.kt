@@ -2,9 +2,8 @@ package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.sql.StandardSql
 
-enum class GroupedOperationType(
+sealed class DataType<T : Any>(
     override val sql: String
 ): StandardSql {
-    MAX("MAX"),
-    SUM("SUM")
+    object INTEGER : DataType<Int>("INTEGER")
 }

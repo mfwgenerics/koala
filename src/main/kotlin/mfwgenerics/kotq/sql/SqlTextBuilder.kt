@@ -22,8 +22,8 @@ class SqlTextBuilder {
         params
     )
 
-    fun parenthesize(noop: Boolean = false, block: () -> Unit) {
-        if (noop) return block()
+    fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {
+        if (!emitParens) return block()
 
         addSql("(")
         block()
