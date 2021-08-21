@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.dsl.Queryable
+import mfwgenerics.kotq.query.Queryable
 
 interface SelectedUnionOperand: Queryable, UnionOperand

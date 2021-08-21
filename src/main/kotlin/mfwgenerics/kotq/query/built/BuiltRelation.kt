@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.dsl.Alias
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.dsl.Relation
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.dsl.Subquery

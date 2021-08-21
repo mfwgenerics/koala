@@ -1,5 +1,6 @@
-package mfwgenerics.kotq.dsl
+package mfwgenerics.kotq.query
 
+import mfwgenerics.kotq.dsl.Relation
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.built.BuiltRelation
 

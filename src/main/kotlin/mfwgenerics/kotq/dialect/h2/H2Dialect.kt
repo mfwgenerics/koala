@@ -1,9 +1,10 @@
 package mfwgenerics.kotq.dialect.h2
 
+import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.dsl.Subquery
-import mfwgenerics.kotq.dsl.WithType
+import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.Distinctness
@@ -97,6 +98,29 @@ class H2Dialect: SqlDialect {
             }
         }
 
+        fun compileCastDataType(type: DataType<*>) {
+            when (type) {
+                DataType.DATE -> TODO()
+                DataType.DATETIME -> TODO()
+                is DataType.DECIMAL -> TODO()
+                DataType.DOUBLE -> TODO()
+                DataType.FLOAT -> TODO()
+                DataType.INSTANT -> TODO()
+                DataType.INT16 -> TODO()
+                DataType.INT32 -> sql.addSql("INTEGER")
+                DataType.INT64 -> TODO()
+                DataType.INT8 -> TODO()
+                is DataType.RAW -> TODO()
+                DataType.TIME -> TODO()
+                DataType.UINT16 -> TODO()
+                DataType.UINT32 -> TODO()
+                DataType.UINT64 -> TODO()
+                DataType.UINT8 -> TODO()
+                is DataType.VARBINARY -> TODO()
+                is DataType.VARCHAR -> TODO()
+            }
+        }
+
         fun compileExpr(expr: Expr<*>, emitParens: Boolean = true) {
             when (expr) {
                 is OperationExpr -> {
@@ -162,7 +186,7 @@ class H2Dialect: SqlDialect {
                     sql.parenthesize {
                         compileExpr(expr.of, false)
                         sql.addSql(" AS ")
-                        sql.addSql(expr.type.sql)
+                        compileCastDataType(expr.type)
                     }
                 }
             }
@@ -173,7 +197,7 @@ class H2Dialect: SqlDialect {
 
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addSql(baseRelation.name)
+                    sql.addSql(baseRelation.relvarName)
                     null
                 }
                 is Subquery -> {
@@ -375,13 +399,13 @@ class H2Dialect: SqlDialect {
             val tableColumnMap = relvar.columns.associateBy { it }
             val columns = insert.query.columns
 
-            sql.addSql(relvar.name)
+            sql.addSql(relvar.relvarName)
             sql.addSql(" ")
 
             sql.parenthesize {
                 sql.prefix("", ", ").forEach(columns.values) {
                     val column = checkNotNull(tableColumnMap[it]) {
-                        "can't insert $it into ${relvar.name}"
+                        "can't insert $it into ${relvar.relvarName}"
                     }
 
                     sql.addSql(column.symbol)

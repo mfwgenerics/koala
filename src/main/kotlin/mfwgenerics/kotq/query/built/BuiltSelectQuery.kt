@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.dsl.LabelList
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.Ordinal
 import mfwgenerics.kotq.query.LockMode

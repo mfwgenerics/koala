@@ -1,7 +1,8 @@
 package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.IdentifierName
-import mfwgenerics.kotq.dsl.Alias
+import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.expr.built.BuildsIntoAggregatedExpr
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import kotlin.reflect.KClass
@@ -63,7 +64,7 @@ class CastExpr<T : Any>(
 
 class Literal<T : Any>(
     val type: KClass<T>,
-    val value: T
+    val value: T?
 ): Expr<T>
 
 class OperationExpr<T : Any>(

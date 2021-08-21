@@ -2,6 +2,9 @@ package mfwgenerics.kotq.dsl
 
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.RelvarColumn
+import mfwgenerics.kotq.query.Alias
+import mfwgenerics.kotq.query.Aliased
+import mfwgenerics.kotq.query.AliasedRelation
 import mfwgenerics.kotq.query.built.BuiltQuery
 import mfwgenerics.kotq.query.built.BuiltRelation
 
@@ -13,7 +16,7 @@ sealed interface Relation: AliasedRelation {
 }
 
 interface Relvar: Relation {
-    val name: String
+    val relvarName: String
 
     val columns: List<RelvarColumn<*>>
 }

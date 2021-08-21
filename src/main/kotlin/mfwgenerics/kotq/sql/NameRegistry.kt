@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.sql
 
-import mfwgenerics.kotq.dsl.Alias
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.window.WindowLabel
 

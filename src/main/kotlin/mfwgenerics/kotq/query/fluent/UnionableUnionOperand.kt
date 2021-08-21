@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.dsl.LabelList
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.built.BuildsIntoSelect

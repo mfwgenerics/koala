@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.dsl.Alias
+import mfwgenerics.kotq.query.Alias
 
 class BuiltWith(
     val alias: Alias,

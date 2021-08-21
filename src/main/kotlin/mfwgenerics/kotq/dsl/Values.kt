@@ -2,6 +2,7 @@ package mfwgenerics.kotq.dsl
 
 import mfwgenerics.kotq.LiteralAssignment
 import mfwgenerics.kotq.expr.Reference
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.values.*
 
 inline fun <T> values(

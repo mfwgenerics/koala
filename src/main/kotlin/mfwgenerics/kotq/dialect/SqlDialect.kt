@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.dialect
 
-import mfwgenerics.kotq.dsl.Queryable
+import mfwgenerics.kotq.query.Queryable
 import mfwgenerics.kotq.query.built.BuiltStatement
 import mfwgenerics.kotq.sql.SqlText
 

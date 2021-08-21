@@ -2,8 +2,8 @@ package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.Assignment
 import mfwgenerics.kotq.Statementable
-import mfwgenerics.kotq.dsl.LabelList
-import mfwgenerics.kotq.dsl.Queryable
+import mfwgenerics.kotq.query.LabelList
+import mfwgenerics.kotq.query.Queryable
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.built.BuildsIntoSelect

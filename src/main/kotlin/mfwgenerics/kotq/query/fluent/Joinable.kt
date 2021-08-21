@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.dsl.AliasedRelation
-import mfwgenerics.kotq.dsl.JoinType
+import mfwgenerics.kotq.query.AliasedRelation
+import mfwgenerics.kotq.query.JoinType
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.query.built.BuildsIntoWhereQuery
 import mfwgenerics.kotq.query.built.BuiltJoin

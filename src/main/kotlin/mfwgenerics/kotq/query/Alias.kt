@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.dsl
+package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.expr.AliasedReference

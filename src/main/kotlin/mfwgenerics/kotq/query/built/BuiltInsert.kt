@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.dsl.WithType
+import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.sql.Scope
 
 class BuiltInsert: BuiltStatement {

@@ -1,8 +1,8 @@
 package mfwgenerics.kotq.jdbc
 
 import mfwgenerics.kotq.dialect.SqlDialect
-import mfwgenerics.kotq.dsl.LabelList
-import mfwgenerics.kotq.dsl.Queryable
+import mfwgenerics.kotq.query.LabelList
+import mfwgenerics.kotq.query.Queryable
 import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.RowSequence
 import java.sql.Connection

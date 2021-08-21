@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.dsl.AliasedQueryable
-import mfwgenerics.kotq.dsl.WithType
+import mfwgenerics.kotq.query.AliasedQueryable
+import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.query.built.*
 
 interface Withable: Withed {

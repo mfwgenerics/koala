@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.dsl
 
+import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.expr.*
 
 infix fun <T : Any> Expr<T>.eq(rhs: Expr<T>): Expr<Boolean> = OperationExpr(OperationType.EQ, listOf(this, rhs))
@@ -31,6 +32,6 @@ fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationExpr(OperationType.I
 fun <T : Any> cast(from: Expr<*>, to: DataType<T>): Expr<T> =
     CastExpr(from, to)
 
-inline fun <reified T : Any> literal(value: T): Expr<T> =
+inline fun <reified T : Any> literal(value: T?): Expr<T> =
     Literal(T::class, value)
 

@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.values
 
-import mfwgenerics.kotq.dsl.LabelList
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.expr.Reference
 
 class RowIteratorToIterator(

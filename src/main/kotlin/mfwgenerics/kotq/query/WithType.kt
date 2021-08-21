@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.dsl
+package mfwgenerics.kotq.query
 
 enum class WithType {
     RECURSIVE,

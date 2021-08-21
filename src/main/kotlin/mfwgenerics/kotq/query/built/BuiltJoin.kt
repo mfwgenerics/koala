@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.dsl.JoinType
+import mfwgenerics.kotq.query.JoinType
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.sql.Scope
 

@@ -1,4 +1,4 @@
-Query, statement and DDL DSLs should be syntactically close to SQL:
+Query and statement DSLs should be syntactically close to SQL:
 * DSL elements should be predictable from their corresponding SQL (e.g. SELECT .select(), IS NOT NULL .isNotNull())
 * Order and arity should closely match SQL (e.g. ORDER BY x DESC becomes orderBy(x.desc()) rather than orderBy(desc(x))) 
 * Exceptions exist for things like .select (end of query) and .with (after table)
