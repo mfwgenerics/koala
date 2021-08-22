@@ -44,12 +44,18 @@ class TableDiffer(
             val dataType = when (val dt = columns.getInt("DATA_TYPE")) {
                 Types.INTEGER -> DataType.INT32
                 Types.SMALLINT -> DataType.INT16
+                Types.VARCHAR -> DataType.VARCHAR(columns.getInt("COLUMN_SIZE"))
                 else -> error("unrecognized SQL datatype $dt")
             }
 
             val expectedDataType = when (val dt = expected.columnType) {
                 is MappedColumnType<*, *> -> dt.baseDataType
                 else -> dt
+            }
+
+            val isAutoincrement = when (columns.getString("IS_AUTOINCREMENT")) {
+                "YES" -> true
+                else -> false
             }
 
             val diff = ColumnDefinitionDiff(
@@ -66,7 +72,7 @@ class TableDiffer(
                     null -> if (expected.default != null) {
                         ChangedDefault(expected.default)
                     } else null
-                    else -> if (expected.default == null) {
+                    else -> if (expected.default == null && !isAutoincrement) {
                         ChangedDefault(expected.default)
                     } else null
                 },

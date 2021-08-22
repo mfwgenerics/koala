@@ -5,9 +5,11 @@ import mfwgenerics.kotq.dialect.h2.H2Dialect
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
 import java.sql.DriverManager
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class TestH2 {
@@ -63,65 +65,223 @@ class TestH2 {
         cxn.jdbc.close()
     }
 
+    object ShopTable: Table("Shop") {
+        val id = column("id", DataType.INT32.autoIncrement())
+
+        val name = column("name", DataType.VARCHAR(100))
+    }
+
+    object CustomerTable: Table("Customer") {
+        val id = column("id", DataType.INT32.autoIncrement())
+
+        val firstName = column("firstName", DataType.VARCHAR(100))
+        val lastName = column("lastName", DataType.VARCHAR(100))
+    }
+
+    object PurchaseTable: Table("Purchase") {
+        val id = column("id", DataType.INT32.autoIncrement())
+
+        val shop = column("shop", DataType.INT32.reference(ShopTable.id))
+        val customer = column("customer", DataType.INT32.reference(CustomerTable.id))
+
+        val product = column("product", DataType.VARCHAR(200))
+
+        val price = column("price", DataType.INT32)
+        val discount = column("discount", DataType.INT32.nullable())
+    }
+
+    // TODO use an assertion library
+    private fun assertListEquals(expected: List<Any?>, actual: List<Any?>) {
+        assert(expected.size == actual.size)
+
+        repeat(expected.size) {
+            assert(expected[it] == actual[it])
+        }
+    }
+
+    private fun assertListOfListsEquals(expected: List<List<Any?>>, actual: List<List<Any?>>) {
+        assert(expected.size == actual.size)
+
+        repeat(expected.size) {
+            assertListEquals(expected[it], actual[it])
+        }
+    }
+
     @Test
     fun `stringy joins`() {
-        val shopTable = object : Table("Shop") {
-            val id = column("id", DataType.INT32.autoIncrement())
-
-            val name = column("name", DataType.VARCHAR(100))
-        }
-
-        val customerTable = object : Table("Customer") {
-            val id = column("id", DataType.INT32.autoIncrement())
-
-            val firstName = column("firstName", DataType.VARCHAR(100))
-            val lastName = column("lastName", DataType.VARCHAR(100))
-        }
-
-        val purchaseTable = object : Table("Purchase") {
-            val id = column("id", DataType.INT32.autoIncrement())
-
-            val shop = column("shop", DataType.INT32.reference(shopTable.id))
-            val customer = column("customer", DataType.INT32.reference(customerTable.id))
-
-            val product = column("product", DataType.VARCHAR(200))
-
-            val price = column("price", DataType.INT32)
-            val discount = column("discount", DataType.INT32.nullable())
-        }
-
         val cxn = ConnectionWithDialect(
             H2Dialect(),
             DriverManager.getConnection("jdbc:h2:mem:test")
         )
 
         cxn.ddl(createTables(
-            shopTable,
-            customerTable,
-            purchaseTable
+            ShopTable,
+            CustomerTable,
+            PurchaseTable
         ))
 
-        val insert = shopTable
+        val shopIds = ShopTable
             .insert(values(
-                rowOf(shopTable.name setTo "Hardware"),
-                rowOf(shopTable.name setTo "Groceries"),
-                rowOf(shopTable.name setTo "Stationary")
+                rowOf(ShopTable.name setTo "Hardware"),
+                rowOf(ShopTable.name setTo "Groceries"),
+                rowOf(ShopTable.name setTo "Stationary")
             ))
-            .returning(shopTable.id)
-
-        val shopIds = cxn.query(insert)
-            .map { it[shopTable.id] }
+            .returning(ShopTable.id)
+            .performWith(cxn)
+            .map { it[ShopTable.id]!! }
             .toList()
 
         val hardwareId = shopIds[0]
         val groceriesId = shopIds[1]
         val stationaryId = shopIds[2]
 
-        shopTable
-            .select(shopTable)
+        val customerIds = CustomerTable
+            .insert(values(
+                rowOf(
+                    CustomerTable.firstName setTo "Jane",
+                    CustomerTable.lastName setTo "Doe"
+                ),
+                rowOf(
+                    CustomerTable.firstName setTo "Bob",
+                    CustomerTable.lastName setTo "Smith"
+                )
+            ))
+            .returning(CustomerTable.id)
             .performWith(cxn)
-            .forEach { row ->
-                println(row.labels.values.map { row[it] }.joinToString(", "))
-            }
+            .map { it[CustomerTable.id]!! }
+            .toList()
+
+        val janeId = customerIds[0]
+        val bobId = customerIds[1]
+
+        PurchaseTable
+            .insert(values(
+                rowOf(
+                    PurchaseTable.shop setTo groceriesId,
+                    PurchaseTable.customer setTo janeId,
+                    PurchaseTable.product setTo "Apple",
+                    PurchaseTable.price setTo 150,
+                    PurchaseTable.discount setTo 20
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo groceriesId,
+                    PurchaseTable.customer setTo bobId,
+                    PurchaseTable.product setTo "Pear",
+                    PurchaseTable.price setTo 200
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo hardwareId,
+                    PurchaseTable.customer setTo janeId,
+                    PurchaseTable.product setTo "Hammer",
+                    PurchaseTable.price setTo 8000
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo stationaryId,
+                    PurchaseTable.customer setTo bobId,
+                    PurchaseTable.product setTo "Pen",
+                    PurchaseTable.price setTo 500
+                ),
+            ))
+            .performWith(cxn)
+
+        val expectedPurchaseItems = listOf(
+            listOf("Bob", "Pear", 200),
+            listOf("Bob", "Pen", 500),
+            listOf("Jane", "Apple", 150),
+            listOf("Jane", "Hammer", 8000)
+        )
+
+        val actualPurchaseItems = CustomerTable
+            .innerJoin(PurchaseTable, CustomerTable.id eq PurchaseTable.customer)
+            .orderBy(CustomerTable.firstName)
+            .select(CustomerTable.firstName, PurchaseTable.product, PurchaseTable.price)
+            .performWith(cxn)
+            .map { row -> row.labels.values.map { row[it] } }
+            .toList()
+
+        assertListOfListsEquals(expectedPurchaseItems, actualPurchaseItems)
+
+        val total = name<Int>()
+
+        val actualTotals = CustomerTable
+            .innerJoin(PurchaseTable, CustomerTable.id eq PurchaseTable.customer)
+            .groupBy(CustomerTable.id)
+            .orderBy(total.desc())
+            .select(CustomerTable.firstName, sum(PurchaseTable.price) `as` total)
+            .performWith(cxn)
+            .map { row -> row.labels.values.map { row[it] } }
+            .toList()
+
+        val expectedTotals = listOf(
+            listOf("Jane", 8150),
+            listOf("Bob", 700),
+        )
+
+        assertListOfListsEquals(expectedTotals, actualTotals)
+
+        val whoDidntShopAtHardware = CustomerTable
+            .leftJoin(PurchaseTable, (CustomerTable.id eq PurchaseTable.customer).and(
+                PurchaseTable.shop eq hardwareId
+            ))
+            .where(PurchaseTable.id.isNull())
+            .select(CustomerTable.firstName)
+            .performWith(cxn)
+            .map { it[CustomerTable.firstName] }
+            .single()
+
+        assert("Bob" == whoDidntShopAtHardware)
+
+        val mp = alias()
+
+        val expectedMostExpensiveByStore = listOf(
+            listOf("Groceries", "Pear"),
+            listOf("Hardware", "Hammer"),
+            listOf("Stationary", "Pen")
+        )
+
+        val actualMostExpensiveByStore = PurchaseTable
+            .groupBy(PurchaseTable.shop)
+            .select(
+                PurchaseTable.shop,
+                max(PurchaseTable.price) `as` PurchaseTable.price
+            )
+            .subquery()
+            .alias(mp)
+            .innerJoin(PurchaseTable, (mp[PurchaseTable.shop] eq PurchaseTable.shop).and(
+                mp[PurchaseTable.price] eq PurchaseTable.price
+            ))
+            .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
+            .orderBy(ShopTable.name)
+            .select(ShopTable, PurchaseTable)
+            .performWith(cxn)
+            .map { listOf(it[ShopTable.name], it[PurchaseTable.product]) }
+            .toList()
+
+        assertListOfListsEquals(expectedMostExpensiveByStore, actualMostExpensiveByStore)
+    }
+
+    @Test
+    fun `table diff`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:test")
+        )
+
+        cxn.ddl(createTables(
+            CustomerTable
+        ))
+
+        val changedCustomerTable = Table("Customer").apply {
+            column("id", DataType.INT32.autoIncrement())
+
+            column("firstName", DataType.VARCHAR(100))
+            column("lastName", DataType.VARCHAR(100))
+        }
+
+        val diff = TableDiffer(cxn.jdbc.metaData).diffTable(
+            changedCustomerTable
+        )
+
+        println(diff)
     }
 }

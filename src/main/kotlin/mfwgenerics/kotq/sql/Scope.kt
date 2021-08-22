@@ -49,7 +49,7 @@ class Scope(
     }
 
     fun internal(name: Reference<*>) {
-        check (internal.putIfAbsent(name, Internal) == null)
+        internal.putIfAbsent(name, Internal)
     }
 
     fun register(alias: Alias, scope: Scope) {
@@ -83,4 +83,6 @@ class Scope(
     fun nameOf(label: WindowLabel): String = names[label]
 
     fun externals(): Collection<Reference<*>> = external.keys
+
+    override fun toString(): String = "scope-${System.identityHashCode(this)}"
 }

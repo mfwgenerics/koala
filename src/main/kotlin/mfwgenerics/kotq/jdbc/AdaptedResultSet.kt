@@ -12,10 +12,20 @@ class AdaptedResultSet(
     val resultSet: ResultSet
 ): RowIterator {
     override fun <T : Any> get(reference: Reference<T>): T? {
-        val ix = labels.positionOf(reference) ?: return null
+        val ix = 1 + (labels.positionOf(reference) ?: return null)
 
         @Suppress("unchecked_cast")
-        return resultSet.getObject(ix + 1) as T?
+        val result = when (reference.type) {
+            Int::class -> resultSet.getInt(ix)
+            Long::class -> resultSet.getLong(ix)
+            Float::class -> resultSet.getFloat(ix)
+            Double::class -> resultSet.getDouble(ix)
+            else -> return resultSet.getObject(ix) as T?
+        } as T?
+
+        if (resultSet.wasNull()) return null
+
+        return result
     }
 
     override fun next(): Boolean =

@@ -10,4 +10,6 @@ abstract class RelvarColumn<T : Any>(
 ): NamedReference<T>(
     type,
     identifier
-)
+) {
+    override fun toString(): String = "`$symbol`"
+}

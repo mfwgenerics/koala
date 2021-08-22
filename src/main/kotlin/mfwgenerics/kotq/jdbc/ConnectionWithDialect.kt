@@ -7,6 +7,7 @@ import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.Queryable
 import mfwgenerics.kotq.query.built.BuiltReturningInsert
 import mfwgenerics.kotq.query.built.BuiltSubquery
+import mfwgenerics.kotq.query.fluent.Inserted
 import mfwgenerics.kotq.sql.SqlText
 import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.RowSequence
@@ -42,6 +43,14 @@ class ConnectionWithDialect(
         dialect.ddl(diff).forEach {
             prepare(it).execute()
         }
+    }
+
+    fun execute(insert: Inserted) {
+        val built = insert.buildInsert()
+
+        val sql = dialect.compile(built)
+
+        prepare(sql).execute()
     }
 
     fun query(queryable: Queryable): RowSequence {
