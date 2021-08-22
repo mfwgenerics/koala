@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.sql
 
-import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.expr.Reference
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.window.WindowLabel
 
 class NameRegistry {

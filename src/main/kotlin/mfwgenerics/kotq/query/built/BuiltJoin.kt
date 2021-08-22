@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.query.JoinType
 import mfwgenerics.kotq.expr.Expr
+import mfwgenerics.kotq.query.JoinType
 import mfwgenerics.kotq.sql.Scope
 
 data class BuiltJoin(

@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.Queryable
+import mfwgenerics.kotq.query.Subqueryable
 
-interface SelectedUnionOperand: Queryable, UnionOperand
+interface SelectedUnionOperand: Subqueryable, UnionOperand

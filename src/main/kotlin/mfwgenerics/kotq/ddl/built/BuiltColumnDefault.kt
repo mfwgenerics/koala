@@ -9,5 +9,5 @@ class ColumnDefaultValue(
 ): BuiltColumnDefault
 
 class ColumnDefaultExpr(
-    val expr: Expr<*>?
+    val expr: Expr<*>
 ): BuiltColumnDefault

@@ -1,11 +1,12 @@
 import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dialect.h2.H2Dialect
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
-import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.jdbc.performWith
+import mfwgenerics.kotq.setTo
 import java.sql.DriverManager
 import kotlin.test.Test
 
@@ -16,45 +17,6 @@ class TestH2 {
             H2Dialect(),
             DriverManager.getConnection("jdbc:h2:mem:test")
         )
-
-        val testTable = object : Table("Test") {
-            val column1 = column("test0", DataType.INT32.nullable().default(12))
-            val column2 = column("test1", DataType.INT32)
-        }
-
-        cxn
-            .jdbc
-            .prepareStatement("""
-                CREATE TABLE Test(
-                    test0 SMALLINT NOT NULL,
-                    test1 INT NOT NULL
-                )
-            """.trimIndent())
-            .execute()
-
-        TableDiffer(cxn.jdbc.metaData)
-            .diffTable(testTable)
-
-        val insert = testTable
-            .insert(values(
-                listOf(1,2,3,4,7,7,10).asSequence(),
-                testTable.column1,
-                testTable.column2
-            ) {
-                value(testTable.column1, it)
-                value(testTable.column2, it * 10)
-            })
-
-        val compiledInsert = H2Dialect()
-            .compile(insert.buildInsert())
-
-        val preparedInsert = cxn.jdbc.prepareStatement(compiledInsert.sql)
-
-        compiledInsert.parameters.forEachIndexed { ix, it ->
-            preparedInsert.setObject(ix + 1, it)
-        }
-
-        preparedInsert.execute()
 
         val number = name<Int>("number")
         val summed = name<Int>("sumUnder")
@@ -123,6 +85,27 @@ class TestH2 {
             val customer = column("customer", DataType.INT32.reference(customerTable.id))
         }
 
-        // TODO
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:test")
+        )
+
+        cxn.ddl(createTables(
+            shopTable,
+            customerTable,
+            purchaseTable
+        ))
+
+        val insert = shopTable
+            .insert(values(
+                rowOf(shopTable.name setTo "Hardware"),
+                rowOf(shopTable.name setTo "Groceries"),
+                rowOf(shopTable.name setTo "Stationary")
+            ))
+            .returning(shopTable.id)
+
+        println(cxn.query(insert)
+            .map { it[shopTable.id] }
+            .toList())
     }
 }

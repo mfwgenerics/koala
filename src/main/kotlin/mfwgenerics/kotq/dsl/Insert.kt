@@ -2,12 +2,13 @@ package mfwgenerics.kotq.dsl
 
 import mfwgenerics.kotq.query.built.BuildsIntoInsert
 import mfwgenerics.kotq.query.built.BuiltInsert
-import mfwgenerics.kotq.query.built.BuiltQuery
+import mfwgenerics.kotq.query.built.BuiltSubquery
+import mfwgenerics.kotq.query.fluent.Inserted
 import mfwgenerics.kotq.query.fluent.Withed
 
 class Insert(
     val of: Withed,
-    val query: BuiltQuery
+    val query: BuiltSubquery
 ): Inserted {
     override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
         out.query = query

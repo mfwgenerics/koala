@@ -70,8 +70,6 @@ fun main() {
             TestTable.column1 `as` renamed
         )
 
-    //println(H2Dialect().compileQueryable(test))
-
     val alias = Alias(IdentifierName("Y"))
 
     println(

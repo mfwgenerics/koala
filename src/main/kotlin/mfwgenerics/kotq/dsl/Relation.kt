@@ -5,8 +5,8 @@ import mfwgenerics.kotq.expr.RelvarColumn
 import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.query.Aliased
 import mfwgenerics.kotq.query.AliasedRelation
-import mfwgenerics.kotq.query.built.BuiltQuery
 import mfwgenerics.kotq.query.built.BuiltRelation
+import mfwgenerics.kotq.query.built.BuiltSubquery
 
 sealed interface Relation: AliasedRelation {
     fun alias(alias: Alias): AliasedRelation = Aliased(this, alias)
@@ -22,7 +22,7 @@ interface Relvar: Relation {
 }
 
 class Subquery(
-    val of: BuiltQuery
+    val of: BuiltSubquery
 ): Relation {
     override fun namedExprs(): List<Labeled<*>> {
         error("not implemented")
