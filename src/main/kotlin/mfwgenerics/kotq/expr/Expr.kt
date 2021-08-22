@@ -2,9 +2,9 @@ package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.ddl.DataType
-import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.expr.built.BuildsIntoAggregatedExpr
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
+import mfwgenerics.kotq.query.Alias
 import kotlin.reflect.KClass
 
 sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {

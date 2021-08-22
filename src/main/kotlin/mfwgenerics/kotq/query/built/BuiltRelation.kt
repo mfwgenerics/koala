@@ -1,9 +1,9 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.dsl.Relation
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.dsl.Subquery
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.sql.Scope
 
 data class BuiltRelation(

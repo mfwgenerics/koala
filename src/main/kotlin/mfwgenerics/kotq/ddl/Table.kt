@@ -5,7 +5,6 @@ import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Labeled
-import mfwgenerics.kotq.expr.NamedReference
 
 open class Table(
     override val relvarName: String

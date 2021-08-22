@@ -9,7 +9,7 @@ class BuiltInsert: BuiltStatement {
     var withType: WithType = WithType.NOT_RECURSIVE
     var withs: List<BuiltWith> = emptyList()
 
-    lateinit var query: BuiltQuery
+    lateinit var query: BuiltSubquery
 
     fun populateScope(scope: Scope) {
 

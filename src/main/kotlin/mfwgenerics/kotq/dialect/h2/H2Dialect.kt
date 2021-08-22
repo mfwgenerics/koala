@@ -1,14 +1,18 @@
 package mfwgenerics.kotq.dialect.h2
 
 import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
+import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
+import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.dsl.Subquery
-import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.Distinctness
 import mfwgenerics.kotq.query.LockMode
+import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.query.built.*
 import mfwgenerics.kotq.sql.NameRegistry
 import mfwgenerics.kotq.sql.Scope
@@ -16,8 +20,92 @@ import mfwgenerics.kotq.sql.SqlText
 import mfwgenerics.kotq.sql.SqlTextBuilder
 import mfwgenerics.kotq.window.*
 import mfwgenerics.kotq.window.built.BuiltWindow
+import kotlin.reflect.KClass
 
 class H2Dialect: SqlDialect {
+    fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
+        when (expr) {
+            is Literal -> sql.addValue(expr.value)
+            else -> error("not implemented")
+        }
+    }
+
+    private fun compileDataType(sql: SqlTextBuilder, type: DataType<*>) {
+        when (type) {
+            DataType.DATE -> TODO()
+            DataType.DATETIME -> TODO()
+            is DataType.DECIMAL -> TODO()
+            DataType.DOUBLE -> TODO()
+            DataType.FLOAT -> TODO()
+            DataType.INSTANT -> TODO()
+            DataType.INT16 -> sql.addSql("SMALLINT")
+            DataType.INT32 -> sql.addSql("INTEGER")
+            DataType.INT64 -> TODO()
+            DataType.INT8 -> TODO()
+            is DataType.RAW -> TODO()
+            DataType.TIME -> TODO()
+            DataType.UINT16 -> TODO()
+            DataType.UINT32 -> TODO()
+            DataType.UINT64 -> TODO()
+            DataType.UINT8 -> TODO()
+            is DataType.VARBINARY -> TODO()
+            is DataType.VARCHAR -> {
+                sql.addSql("VARCHAR")
+                sql.parenthesize {
+                    sql.addSql("${type.maxLength}")
+                }
+            }
+        }
+    }
+
+    private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
+        sql.addSql("CREATE TABLE ")
+
+        sql.addSql(table.relvarName)
+        sql.parenthesize {
+            sql.prefix("", ", ").forEach(table.columns) {
+                sql.addSql("\n")
+                val def = it.builtDef
+
+                sql.addSql(it.symbol)
+                sql.addSql(" ")
+                compileDataType(sql, def.columnType.baseDataType)
+
+                if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+                if (def.notNull) sql.addSql(" NOT NULL")
+
+                def.default?.let { default ->
+                    @Suppress("unchecked_cast")
+                    val finalExpr = when (default) {
+                        is ColumnDefaultExpr -> default.expr
+                        is ColumnDefaultValue -> Literal(
+                            def.columnType.type as KClass<Any>,
+                            default.value
+                        )
+                    }
+
+                    sql.addSql(" DEFAULT ")
+                    compileDefaultExpr(sql, finalExpr)
+                }
+            }
+            sql.addSql("\n")
+        }
+    }
+
+    override fun ddl(diff: SchemaDiff): List<SqlText> {
+        val results = mutableListOf<SqlText>()
+
+        diff.tables.created.forEach { (_, table) ->
+            val sql = SqlTextBuilder()
+
+            compileCreateTable(sql, table)
+
+            results.add(sql.toSql())
+        }
+
+        return results
+    }
+
     private class Compilation(
         val scope: Scope,
         val sql: SqlTextBuilder = SqlTextBuilder()
@@ -375,7 +463,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltQuery) {
+        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltSubquery) {
             when (query) {
                 is BuiltSelectQuery -> compileSelect(outerSelect, query)
                 is BuiltValuesQuery -> compileValues(

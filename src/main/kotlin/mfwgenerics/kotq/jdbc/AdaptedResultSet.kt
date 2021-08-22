@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.expr.Reference
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.values.PreLabeledRow
 import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.ValuesRow

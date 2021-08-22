@@ -12,18 +12,14 @@ import java.time.LocalTime
 import kotlin.reflect.KClass
 
 sealed interface ColumnType<T : Any>: ColumnIncrementable<T> {
+    val baseDataType: DataType<*>
+
     val type: KClass<T>
 
     fun equivalentKind(other: DataType<*>): Boolean
 
-    fun equivalentKind(other: ColumnType<*>): Boolean {
-        val downcast: DataType<*> = when (other) {
-            is MappedColumnType<*, *> -> other.dataType
-            is DataType<*> -> other
-        }
-
-        return equivalentKind(downcast)
-    }
+    fun equivalentKind(other: ColumnType<*>): Boolean =
+        equivalentKind(baseDataType)
 
     override fun buildIntoColumnDef(out: BuiltColumnDef): BuildsIntoColumnDef? {
         out.columnType = this
@@ -33,16 +29,18 @@ sealed interface ColumnType<T : Any>: ColumnIncrementable<T> {
 
 class MappedColumnType<F : Any, T : Any>(
     override val type: KClass<T>,
-    val dataType: DataType<F>,
+    override val baseDataType: DataType<F>,
     val converter: TypeConverter<F, T>
 ): ColumnType<T> {
     override fun equivalentKind(other: DataType<*>): Boolean =
-        dataType.equivalentKind(other)
+        baseDataType.equivalentKind(other)
 }
 
 sealed class DataType<T : Any>(
     override val type: KClass<T>
 ): ColumnType<T> {
+    override val baseDataType: DataType<*> get() = this
+
     override fun equivalentKind(other: DataType<*>): Boolean {
         return this::class == other::class
     }

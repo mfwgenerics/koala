@@ -12,11 +12,8 @@ inline fun <T> values(
 ): RowSequence {
     return object : RowSequence {
         override val columns = LabelList(references.asList())
-        var called = false
 
         override fun rowIterator(): RowIterator {
-            called = true
-
             var row = PreLabeledRow(columns)
 
             val iter = source.iterator()
@@ -36,6 +33,43 @@ inline fun <T> values(
                     row = PreLabeledRow(labels)
                     return result
                 }
+            }
+        }
+    }
+}
+
+
+fun values(
+    vararg rows: ValuesRow
+): RowSequence {
+    val labelSet = hashSetOf<Reference<*>>()
+
+    rows.forEach {
+        labelSet.addAll(it.labels.values)
+    }
+
+    return object : RowSequence {
+        override val columns: LabelList = LabelList(labelSet.toList())
+
+        override fun rowIterator(): RowIterator {
+            val iter = rows.iterator()
+
+            return object : RowIterator {
+                override val labels: LabelList get() = columns
+                lateinit var row: ValuesRow
+
+                override fun next(): Boolean {
+                    if (!iter.hasNext()) return false
+
+                    row = iter.next()
+
+                    return true
+                }
+
+                override fun consume(): ValuesRow = row
+
+                override fun <T : Any> get(reference: Reference<T>): T? =
+                    row[reference]
             }
         }
     }
