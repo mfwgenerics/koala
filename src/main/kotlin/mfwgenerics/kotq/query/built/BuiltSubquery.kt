@@ -7,17 +7,23 @@ import mfwgenerics.kotq.query.LockMode
 import mfwgenerics.kotq.sql.Scope
 import mfwgenerics.kotq.values.RowSequence
 
-sealed interface BuiltQuery
+sealed interface BuiltQuery {
+    fun populateScope(scope: Scope)
+}
 
 class BuiltReturningInsert(
     val insert: BuiltInsert,
     val returning: List<Labeled<*>> = emptyList()
-): BuiltQuery
+): BuiltQuery {
+    override fun populateScope(scope: Scope) {
+
+    }
+}
 
 sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
     val columns: LabelList
 
-    fun populateScope(scope: Scope)
+    override fun populateScope(scope: Scope)
 }
 
 data class BuiltSelectQuery(

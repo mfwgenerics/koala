@@ -17,7 +17,7 @@ class TestH2 {
     fun `triangular numbers from values clause subquery`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),
-            DriverManager.getConnection("jdbc:h2:mem:test")
+            DriverManager.getConnection("jdbc:h2:mem:")
         )
 
         val number = name<Int>("number")
@@ -107,13 +107,7 @@ class TestH2 {
         }
     }
 
-    @Test
-    fun `stringy joins`() {
-        val cxn = ConnectionWithDialect(
-            H2Dialect(),
-            DriverManager.getConnection("jdbc:h2:mem:test")
-        )
-
+    fun createAndPopulate(cxn: ConnectionWithDialect) {
         cxn.ddl(createTables(
             ShopTable,
             CustomerTable,
@@ -183,6 +177,16 @@ class TestH2 {
                 ),
             ))
             .performWith(cxn)
+    }
+
+    @Test
+    fun `stringy joins`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:")
+        )
+
+        createAndPopulate(cxn)
 
         val expectedPurchaseItems = listOf(
             listOf("Bob", "Pear", 200),
@@ -220,9 +224,13 @@ class TestH2 {
         assertListOfListsEquals(expectedTotals, actualTotals)
 
         val whoDidntShopAtHardware = CustomerTable
-            .leftJoin(PurchaseTable, (CustomerTable.id eq PurchaseTable.customer).and(
-                PurchaseTable.shop eq hardwareId
-            ))
+            .leftJoin(PurchaseTable
+                .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
+                .where(ShopTable.name eq "Hardware")
+                .select(PurchaseTable, ShopTable)
+                .subquery(),
+                CustomerTable.id eq PurchaseTable.customer
+            )
             .where(PurchaseTable.id.isNull())
             .select(CustomerTable.firstName)
             .performWith(cxn)
@@ -261,10 +269,31 @@ class TestH2 {
     }
 
     @Test
+    fun `update through join`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:")
+        )
+
+        createAndPopulate(cxn)
+
+        CustomerTable
+            .leftJoin(PurchaseTable
+                .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
+                .where(ShopTable.name eq "Hardware")
+                .select(PurchaseTable, ShopTable)
+                .subquery(),
+                CustomerTable.id eq PurchaseTable.customer
+            )
+            .where(PurchaseTable.id.isNull())
+            .update(CustomerTable.firstName setTo "Bawb")
+    }
+
+    @Test
     fun `table diff`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),
-            DriverManager.getConnection("jdbc:h2:mem:test")
+            DriverManager.getConnection("jdbc:h2:mem:")
         )
 
         cxn.ddl(createTables(

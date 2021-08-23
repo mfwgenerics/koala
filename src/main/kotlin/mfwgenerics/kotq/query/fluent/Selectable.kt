@@ -1,14 +1,13 @@
 package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.Assignment
-import mfwgenerics.kotq.Statementable
+import mfwgenerics.kotq.Updated
+import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.Subqueryable
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
-import mfwgenerics.kotq.query.built.BuiltSelectQuery
-import mfwgenerics.kotq.query.built.BuiltSubquery
+import mfwgenerics.kotq.query.built.*
 
 interface Selectable: BuildsIntoSelect {
     private class Select(
@@ -27,7 +26,22 @@ interface Selectable: BuildsIntoSelect {
     fun select(vararg references: NamedExprs): Subqueryable =
         Select(this, references.asSequence().flatMap { it.namedExprs() }.toList())
 
-    fun update(vararg assignments: Assignment<*>): Statementable =
+    private class Update(
+        val of: Selectable,
+        val assignments: List<Assignment<*>>
+    ): Updated {
+        override fun buildsIntoUpdate(out: BuiltUpdate): BuildsIntoUpdate? {
+            out.select = of.buildSelect()
+            out.assignments = assignments
+            return null
+        }
+    }
+
+    fun update(vararg assignments: Assignment<*>): Updated =
+        Update(this, assignments.asList())
+
+    /* Relation rather than Table e.g. self join delete may delete by alias */
+    fun delete(vararg relations: Relvar): Nothing =
         TODO()
 }
 

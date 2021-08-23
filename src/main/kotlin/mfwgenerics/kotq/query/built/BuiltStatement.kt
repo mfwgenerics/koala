@@ -1,3 +1,7 @@
 package mfwgenerics.kotq.query.built
 
-interface BuiltStatement
+import mfwgenerics.kotq.sql.Scope
+
+sealed interface BuiltStatement {
+    fun populateScope(scope: Scope)
+}

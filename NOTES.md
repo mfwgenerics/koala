@@ -38,3 +38,7 @@ Error handling:
 * Wrap exceptions so the issue can be pointed to in the generated SQL
 * Better scope names? tag them with "outer", "inner" or alias perhaps
 * Explain scope contents?
+
+Refactoring:
+* Clean up spaghetti of update/insert/select distinctions
+* Deep nested field accesses in H2 compiler

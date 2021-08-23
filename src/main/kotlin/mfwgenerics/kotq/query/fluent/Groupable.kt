@@ -1,7 +1,5 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.Statementable
-import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.query.built.BuildsIntoSelectBody
 import mfwgenerics.kotq.query.built.BuildsIntoWhereQuery
@@ -20,8 +18,4 @@ interface Groupable: Windowable, Orderable, BuildsIntoWhereQuery {
 
     fun groupBy(vararg exprs: Expr<*>): Havingable =
         GroupBy(this, exprs.asList())
-
-    /* Relation rather than Table e.g. self join delete may delete by alias */
-    fun delete(vararg relations: Relvar): Statementable =
-        TODO()
 }

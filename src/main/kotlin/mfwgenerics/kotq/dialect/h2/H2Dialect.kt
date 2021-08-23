@@ -504,52 +504,38 @@ class H2Dialect: SqlDialect {
 
             compileQuery(emptyList(), insert.query)
         }
+
+        fun compileUpdate(update: BuiltUpdate) {
+            val query = update.select
+
+            compileWiths(query.body.where.withType, query.body.where.withs)
+
+            if (query.body.where.withs.isNotEmpty()) sql.addSql("\n")
+
+            sql.addSql("UPDATE ")
+
+            TODO()
+        }
     }
 
     override fun compile(statement: BuiltStatement): SqlText {
-        if (statement is BuiltSelectQuery) {
-            val registry = NameRegistry()
+        val registry = NameRegistry()
+        val scope = Scope(registry)
 
-            val scope = Scope(registry)
+        val compilation = Compilation(
+            scope = scope
+        )
 
-            statement.populateScope(scope)
+        statement.populateScope(scope)
 
-            val compilation = Compilation(
-                scope = scope
-            )
-
-            compilation.compileSelect(emptyList(), statement)
-
-            return compilation.sql.toSql()
-        } else if (statement is BuiltValuesQuery) {
-            val registry = NameRegistry()
-
-            val scope = Scope(registry)
-
-            statement.populateScope(scope)
-
-            val compilation = Compilation(
-                scope = scope
-            )
-
-            compilation.compileValues(statement)
-
-            return compilation.sql.toSql()
-        } else if (statement is BuiltInsert) {
-            val registry = NameRegistry()
-
-            val scope = Scope(registry)
-
-            statement.populateScope(scope)
-
-            val compilation = Compilation(
-                scope = scope
-            )
-
-            compilation.compileInsert(statement)
-
-            return compilation.sql.toSql()
+        when (statement) {
+            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
+            is BuiltValuesQuery -> compilation.compileValues(statement)
+            is BuiltInsert -> compilation.compileInsert(statement)
+            is BuiltUpdate -> compilation.compileUpdate(statement)
         }
+
+        return compilation.sql.toSql()
 
         error("can't compile $statement")
     }

@@ -11,7 +11,7 @@ class BuiltInsert: BuiltStatement {
 
     lateinit var query: BuiltSubquery
 
-    fun populateScope(scope: Scope) {
+    override fun populateScope(scope: Scope) {
 
     }
 }
