@@ -9,6 +9,6 @@ class BuiltUpdate: BuiltStatement {
     var assignments: List<Assignment<*>> = emptyList()
 
     override fun populateScope(scope: Scope) {
-
+        select.populateScope(scope)
     }
 }

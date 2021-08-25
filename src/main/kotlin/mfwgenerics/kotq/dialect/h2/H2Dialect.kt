@@ -209,8 +209,10 @@ class H2Dialect: SqlDialect {
             }
         }
 
+        fun exhaustive(value: Any?) { }
+
         fun compileExpr(expr: Expr<*>, emitParens: Boolean = true) {
-            when (expr) {
+            exhaustive(when (expr) {
                 is OperationExpr -> {
                     when (expr.type.fixity) {
                         OperationFixity.PREFIX -> {
@@ -277,7 +279,26 @@ class H2Dialect: SqlDialect {
                         compileCastDataType(expr.type)
                     }
                 }
-            }
+                is ExistsOperation -> {
+                    if (expr.not) sql.addSql("NOT ")
+                    sql.addSql("EXISTS")
+                    sql.parenthesize {
+                        val innerScope = scope.innerScope()
+
+                        expr.subquery.populateScope(innerScope)
+
+                        val compilation = Compilation(
+                            sql = sql,
+                            scope = innerScope
+                        )
+
+                        when (val subquery = expr.subquery) {
+                            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), subquery)
+                            is BuiltValuesQuery -> compilation.compileValues(subquery)
+                        }
+                    }
+                }
+            })
         }
 
         fun compileRelation(relation: BuiltRelation) {
@@ -514,7 +535,29 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("UPDATE ")
 
-            TODO()
+            compileRelation(update.select.body.where.relation)
+
+            sql.addSql("\nSET ")
+
+            val updatePrefix = sql.prefix("", ", ")
+
+            check (query.body.where.joins.isEmpty()) {
+                "H2 does not support JOIN in update"
+            }
+
+            update.assignments
+                .forEach {
+                    updatePrefix.next {
+                        compileExpr(it.reference, false)
+                        sql.addSql(" = ")
+                        compileExpr(it.expr)
+                    }
+                }
+
+            query.body.where.where?.let {
+                sql.addSql("\nWHERE ")
+                compileExpr(it, false)
+            }
         }
     }
 

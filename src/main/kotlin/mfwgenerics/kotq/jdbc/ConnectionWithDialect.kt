@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.jdbc
 
+import mfwgenerics.kotq.Updated
 import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
@@ -53,6 +54,14 @@ class ConnectionWithDialect(
         prepare(sql).execute()
     }
 
+    fun execute(updated: Updated) {
+        val built = updated.buildUpdate()
+
+        val sql = dialect.compile(built)
+
+        prepare(sql).execute()
+    }
+
     fun query(queryable: Queryable): RowSequence {
         val built = queryable.buildQuery()
 
@@ -72,12 +81,12 @@ class ConnectionWithDialect(
 
                 if (!column.builtDef.autoIncrement) err()
 
+                prepared.execute()
+
                 return object : RowSequence {
                     override val columns: LabelList = LabelList(built.returning.map { it.name })
 
                     override fun rowIterator(): RowIterator {
-                        prepared.execute()
-
                         return AdaptedResultSet(columns, prepared.generatedKeys)
                     }
                 }
@@ -87,12 +96,12 @@ class ConnectionWithDialect(
 
                 val prepared = prepare(sql)
 
+                val results = prepared.executeQuery()
+
                 return object : RowSequence {
                     override val columns: LabelList = built.columns
 
                     override fun rowIterator(): RowIterator {
-                        val results = prepared.executeQuery()
-
                         return AdaptedResultSet(columns, results)
                     }
                 }

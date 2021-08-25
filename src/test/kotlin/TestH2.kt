@@ -269,7 +269,7 @@ class TestH2 {
     }
 
     @Test
-    fun `update through join`() {
+    fun `update through not exists`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),
             DriverManager.getConnection("jdbc:h2:mem:")
@@ -278,15 +278,20 @@ class TestH2 {
         createAndPopulate(cxn)
 
         CustomerTable
-            .leftJoin(PurchaseTable
+            .where(notExists(PurchaseTable
                 .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
                 .where(ShopTable.name eq "Hardware")
-                .select(PurchaseTable, ShopTable)
-                .subquery(),
-                CustomerTable.id eq PurchaseTable.customer
-            )
-            .where(PurchaseTable.id.isNull())
+                .where(CustomerTable.id eq PurchaseTable.customer)
+                .select(PurchaseTable.id)
+            ))
             .update(CustomerTable.firstName setTo "Bawb")
+            .performWith(cxn)
+
+        CustomerTable
+            .where(CustomerTable.firstName eq "Bawb")
+            .select(CustomerTable.firstName)
+            .performWith(cxn)
+            .single()
     }
 
     @Test

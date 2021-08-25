@@ -5,6 +5,8 @@ import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.expr.built.BuildsIntoAggregatedExpr
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.Alias
+import mfwgenerics.kotq.query.Subqueryable
+import mfwgenerics.kotq.query.built.BuiltSubquery
 import kotlin.reflect.KClass
 
 sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {
@@ -71,3 +73,8 @@ class OperationExpr<T : Any>(
     val type: OperationType,
     val args: Collection<Expr<*>>
 ): Expr<T>
+
+class ExistsOperation(
+    val not: Boolean,
+    val subquery: BuiltSubquery
+): Expr<Boolean>
