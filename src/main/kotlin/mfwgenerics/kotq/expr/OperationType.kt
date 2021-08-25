@@ -17,6 +17,12 @@ enum class OperationType(
     OR("OR", OperationFixity.INFIX),
     NOT("NOT", OperationFixity.INFIX),
 
+    IN("IN", OperationFixity.INFIX),
+    NOT_IN("NOT IN", OperationFixity.INFIX),
+
     IS_NULL("IS NULL", OperationFixity.POSTFIX),
-    IS_NOT_NULL("IS NOT NULL", OperationFixity.POSTFIX)
+    IS_NOT_NULL("IS NOT NULL", OperationFixity.POSTFIX),
+
+    EXISTS("EXISTS", OperationFixity.PREFIX),
+    NOT_EXISTS("NOT EXISTS", OperationFixity.PREFIX)
 }

@@ -74,7 +74,10 @@ class OperationExpr<T : Any>(
     val args: Collection<Expr<*>>
 ): Expr<T>
 
-class ExistsOperation(
-    val not: Boolean,
+class SubqueryExpr(
     val subquery: BuiltSubquery
-): Expr<Boolean>
+): Expr<SubqueryMarker>
+
+class ExprListExpr<T : Any>(
+    val exprs: Collection<Expr<T>>
+): Expr<ExprListMarker<T>>

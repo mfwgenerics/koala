@@ -3,6 +3,7 @@ package mfwgenerics.kotq.dsl
 import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.Subqueryable
+import mfwgenerics.kotq.query.fluent.SelectedJust
 
 infix fun <T : Any> Expr<T>.eq(rhs: Expr<T>): Expr<Boolean> = OperationExpr(OperationType.EQ, listOf(this, rhs))
 inline infix fun <reified T : Any> Expr<T>.eq(rhs: T): Expr<Boolean> = eq(literal(rhs))
@@ -31,10 +32,28 @@ fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationExpr(OperationType.IS_N
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationExpr(OperationType.IS_NOT_NULL, listOf(this))
 
 fun exists(query: Subqueryable): Expr<Boolean> =
-    ExistsOperation(false, query.buildQuery())
+    OperationExpr(OperationType.EXISTS, listOf(SubqueryExpr(query.buildQuery())))
 
 fun notExists(query: Subqueryable): Expr<Boolean> =
-    ExistsOperation(true, query.buildQuery())
+    OperationExpr(OperationType.NOT_EXISTS, listOf(SubqueryExpr(query.buildQuery())))
+
+infix fun <T : Any> Expr<T>.inQuery(query: SelectedJust<T>): Expr<Boolean> =
+    OperationExpr(OperationType.IN, listOf(this, SubqueryExpr(query.buildQuery())))
+
+infix fun <T : Any> Expr<T>.notInQuery(query: SelectedJust<T>): Expr<Boolean> =
+    OperationExpr(OperationType.NOT_IN, listOf(this, SubqueryExpr(query.buildQuery())))
+
+infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> =
+    OperationExpr(OperationType.IN, listOf(this, ExprListExpr(values)))
+
+infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolean> =
+    OperationExpr(OperationType.NOT_IN, listOf(this, ExprListExpr(values)))
+
+inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T>): Expr<Boolean> =
+    inExprs(values.map { Literal(T::class, it) })
+
+inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T>): Expr<Boolean> =
+    notInExprs(values.map { Literal(T::class, it) })
 
 fun <T : Any> cast(from: Expr<*>, to: DataType<T>): Expr<T> =
     CastExpr(from, to)

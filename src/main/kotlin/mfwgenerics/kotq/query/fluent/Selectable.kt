@@ -5,15 +5,16 @@ import mfwgenerics.kotq.Updated
 import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.NamedExprs
+import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.*
 
 interface Selectable: BuildsIntoSelect {
-    private class Select(
+    private class Select<T : Any>(
         val of: Selectable,
         val references: List<Labeled<*>>
-    ): Subqueryable, BuildsIntoSelect {
+    ): SelectedJust<T>, BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
         override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
@@ -23,8 +24,17 @@ interface Selectable: BuildsIntoSelect {
         }
     }
 
-    fun select(vararg references: NamedExprs): Subqueryable =
+    private fun <T : Any> selectInternal(references: List<NamedExprs>): SelectedJust<T> =
         Select(this, references.asSequence().flatMap { it.namedExprs() }.toList())
+
+    fun select(vararg references: NamedExprs): Subqueryable =
+        selectInternal<Nothing>(references.asList())
+
+    fun <T : Any> select(labeled: Labeled<T>): SelectedJust<T> =
+        selectInternal(listOf(labeled))
+
+    fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
+        selectInternal(listOf(reference))
 
     private class Update(
         val of: Selectable,
