@@ -26,7 +26,12 @@ enum class OperationType(
     EXISTS("EXISTS", OperationFixity.PREFIX),
     NOT_EXISTS("NOT EXISTS", OperationFixity.PREFIX),
 
-    DIVIDE("/", OperationFixity.INFIX);
+    PLUS("+", OperationFixity.INFIX),
+    MINUS("-", OperationFixity.INFIX),
+    MULTIPLY("*", OperationFixity.INFIX),
+    DIVIDE("/", OperationFixity.INFIX),
+
+    UNARY_MINUS("-", OperationFixity.PREFIX);
 
     operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
         OperationExpr(this, args.toList())
