@@ -8,6 +8,8 @@ class SqlTextBuilder {
         contents.append(sql)
     }
 
+    fun addSql(sql: StandardSql) { addSql(sql.sql) }
+
     fun addValue(value: Any?) {
         if (value == null) {
             addSql("NULL")

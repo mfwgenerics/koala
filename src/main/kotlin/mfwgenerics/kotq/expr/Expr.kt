@@ -10,7 +10,22 @@ import kotlin.reflect.KClass
 
 sealed interface QuasiExpr
 
-sealed interface Expr<T : Any>: QuasiExpr, Ordinal<T>, OrderableAggregatable<T> {
+class SubqueryExpr(
+    val subquery: BuiltSubquery
+): QuasiExpr
+
+class ExprListExpr<T : Any>(
+    val exprs: Collection<Expr<T>>
+): QuasiExpr
+
+sealed interface ComparisonOperand<T : Any>: QuasiExpr
+
+class ComparedQuery<T : Any>(
+    val type: ComparedQueryType,
+    val subquery: BuiltSubquery
+): ComparisonOperand<T>
+
+sealed interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
     fun asc() = OrderKey(SortOrder.ASC, this)
@@ -74,11 +89,3 @@ class OperationExpr<T : Any>(
     val type: OperationType,
     val args: Collection<QuasiExpr>
 ): Expr<T>
-
-class SubqueryExpr(
-    val subquery: BuiltSubquery
-): QuasiExpr
-
-class ExprListExpr<T : Any>(
-    val exprs: Collection<Expr<T>>
-): QuasiExpr

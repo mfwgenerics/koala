@@ -299,6 +299,66 @@ class TestH2 {
     }
 
     @Test
+    fun `insert from select and subquery comparisons`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:")
+        )
+
+        createAndPopulate(cxn)
+
+        val (bobId, janeId) = CustomerTable
+            .where(CustomerTable.firstName inValues listOf("Bob", "Jane"))
+            .orderBy(CustomerTable.firstName)
+            .select(CustomerTable.id)
+            .performWith(cxn)
+            .map { it[CustomerTable.id]!! }
+            .toList()
+
+        PurchaseTable
+            .insert(PurchaseTable
+                .where((PurchaseTable.id eq bobId).and(PurchaseTable.product eq "Pear"))
+                .select(
+                    /* need a way to automate these field selects and only specify the overrides */
+                    PurchaseTable.id,
+                    PurchaseTable.shop,
+                    PurchaseTable.customer,
+                    literal("NanoPear") `as` PurchaseTable.product,
+                    cast(PurchaseTable.price / 100, DataType.INT32) `as` PurchaseTable.price,
+                    PurchaseTable.discount
+                )
+            )
+            .performWith(cxn)
+
+        val janesPurchasePrices = PurchaseTable
+            .where(PurchaseTable.customer eq janeId)
+            .select(PurchaseTable.price)
+
+        val cheaperThanAll = PurchaseTable
+            .where((PurchaseTable.customer eq bobId)
+                .and(PurchaseTable.price less all(janesPurchasePrices))
+            )
+            .orderBy(PurchaseTable.product)
+            .select(PurchaseTable.product)
+            .performWith(cxn)
+            .map { it[PurchaseTable.product] }
+            .toList()
+
+        val cheaperThanAny = PurchaseTable
+            .where((PurchaseTable.customer eq bobId)
+                .and(PurchaseTable.price less any(janesPurchasePrices))
+            )
+            .orderBy(PurchaseTable.product)
+            .select(PurchaseTable.product)
+            .performWith(cxn)
+            .map { it[PurchaseTable.product] }
+            .toList()
+
+        assertListEquals(cheaperThanAll, listOf("NanoPear"))
+        assertListEquals(cheaperThanAny, listOf("NanoPear", "Pear", "Pen"))
+    }
+
+    @Test
     fun `table diff`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),

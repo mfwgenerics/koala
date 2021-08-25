@@ -22,11 +22,11 @@ Misc:
 * do not attempt to represent NULLability as Kotlin optional. poor fit to SQL semantics
 * shared subcase for different INT data types?
 
-
-Pain points:
-* No way to dynamically select (select only fields that query brings into scope)
-* need some selectAll type option?
-* Selecting a whole Table should only select the table fields in scope? error is surprising to user  
+Selection:
+* Need a way to dynamically select (select only fields that query brings into scope)
+* A selectAll type option?
+* Selecting a whole Table should only select the table fields in scope? error is surprising to user
+* Should be able to select table fields but override specific fields using labels  
 
 Data typing:
  

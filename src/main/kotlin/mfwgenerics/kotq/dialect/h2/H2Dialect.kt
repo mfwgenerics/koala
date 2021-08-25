@@ -209,6 +209,28 @@ class H2Dialect: SqlDialect {
             }
         }
 
+        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltSubquery) {
+            val innerScope = scope.innerScope()
+
+            query.populateScope(innerScope)
+
+            val compilation = Compilation(
+                sql = sql,
+                scope = innerScope
+            )
+
+            when (query) {
+                is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
+                is BuiltValuesQuery -> compilation.compileValues(query)
+            }
+        }
+
+        fun compileSubqueryExpr(subquery: BuiltSubquery) {
+            sql.parenthesize {
+                compileQuery(emptyList(), subquery)
+            }
+        }
+
         fun exhaustive(value: Any?) { }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
@@ -279,25 +301,15 @@ class H2Dialect: SqlDialect {
                         compileCastDataType(expr.type)
                     }
                 }
-                is SubqueryExpr -> sql.parenthesize {
-                    val innerScope = scope.innerScope()
-
-                    expr.subquery.populateScope(innerScope)
-
-                    val compilation = Compilation(
-                        sql = sql,
-                        scope = innerScope
-                    )
-
-                    when (val subquery = expr.subquery) {
-                        is BuiltSelectQuery -> compilation.compileSelect(emptyList(), subquery)
-                        is BuiltValuesQuery -> compilation.compileValues(subquery)
-                    }
-                }
+                is SubqueryExpr -> compileSubqueryExpr(expr.subquery)
                 is ExprListExpr<*> -> sql.parenthesize {
                     sql.prefix("", ", ").forEach(expr.exprs) {
                         compileExpr(it, false)
                     }
+                }
+                is ComparedQuery<*> -> {
+                    sql.addSql(expr.type)
+                    compileSubqueryExpr(expr.subquery)
                 }
             })
         }
@@ -482,15 +494,6 @@ class H2Dialect: SqlDialect {
                     }
                     sql.addSql(")")
                 }
-            }
-        }
-
-        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltSubquery) {
-            when (query) {
-                is BuiltSelectQuery -> compileSelect(outerSelect, query)
-                is BuiltValuesQuery -> compileValues(
-                    query
-                )
             }
         }
 
