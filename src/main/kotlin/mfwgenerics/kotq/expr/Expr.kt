@@ -5,11 +5,12 @@ import mfwgenerics.kotq.ddl.DataType
 import mfwgenerics.kotq.expr.built.BuildsIntoAggregatedExpr
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.Alias
-import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.BuiltSubquery
 import kotlin.reflect.KClass
 
-sealed interface Expr<T : Any>: Ordinal<T>, OrderableAggregatable<T> {
+sealed interface QuasiExpr
+
+sealed interface Expr<T : Any>: QuasiExpr, Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
     fun asc() = OrderKey(SortOrder.ASC, this)
@@ -71,13 +72,13 @@ class Literal<T : Any>(
 
 class OperationExpr<T : Any>(
     val type: OperationType,
-    val args: Collection<Expr<*>>
+    val args: Collection<QuasiExpr>
 ): Expr<T>
 
 class SubqueryExpr(
     val subquery: BuiltSubquery
-): Expr<SubqueryMarker>
+): QuasiExpr
 
 class ExprListExpr<T : Any>(
     val exprs: Collection<Expr<T>>
-): Expr<ExprListMarker<T>>
+): QuasiExpr

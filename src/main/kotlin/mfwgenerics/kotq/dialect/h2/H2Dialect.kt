@@ -211,9 +211,9 @@ class H2Dialect: SqlDialect {
 
         fun exhaustive(value: Any?) { }
 
-        fun compileExpr(expr: Expr<*>, emitParens: Boolean = true) {
+        fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
             exhaustive(when (expr) {
-                is OperationExpr -> {
+                is OperationExpr<*> -> {
                     when (expr.type.fixity) {
                         OperationFixity.PREFIX -> {
                             sql.parenthesize(emitParens) {
@@ -246,9 +246,9 @@ class H2Dialect: SqlDialect {
                         }
                     }
                 }
-                is Literal -> sql.addValue(expr.value)
-                is Reference -> { compileReference(expr) }
-                is AggregatedExpr -> {
+                is Literal<*> -> sql.addValue(expr.value)
+                is Reference<*> -> { compileReference(expr) }
+                is AggregatedExpr<*> -> {
                     val built = expr.buildAggregated()
 
                     sql.addSql(built.expr.type.sql)
@@ -271,7 +271,7 @@ class H2Dialect: SqlDialect {
                         sql.addSql(")")
                     }
                 }
-                is CastExpr -> {
+                is CastExpr<*> -> {
                     sql.addSql("CAST")
                     sql.parenthesize {
                         compileExpr(expr.of, false)
