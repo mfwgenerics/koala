@@ -284,12 +284,16 @@ class TestH2 {
                 .where(CustomerTable.id eq PurchaseTable.customer)
                 .select(PurchaseTable.id)
             ))
-            .update(CustomerTable.firstName setTo "Bawb")
+            .update(
+                CustomerTable.firstName setTo "Bawb",
+                CustomerTable.lastName setTo CustomerTable.firstName
+            )
             .performWith(cxn)
 
         CustomerTable
             .where(CustomerTable.firstName eq "Bawb")
-            .select(CustomerTable.firstName)
+            .where(CustomerTable.lastName eq "Bob")
+            .select(CustomerTable)
             .performWith(cxn)
             .single()
     }
