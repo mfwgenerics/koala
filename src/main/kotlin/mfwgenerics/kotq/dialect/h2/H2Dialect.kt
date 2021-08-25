@@ -350,7 +350,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQueryWhere(query: BuiltWhere) {
+        fun compileQueryWhere(query: BuiltSelectQuery) {
             compileRelation(query.relation)
 
             query.joins.forEach { join ->
@@ -368,8 +368,8 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileSelectBody(body: BuiltSelectBody) {
-            compileQueryWhere(body.where)
+        fun compileSelectBody(body: BuiltSelectQuery) {
+            compileQueryWhere(body)
 
             sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
                 compileExpr(it, false)
@@ -430,9 +430,9 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileSelect(outerSelect: List<Labeled<*>>, select: BuiltSelectQuery) {
-            val withs = select.body.where.withs
+            val withs = select.withs
 
-            compileWiths(select.body.where.withType, withs)
+            compileWiths(select.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
 
@@ -449,7 +449,7 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("\nFROM ")
 
-            compileSelectBody(select.body)
+            compileSelectBody(select)
 
             select.setOperations.forEach {
                 compileSetOperation(select.selected, it)
@@ -533,19 +533,19 @@ class H2Dialect: SqlDialect {
         fun compileUpdate(update: BuiltUpdate) {
             val query = update.select
 
-            compileWiths(query.body.where.withType, query.body.where.withs)
+            compileWiths(query.withType, query.withs)
 
-            if (query.body.where.withs.isNotEmpty()) sql.addSql("\n")
+            if (query.withs.isNotEmpty()) sql.addSql("\n")
 
             sql.addSql("UPDATE ")
 
-            compileRelation(update.select.body.where.relation)
+            compileRelation(update.select.relation)
 
             sql.addSql("\nSET ")
 
             val updatePrefix = sql.prefix("", ", ")
 
-            check (query.body.where.joins.isEmpty()) {
+            check (query.joins.isEmpty()) {
                 "H2 does not support JOIN in update"
             }
 
@@ -558,7 +558,7 @@ class H2Dialect: SqlDialect {
                     }
                 }
 
-            query.body.where.where?.let {
+            query.where?.let {
                 sql.addSql("\nWHERE ")
                 compileExpr(it, false)
             }
@@ -583,7 +583,5 @@ class H2Dialect: SqlDialect {
         }
 
         return compilation.sql.toSql()
-
-        error("can't compile $statement")
     }
 }

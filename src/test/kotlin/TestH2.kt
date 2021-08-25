@@ -9,7 +9,6 @@ import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
 import java.sql.DriverManager
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class TestH2 {

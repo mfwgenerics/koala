@@ -7,7 +7,7 @@ import mfwgenerics.kotq.query.fluent.Withable
 interface AliasedRelation: Withable, NamedExprs {
     fun buildQueryRelation(): BuiltRelation
 
-    override fun buildIntoWhere(out: BuiltWhere): BuildsIntoWhereQuery? {
+    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
         out.relation = buildQueryRelation()
         return null
     }

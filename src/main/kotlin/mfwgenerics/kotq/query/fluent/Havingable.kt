@@ -2,15 +2,15 @@ package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.dsl.and
 import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.query.built.BuildsIntoSelectBody
-import mfwgenerics.kotq.query.built.BuiltSelectBody
+import mfwgenerics.kotq.query.built.BuildsIntoSelect
+import mfwgenerics.kotq.query.built.BuiltSelectQuery
 
 interface Havingable: Windowable {
     private class Having(
         val of: Havingable,
         val having: Expr<Boolean>
     ): Havingable {
-        override fun buildIntoSelectBody(out: BuiltSelectBody): BuildsIntoSelectBody? {
+        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
             out.having = out.having?.and(having)?:having
             return of
         }

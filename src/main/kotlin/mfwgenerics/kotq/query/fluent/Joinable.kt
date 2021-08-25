@@ -3,9 +3,9 @@ package mfwgenerics.kotq.query.fluent
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.query.AliasedRelation
 import mfwgenerics.kotq.query.JoinType
-import mfwgenerics.kotq.query.built.BuildsIntoWhereQuery
+import mfwgenerics.kotq.query.built.BuildsIntoSelect
 import mfwgenerics.kotq.query.built.BuiltJoin
-import mfwgenerics.kotq.query.built.BuiltWhere
+import mfwgenerics.kotq.query.built.BuiltSelectQuery
 
 interface Joinable: Whereable {
     private class Join(
@@ -14,7 +14,7 @@ interface Joinable: Whereable {
         val to: AliasedRelation,
         val on: Expr<Boolean>
     ): Joinable {
-        override fun buildIntoWhere(out: BuiltWhere): BuildsIntoWhereQuery? {
+        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
             out.joins.add(BuiltJoin(
                 type = type,
                 to = to.buildQueryRelation(),

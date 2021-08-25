@@ -1,11 +1,14 @@
 package mfwgenerics.kotq.query.built
 
+import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Labeled
 import mfwgenerics.kotq.expr.Ordinal
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.LockMode
+import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.sql.Scope
 import mfwgenerics.kotq.values.RowSequence
+import mfwgenerics.kotq.window.LabeledWindow
 
 sealed interface BuiltQuery {
     fun populateScope(scope: Scope)
@@ -26,24 +29,50 @@ sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
     override fun populateScope(scope: Scope)
 }
 
-data class BuiltSelectQuery(
-    val body: BuiltSelectBody = BuiltSelectBody(),
+class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
+    lateinit var relation: BuiltRelation
 
-    val setOperations: MutableList<BuiltSetOperation> = arrayListOf(),
+    var withType = WithType.NOT_RECURSIVE
+    var withs: List<BuiltWith> = emptyList()
 
-    var orderBy: List<Ordinal<*>> = emptyList(),
+    val joins: MutableList<BuiltJoin> = arrayListOf()
 
-    var offset: Int = 0,
-    var limit: Int? = null,
+    var where: Expr<Boolean>? = null
 
-    var locking: LockMode? = null,
+    var groupBy: List<Expr<*>> = arrayListOf()
+    var having: Expr<Boolean>? = null
+
+    var windows: List<LabeledWindow> = emptyList()
+
+    val setOperations: MutableList<BuiltSetOperation> = arrayListOf()
+
+    var orderBy: List<Ordinal<*>> = emptyList()
+
+    var offset: Int = 0
+    var limit: Int? = null
+
+    var locking: LockMode? = null
 
     var selected: List<Labeled<*>> = emptyList()
-): BuiltSubquery, BuiltStatement {
+
     override lateinit var columns: LabelList
 
     override fun populateScope(scope: Scope) {
-        body.populateScope(scope)
+        relation.populateScope(scope)
+
+        joins.forEach { it.populateScope(scope) }
+
+        withs.forEach {
+            val innerScope = scope.innerScope()
+
+            it.query.populateScope(innerScope)
+
+            innerScope.externals().forEach { name ->
+                scope.internal(it.alias[name], name, it.alias)
+            }
+
+            scope.register(it.alias, innerScope)
+        }
 
         selected.forEach {
             it.namedExprs().forEach { labeled ->
