@@ -366,6 +366,23 @@ class TestH2 {
     }
 
     @Test
+    fun `various selections`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:")
+        )
+
+        createAndPopulate(cxn)
+
+        val alias = alias()
+
+        PurchaseTable
+            .alias(alias)
+            .select(PurchaseTable.alias(alias))
+            .performWith(cxn)
+    }
+
+    @Test
     fun `table diff`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),

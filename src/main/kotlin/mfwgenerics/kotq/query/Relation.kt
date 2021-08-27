@@ -12,10 +12,6 @@ sealed interface Relation: AliasedRelation {
 
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(this, null)
-
-    override fun buildIntoSelection(selection: SelectionBuilder) {
-        selection.fromRelation(this)
-    }
 }
 
 interface Relvar: Relation {
