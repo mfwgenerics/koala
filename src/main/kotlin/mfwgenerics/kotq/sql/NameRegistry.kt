@@ -2,6 +2,7 @@ package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.Alias
+import mfwgenerics.kotq.query.Cte
 import mfwgenerics.kotq.window.WindowLabel
 
 class NameRegistry {
@@ -10,9 +11,15 @@ class NameRegistry {
 
     private fun generate(prefix: String): String = "$prefix${generated++}"
 
+    operator fun get(cte: Cte): String =
+        registered.getOrPut(cte) { cte
+            .identifier.asString
+            ?: generate("T")
+        }
+
     operator fun get(name: Reference<*>): String =
         registered.getOrPut(name) { name
-            ?.identifier?.asString
+            .identifier?.asString
             ?: generate("n")
         }
 

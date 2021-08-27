@@ -360,6 +360,16 @@ class TestH2 {
     }
 
     @Test
+    fun `join to cte`() {
+        val cxn = ConnectionWithDialect(
+            H2Dialect(),
+            DriverManager.getConnection("jdbc:h2:mem:")
+        )
+
+        createAndPopulate(cxn)
+    }
+
+    @Test
     fun `table diff`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),

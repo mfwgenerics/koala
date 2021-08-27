@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.expr.Labeled
+import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.Returning
 import mfwgenerics.kotq.query.built.BuildsIntoInsert
@@ -9,7 +9,7 @@ import mfwgenerics.kotq.query.built.BuiltReturningInsert
 interface Inserted: BuildsIntoInsert {
     private class InsertedReturning(
         val inserted: Inserted,
-        val returning: List<Labeled<*>> = emptyList()
+        val returning: List<SelectedExpr<*>> = emptyList()
     ): Returning {
         override fun buildQuery(): BuiltReturningInsert = BuiltReturningInsert(
             inserted.buildInsert(),

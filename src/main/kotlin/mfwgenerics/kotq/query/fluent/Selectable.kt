@@ -2,18 +2,18 @@ package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.Assignment
 import mfwgenerics.kotq.Updated
-import mfwgenerics.kotq.dsl.Relvar
-import mfwgenerics.kotq.expr.Labeled
+import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
+import mfwgenerics.kotq.query.Relvar
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.*
 
 interface Selectable: BuildsIntoSelect {
     private class Select<T : Any>(
         val of: Selectable,
-        val references: List<Labeled<*>>
+        val references: List<SelectedExpr<*>>
     ): SelectedJust<T>, BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
@@ -30,7 +30,7 @@ interface Selectable: BuildsIntoSelect {
     fun select(vararg references: NamedExprs): Subqueryable =
         selectInternal<Nothing>(references.asList())
 
-    fun <T : Any> select(labeled: Labeled<T>): SelectedJust<T> =
+    fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
         selectInternal(listOf(labeled))
 
     fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =

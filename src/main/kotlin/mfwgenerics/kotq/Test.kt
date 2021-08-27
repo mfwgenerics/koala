@@ -16,8 +16,8 @@ fun main() {
 
     //val selected = selected(TestTable.column1)
 
-    val cte = Alias(IdentifierName("cte0"))
-    val cte2 = Alias(IdentifierName("cte1"))
+    val cte = cte("cte0")
+    val cte2 = cte("cte1")
 
     val selfJoined = Alias(IdentifierName("selfJoined"))
     val renamed = name<Int>("renamed")
@@ -44,9 +44,9 @@ fun main() {
         .having(TestTable.column1 eq TestTable.column1)
         .window(window `as` all()
             .partitionBy(literal(1))
-            .orderBy(TestTable.column1, cte[TestTable.column1]),
+            .orderBy(TestTable.column1, TestTable.column1),
             window2 `as` all()
-            .orderBy(TestTable.column1, cte[TestTable.column1]))
+            .orderBy(TestTable.column1, TestTable.column1))
         .union(TestTable)
         .orderBy(TestTable.column1, TestTable.column1.desc())
         .offset(20)
@@ -71,6 +71,10 @@ fun main() {
         )
 
     val alias = Alias(IdentifierName("Y"))
+
+    println(
+        H2Dialect().compile(test.buildQuery())
+    )
 
     println(
         H2Dialect().compile(

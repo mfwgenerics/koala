@@ -1,8 +1,9 @@
 package mfwgenerics.kotq.query.built
 
 import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.Labeled
+import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.Ordinal
+import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.LockMode
 import mfwgenerics.kotq.query.WithType
@@ -16,7 +17,7 @@ sealed interface BuiltQuery {
 
 class BuiltReturningInsert(
     val insert: BuiltInsert,
-    val returning: List<Labeled<*>> = emptyList()
+    val returning: List<SelectedExpr<*>> = emptyList()
 ): BuiltQuery {
     override fun populateScope(scope: Scope) {
 
@@ -25,6 +26,8 @@ class BuiltReturningInsert(
 
 sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
     val columns: LabelList
+
+    fun exports(): Sequence<Reference<*>>
 
     override fun populateScope(scope: Scope)
 }
@@ -53,9 +56,12 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
 
     var locking: LockMode? = null
 
-    var selected: List<Labeled<*>> = emptyList()
+    var selected: List<SelectedExpr<*>> = emptyList()
 
     override lateinit var columns: LabelList
+
+    override fun exports(): Sequence<Reference<*>> =
+        selected.asSequence().flatMap { it.namedExprs() }.map { it.name }
 
     override fun populateScope(scope: Scope) {
         relation.populateScope(scope)
@@ -63,15 +69,7 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
         joins.forEach { it.populateScope(scope) }
 
         withs.forEach {
-            val innerScope = scope.innerScope()
-
-            it.query.populateScope(innerScope)
-
-            innerScope.externals().forEach { name ->
-                scope.internal(it.alias[name], name, it.alias)
-            }
-
-            scope.register(it.alias, innerScope)
+            // TODO
         }
 
         selected.forEach {
@@ -88,7 +86,8 @@ data class BuiltValuesQuery(
 ): BuiltSubquery {
     override val columns: LabelList get() = values.columns
 
-    override fun populateScope(scope: Scope) {
-        columns.values.forEach { scope.external(it) }
-    }
+    override fun exports(): Sequence<Reference<*>> =
+        columns.values.asSequence()
+
+    override fun populateScope(scope: Scope) { }
 }

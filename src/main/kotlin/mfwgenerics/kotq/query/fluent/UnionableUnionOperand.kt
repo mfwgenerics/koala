@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.expr.Labeled
+import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.NamedExprs
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.built.BuildsIntoSelect
@@ -10,7 +10,7 @@ import mfwgenerics.kotq.query.built.BuiltSubquery
 interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoSelect {
     private class SelectUnionableUnionOperand(
         val of: UnionableUnionOperand,
-        val references: List<Labeled<*>>
+        val references: List<SelectedExpr<*>>
     ): SelectedUnionOperand {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 

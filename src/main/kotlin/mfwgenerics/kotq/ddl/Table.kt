@@ -4,9 +4,9 @@ import mfwgenerics.kotq.data.DataType
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
-import mfwgenerics.kotq.dsl.Relvar
 import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.Labeled
+import mfwgenerics.kotq.expr.SelectedExpr
+import mfwgenerics.kotq.query.Relvar
 
 open class Table(
     override val relvarName: String
@@ -67,7 +67,7 @@ open class Table(
         )))
     }
 
-    override fun namedExprs(): List<Labeled<*>> = columns.flatMap {
+    override fun namedExprs(): List<SelectedExpr<*>> = columns.flatMap {
         it.namedExprs()
     }
 

@@ -1,8 +1,8 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.query.Alias
+import mfwgenerics.kotq.query.Cte
 
 class BuiltWith(
-    val alias: Alias,
+    val alias: Cte,
     val query: BuiltSubquery
 )

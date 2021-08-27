@@ -1,11 +1,15 @@
 package mfwgenerics.kotq.expr
 
-data class Labeled<T : Any>(
+sealed interface Selection
+
+object SelectAll: Selection
+
+data class SelectedExpr<T : Any>(
     val expr: Expr<T>,
     val name: Reference<T>
-): NamedExprs {
-    override fun namedExprs(): List<Labeled<*>> = listOf(this)
+): NamedExprs, Selection {
+    override fun namedExprs(): List<SelectedExpr<*>> = listOf(this)
 }
 
-infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): Labeled<T> =
-    Labeled(this, reference)
+infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): SelectedExpr<T> =
+    SelectedExpr(this, reference)

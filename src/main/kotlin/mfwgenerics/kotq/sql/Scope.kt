@@ -2,11 +2,12 @@ package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.Alias
+import mfwgenerics.kotq.query.Cte
 import mfwgenerics.kotq.window.WindowLabel
 
 /* TODO restrict names to identifier characters */
 class Scope(
-    private val names: NameRegistry,
+    val names: NameRegistry,
     private val enclosing: Scope? = null
 ) {
     fun innerScope(): Scope =
@@ -16,20 +17,13 @@ class Scope(
 
     private class UnderAlias(
         val alias: Alias,
-        val innerName: Reference<*>
+        val innerName: String
     ): Registered
 
     private object Internal: Registered
 
-    class RegisteredAlias(
-        val ident: String,
-        val scope: Scope
-    )
-
     private val external = hashMapOf<Reference<*>, String>()
     private val internal = hashMapOf<Reference<*>, Registered>()
-
-    private val aliases = hashMapOf<Alias, RegisteredAlias>()
 
     fun external(name: Reference<*>, symbol: String? = null) {
         check (external.putIfAbsent(name, symbol?:names[name]) == null)
@@ -37,7 +31,7 @@ class Scope(
 
     fun internal(
         name: Reference<*>,
-        innerName: Reference<*>,
+        innerName: String,
         alias: Alias
     ) {
         val value = UnderAlias(
@@ -52,13 +46,6 @@ class Scope(
         internal.putIfAbsent(name, Internal)
     }
 
-    fun register(alias: Alias, scope: Scope) {
-        aliases[alias] = RegisteredAlias(
-            names[alias],
-            scope
-        )
-    }
-
     operator fun get(name: Reference<*>): String {
         val registered = internal[name]
             ?: return checkNotNull(enclosing?.get(name)) {
@@ -67,22 +54,17 @@ class Scope(
 
         return when (registered) {
             is UnderAlias -> {
-                val alias = aliases.getValue(registered.alias)
-
-                "${alias.ident}.${alias.scope.nameOf(registered.innerName)}"
+                "${names[registered.alias]}.${registered.innerName}"
             }
             Internal -> names[name]
         }
     }
 
-    operator fun get(alias: Alias): RegisteredAlias =
-        checkNotNull(aliases[alias]?:enclosing?.get(alias))
-        { "alias $alias not found in scope ${System.identityHashCode(this)}" }
+    operator fun get(alias: Alias): String = names[alias]
+    operator fun get(cte: Cte): String = names[cte]
 
     fun nameOf(name: Reference<*>): String = external[name]!!
     fun nameOf(label: WindowLabel): String = names[label]
-
-    fun externals(): Collection<Reference<*>> = external.keys
 
     override fun toString(): String = "scope-${System.identityHashCode(this)}"
 }

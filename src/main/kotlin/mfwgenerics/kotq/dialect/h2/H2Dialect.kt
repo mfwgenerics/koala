@@ -6,13 +6,9 @@ import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
-import mfwgenerics.kotq.dsl.Relvar
-import mfwgenerics.kotq.dsl.Subquery
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
-import mfwgenerics.kotq.query.Distinctness
-import mfwgenerics.kotq.query.LockMode
-import mfwgenerics.kotq.query.WithType
+import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.query.built.*
 import mfwgenerics.kotq.sql.NameRegistry
 import mfwgenerics.kotq.sql.Scope
@@ -23,7 +19,7 @@ import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class H2Dialect: SqlDialect {
-    fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
+    private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addValue(expr.value)
             else -> error("not implemented")
@@ -209,7 +205,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQuery(outerSelect: List<Labeled<*>>, query: BuiltSubquery) {
+        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -315,17 +311,19 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileRelation(relation: BuiltRelation) {
-            val relationScope = scope[relation.computedAlias]
-
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
                     sql.addSql(baseRelation.relvarName)
                     null
                 }
                 is Subquery -> {
+                    val innerScope = scope.innerScope()
+
+                    baseRelation.of.populateScope(innerScope)
+
                     sql.parenthesize {
                         Compilation(
-                            relationScope.scope,
+                            innerScope,
                             sql = sql
                         ).compileQuery(emptyList(), baseRelation.of)
                     }
@@ -336,10 +334,11 @@ class H2Dialect: SqlDialect {
                         null
                     }
                 }
+                is Cte -> TODO()
             }
 
             sql.addSql(" ")
-            sql.addSql(relationScope.ident)
+            sql.addSql(scope[relation.computedAlias])
 
             explicitLabels?.let { labels ->
                 sql.parenthesize {
@@ -390,7 +389,7 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileSetOperation(
-            outerSelect: List<Labeled<*>>,
+            outerSelect: List<SelectedExpr<*>>,
             operation: BuiltSetOperation
         ) {
             sql.addSql("\n")
@@ -415,13 +414,15 @@ class H2Dialect: SqlDialect {
                     "\n, "
                 )
                 .forEach(withs) {
-                    val subquery = scope[it.alias]
+                    val innerScope = scope.innerScope()
 
-                    sql.addSql(subquery.ident)
+                    it.query.populateScope(innerScope)
+
+                    sql.addSql(scope[it.alias])
                     sql.addSql(" AS (")
 
                     Compilation(
-                        scope = subquery.scope,
+                        scope = innerScope,
                         sql = sql
                     ).compileQuery(emptyList(), it.query)
 
@@ -429,7 +430,7 @@ class H2Dialect: SqlDialect {
                 }
         }
 
-        fun compileSelect(outerSelect: List<Labeled<*>>, select: BuiltSelectQuery) {
+        fun compileSelect(outerSelect: List<SelectedExpr<*>>, select: BuiltSelectQuery) {
             val withs = select.withs
 
             compileWiths(select.withType, withs)
@@ -507,6 +508,7 @@ class H2Dialect: SqlDialect {
             val relvar = when (val relation = insert.relation.relation) {
                 is Relvar -> relation
                 is Subquery -> error("can not insert into subquery")
+                is Cte -> error("can not insert into CTE")
             }
 
             val tableColumnMap = relvar.columns.associateBy { it }

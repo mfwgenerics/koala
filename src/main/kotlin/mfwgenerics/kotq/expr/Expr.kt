@@ -42,8 +42,8 @@ sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
 
     val identifier: IdentifierName?
 
-    override fun namedExprs(): List<Labeled<*>> =
-        listOf(Labeled(this, this))
+    override fun namedExprs(): List<SelectedExpr<*>> =
+        listOf(SelectedExpr(this, this))
 }
 
 class AliasedReference<T : Any>(

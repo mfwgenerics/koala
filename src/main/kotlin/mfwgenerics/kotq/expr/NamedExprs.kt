@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.expr
 
 interface NamedExprs {
-    fun namedExprs(): List<Labeled<*>>
+    fun namedExprs(): List<SelectedExpr<*>>
 }
