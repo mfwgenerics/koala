@@ -1,9 +1,11 @@
 package mfwgenerics.kotq.ddl
 
+import mfwgenerics.kotq.data.DataType
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
 import mfwgenerics.kotq.dsl.Relvar
+import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Labeled
 
 open class Table(
@@ -22,6 +24,12 @@ open class Table(
         takeName(name)
 
         return TableColumn(this, name, def).also { internalColumns.add(it) }
+    }
+
+    fun <T : Any> column(name: String, def: DataType<T>): TableColumn<T> {
+        takeName(name)
+
+        return TableColumn(this, name, BaseColumnType(def)).also { internalColumns.add(it) }
     }
 
     var primaryKey: BuiltNamedIndex? = null
@@ -61,5 +69,16 @@ open class Table(
 
     override fun namedExprs(): List<Labeled<*>> = columns.flatMap {
         it.namedExprs()
+    }
+
+    companion object {
+        fun <T : Any> DataType<T>.autoIncrement() = BaseColumnType(this).autoIncrement()
+
+        fun <T : Any> DataType<T>.nullable() = BaseColumnType(this).nullable()
+
+        fun <T : Any> DataType<T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
+        fun <T : Any> DataType<T>.default(value: T?) = BaseColumnType(this).default(value)
+
+        fun <T : Any> DataType<T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
     }
 }

@@ -1,10 +1,10 @@
 package mfwgenerics.kotq.ddl.built
 
-import mfwgenerics.kotq.ddl.ColumnType
+import mfwgenerics.kotq.data.MappedDataType
 import mfwgenerics.kotq.ddl.TableColumn
 
 class BuiltColumnDef {
-    lateinit var columnType: ColumnType<*>
+    lateinit var columnType: MappedDataType<*, *>
 
     var autoIncrement: Boolean = false
 

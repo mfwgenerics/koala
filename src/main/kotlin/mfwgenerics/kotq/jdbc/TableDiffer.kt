@@ -1,7 +1,9 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.ddl.DataType
-import mfwgenerics.kotq.ddl.MappedColumnType
+import mfwgenerics.kotq.data.INTEGER
+import mfwgenerics.kotq.data.SMALLINT
+import mfwgenerics.kotq.data.VARCHAR
+import mfwgenerics.kotq.ddl.BaseColumnType
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.built.BuiltColumnDef
 import mfwgenerics.kotq.ddl.diff.ColumnDefinitionDiff
@@ -42,16 +44,13 @@ class TableDiffer(
             }
 
             val dataType = when (val dt = columns.getInt("DATA_TYPE")) {
-                Types.INTEGER -> DataType.INT32
-                Types.SMALLINT -> DataType.INT16
-                Types.VARCHAR -> DataType.VARCHAR(columns.getInt("COLUMN_SIZE"))
+                Types.INTEGER -> INTEGER
+                Types.SMALLINT -> SMALLINT
+                Types.VARCHAR -> VARCHAR(columns.getInt("COLUMN_SIZE"))
                 else -> error("unrecognized SQL datatype $dt")
             }
 
-            val expectedDataType = when (val dt = expected.columnType) {
-                is MappedColumnType<*, *> -> dt.baseDataType
-                else -> dt
-            }
+            val expectedDataType = expected.columnType.dataType
 
             val isAutoincrement = when (columns.getString("IS_AUTOINCREMENT")) {
                 "YES" -> true
@@ -59,9 +58,9 @@ class TableDiffer(
             }
 
             val diff = ColumnDefinitionDiff(
-                type = if (!dataType.equivalentKind(expectedDataType)) {
+                type = if (dataType != expectedDataType) {
                     /* TODO precision comparison */
-                    expectedDataType
+                    BaseColumnType(expectedDataType)
                 } else null,
                 notNull = when (columns.getString("IS_NULLABLE")) {
                     "YES" -> if (expected.notNull) expected.notNull else null

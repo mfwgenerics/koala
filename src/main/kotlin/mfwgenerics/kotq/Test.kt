@@ -1,6 +1,6 @@
 package mfwgenerics.kotq
 
-import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dialect.h2.H2Dialect
 import mfwgenerics.kotq.dsl.*
@@ -8,7 +8,7 @@ import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.query.Alias
 
 object TestTable : Table("Test") {
-    val column1 = column("test0", DataType.INT32)
+    val column1 = column("test0", INTEGER)
 }
 
 fun main() {

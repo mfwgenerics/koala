@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.IdentifierName
-import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.data.DataType
 import mfwgenerics.kotq.expr.built.BuildsIntoAggregatedExpr
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.Alias

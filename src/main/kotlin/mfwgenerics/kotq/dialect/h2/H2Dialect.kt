@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.dialect.h2
 
-import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
@@ -32,29 +32,29 @@ class H2Dialect: SqlDialect {
 
     private fun compileDataType(sql: SqlTextBuilder, type: DataType<*>) {
         when (type) {
-            DataType.DATE -> TODO()
-            DataType.DATETIME -> TODO()
-            is DataType.DECIMAL -> TODO()
-            DataType.DOUBLE -> TODO()
-            DataType.FLOAT -> TODO()
-            DataType.INSTANT -> TODO()
-            DataType.INT16 -> sql.addSql("SMALLINT")
-            DataType.INT32 -> sql.addSql("INTEGER")
-            DataType.INT64 -> TODO()
-            DataType.INT8 -> TODO()
-            is DataType.RAW -> TODO()
-            DataType.TIME -> TODO()
-            DataType.UINT16 -> TODO()
-            DataType.UINT32 -> TODO()
-            DataType.UINT64 -> TODO()
-            DataType.UINT8 -> TODO()
-            is DataType.VARBINARY -> TODO()
-            is DataType.VARCHAR -> {
+            DATE -> TODO()
+            DATETIME -> TODO()
+            is DECIMAL -> TODO()
+            DOUBLE -> TODO()
+            FLOAT -> TODO()
+            INSTANT -> TODO()
+            SMALLINT -> sql.addSql("SMALLINT")
+            INTEGER -> sql.addSql("INTEGER")
+            TINYINT -> TODO()
+            is RAW -> TODO()
+            TIME -> TODO()
+            is VARBINARY -> TODO()
+            is VARCHAR -> {
                 sql.addSql("VARCHAR")
                 sql.parenthesize {
                     sql.addSql("${type.maxLength}")
                 }
             }
+            BIGINT -> TODO()
+            TINYINT.UNSIGNED -> TODO()
+            SMALLINT.UNSIGNED -> TODO()
+            INTEGER.UNSIGNED -> TODO()
+            BIGINT.UNSIGNED -> TODO()
         }
     }
 
@@ -69,7 +69,7 @@ class H2Dialect: SqlDialect {
 
                 sql.addSql(it.symbol)
                 sql.addSql(" ")
-                compileDataType(sql, def.columnType.baseDataType)
+                compileDataType(sql, def.columnType.dataType)
 
                 if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
                 if (def.notNull) sql.addSql(" NOT NULL")
@@ -188,24 +188,24 @@ class H2Dialect: SqlDialect {
 
         fun compileCastDataType(type: DataType<*>) {
             when (type) {
-                DataType.DATE -> TODO()
-                DataType.DATETIME -> TODO()
-                is DataType.DECIMAL -> TODO()
-                DataType.DOUBLE -> TODO()
-                DataType.FLOAT -> TODO()
-                DataType.INSTANT -> TODO()
-                DataType.INT16 -> TODO()
-                DataType.INT32 -> sql.addSql("INTEGER")
-                DataType.INT64 -> TODO()
-                DataType.INT8 -> TODO()
-                is DataType.RAW -> TODO()
-                DataType.TIME -> TODO()
-                DataType.UINT16 -> TODO()
-                DataType.UINT32 -> TODO()
-                DataType.UINT64 -> TODO()
-                DataType.UINT8 -> TODO()
-                is DataType.VARBINARY -> TODO()
-                is DataType.VARCHAR -> TODO()
+                DATE -> TODO()
+                DATETIME -> TODO()
+                is DECIMAL -> TODO()
+                DOUBLE -> TODO()
+                FLOAT -> TODO()
+                INSTANT -> TODO()
+                SMALLINT -> TODO()
+                INTEGER -> sql.addSql("INTEGER")
+                TINYINT -> TODO()
+                is RAW -> TODO()
+                TIME -> TODO()
+                TINYINT.UNSIGNED -> TODO()
+                is VARBINARY -> TODO()
+                is VARCHAR -> TODO()
+                BIGINT -> TODO()
+                SMALLINT.UNSIGNED -> TODO()
+                INTEGER.UNSIGNED -> TODO()
+                BIGINT.UNSIGNED -> TODO()
             }
         }
 

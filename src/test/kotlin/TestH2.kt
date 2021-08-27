@@ -1,5 +1,7 @@
-import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.data.INTEGER
+import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.Table.Companion.autoIncrement
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dialect.h2.H2Dialect
 import mfwgenerics.kotq.dsl.*
@@ -23,7 +25,7 @@ class TestH2 {
         val summed = name<Int>("sumUnder")
 
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
-        val castNumber = cast(number, DataType.INT32)
+        val castNumber = cast(number, INTEGER)
 
         val alias = alias("A")
 
@@ -65,28 +67,28 @@ class TestH2 {
     }
 
     object ShopTable: Table("Shop") {
-        val id = column("id", DataType.INT32.autoIncrement())
+        val id = column("id", INTEGER.autoIncrement())
 
-        val name = column("name", DataType.VARCHAR(100))
+        val name = column("name", VARCHAR(100))
     }
 
     object CustomerTable: Table("Customer") {
-        val id = column("id", DataType.INT32.autoIncrement())
+        val id = column("id", INTEGER.autoIncrement())
 
-        val firstName = column("firstName", DataType.VARCHAR(100))
-        val lastName = column("lastName", DataType.VARCHAR(100))
+        val firstName = column("firstName", VARCHAR(100))
+        val lastName = column("lastName", VARCHAR(100))
     }
 
     object PurchaseTable: Table("Purchase") {
-        val id = column("id", DataType.INT32.autoIncrement())
+        val id = column("id", INTEGER.autoIncrement())
 
-        val shop = column("shop", DataType.INT32.reference(ShopTable.id))
-        val customer = column("customer", DataType.INT32.reference(CustomerTable.id))
+        val shop = column("shop", INTEGER.reference(ShopTable.id))
+        val customer = column("customer", INTEGER.reference(CustomerTable.id))
 
-        val product = column("product", DataType.VARCHAR(200))
+        val product = column("product", VARCHAR(200))
 
-        val price = column("price", DataType.INT32)
-        val discount = column("discount", DataType.INT32.nullable())
+        val price = column("price", INTEGER)
+        val discount = column("discount", INTEGER.nullable())
     }
 
     // TODO use an assertion library
@@ -323,7 +325,7 @@ class TestH2 {
                     PurchaseTable.shop,
                     PurchaseTable.customer,
                     literal("NanoPear") `as` PurchaseTable.product,
-                    cast(PurchaseTable.price / 100, DataType.INT32) `as` PurchaseTable.price,
+                    cast(PurchaseTable.price / 100, INTEGER) `as` PurchaseTable.price,
                     PurchaseTable.discount
                 )
             )
@@ -369,10 +371,10 @@ class TestH2 {
         ))
 
         val changedCustomerTable = Table("Customer").apply {
-            column("id", DataType.INT32.autoIncrement())
+            column("id", INTEGER.autoIncrement())
 
-            column("firstName", DataType.VARCHAR(100))
-            column("lastName", DataType.VARCHAR(100))
+            column("firstName", VARCHAR(100))
+            column("lastName", VARCHAR(100))
         }
 
         val diff = TableDiffer(cxn.jdbc.metaData).diffTable(

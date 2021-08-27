@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.dsl
 
-import mfwgenerics.kotq.ddl.DataType
+import mfwgenerics.kotq.data.DataType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.fluent.SelectedJust
