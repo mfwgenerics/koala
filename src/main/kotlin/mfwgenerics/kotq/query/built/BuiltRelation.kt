@@ -24,7 +24,7 @@ data class BuiltRelation(
                 }
             }
             is Subquery -> {
-                relation.of.exports().forEach { name ->
+                relation.of.columns.values.forEach { name ->
                     if (alias == null) {
                         scope.internal(name, scope.names[name], computedAlias)
                     } else {

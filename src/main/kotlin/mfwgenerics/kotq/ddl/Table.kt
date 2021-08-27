@@ -5,7 +5,6 @@ import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
 import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.query.Relvar
 
 open class Table(
@@ -65,10 +64,6 @@ open class Table(
             type = IndexType.INDEX,
             keys = keys
         )))
-    }
-
-    override fun namedExprs(): List<SelectedExpr<*>> = columns.flatMap {
-        it.namedExprs()
     }
 
     companion object {

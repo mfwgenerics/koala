@@ -10,17 +10,16 @@ import mfwgenerics.kotq.query.built.BuiltSubquery
 interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoSelect {
     private class SelectUnionableUnionOperand(
         val of: UnionableUnionOperand,
-        val references: List<SelectedExpr<*>>
+        val references: List<NamedExprs>
     ): SelectedUnionOperand {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
         override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
-            out.selected = references
-            out.columns = LabelList(references.map { it.name })
+            out.buildSelection(references)
             return of
         }
     }
 
     override fun select(vararg references: NamedExprs): SelectedUnionOperand =
-        SelectUnionableUnionOperand(this, references.asSequence().flatMap { it.namedExprs() }.toList())
+        SelectUnionableUnionOperand(this, references.asList())
 }

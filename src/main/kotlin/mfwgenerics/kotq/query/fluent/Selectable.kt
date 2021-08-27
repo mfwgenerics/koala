@@ -13,19 +13,18 @@ import mfwgenerics.kotq.query.built.*
 interface Selectable: BuildsIntoSelect {
     private class Select<T : Any>(
         val of: Selectable,
-        val references: List<SelectedExpr<*>>
+        val references: List<NamedExprs>
     ): SelectedJust<T>, BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
-            out.selected = references
-            out.columns = LabelList(references.map { it.name })
+        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
+            out.buildSelection(references)
             return of
         }
     }
 
     private fun <T : Any> selectInternal(references: List<NamedExprs>): SelectedJust<T> =
-        Select(this, references.asSequence().flatMap { it.namedExprs() }.toList())
+        Select(this, references)
 
     fun select(vararg references: NamedExprs): Subqueryable =
         selectInternal<Nothing>(references.asList())

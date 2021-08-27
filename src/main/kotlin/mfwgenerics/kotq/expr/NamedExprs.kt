@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.expr
 
 interface NamedExprs {
-    fun namedExprs(): List<SelectedExpr<*>>
+    fun buildIntoSelection(selection: SelectionBuilder)
 }

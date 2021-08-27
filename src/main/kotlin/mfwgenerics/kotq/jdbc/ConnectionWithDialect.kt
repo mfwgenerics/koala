@@ -76,7 +76,7 @@ class ConnectionWithDialect(
                 val keys = built.returning
                 if (keys.size != 1) err()
 
-                val column = keys[0].expr
+                val column = keys[0]
                 if (column !is TableColumn) err()
 
                 if (!column.builtDef.autoIncrement) err()
@@ -84,7 +84,7 @@ class ConnectionWithDialect(
                 prepared.execute()
 
                 return object : RowSequence {
-                    override val columns: LabelList = LabelList(built.returning.map { it.name })
+                    override val columns: LabelList = LabelList(built.returning)
 
                     override fun rowIterator(): RowIterator {
                         return AdaptedResultSet(columns, prepared.generatedKeys)

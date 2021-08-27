@@ -320,13 +320,9 @@ class TestH2 {
             .insert(PurchaseTable
                 .where((PurchaseTable.id eq bobId).and(PurchaseTable.product eq "Pear"))
                 .select(
-                    /* need a way to automate these field selects and only specify the overrides */
-                    PurchaseTable.id,
-                    PurchaseTable.shop,
-                    PurchaseTable.customer,
                     literal("NanoPear") `as` PurchaseTable.product,
+                    PurchaseTable,
                     cast(PurchaseTable.price / 100, INTEGER) `as` PurchaseTable.price,
-                    PurchaseTable.discount
                 )
             )
             .performWith(cxn)

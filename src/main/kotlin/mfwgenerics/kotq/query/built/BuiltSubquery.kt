@@ -1,9 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.SelectedExpr
-import mfwgenerics.kotq.expr.Ordinal
-import mfwgenerics.kotq.expr.Reference
+import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.LockMode
 import mfwgenerics.kotq.query.WithType
@@ -17,7 +14,7 @@ sealed interface BuiltQuery {
 
 class BuiltReturningInsert(
     val insert: BuiltInsert,
-    val returning: List<SelectedExpr<*>> = emptyList()
+    val returning: List<Reference<*>> = emptyList()
 ): BuiltQuery {
     override fun populateScope(scope: Scope) {
 
@@ -26,8 +23,6 @@ class BuiltReturningInsert(
 
 sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
     val columns: LabelList
-
-    fun exports(): Sequence<Reference<*>>
 
     override fun populateScope(scope: Scope)
 }
@@ -57,11 +52,24 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
     var locking: LockMode? = null
 
     var selected: List<SelectedExpr<*>> = emptyList()
+        private set(value) {
+            columns = LabelList(value.map { it.name })
+            field = value
+        }
 
     override lateinit var columns: LabelList
+        private set
 
-    override fun exports(): Sequence<Reference<*>> =
-        selected.asSequence().flatMap { it.namedExprs() }.map { it.name }
+    fun buildSelection(references: List<NamedExprs>) {
+        val builder = SelectionBuilder()
+
+        references.forEach {
+            it.buildIntoSelection(builder)
+        }
+
+        @Suppress("unchecked_cast")
+        selected = builder.entries.map { (k, v) -> SelectedExpr(v as Expr<Any>, k as Reference<Any>) }
+    }
 
     override fun populateScope(scope: Scope) {
         relation.populateScope(scope)
@@ -73,10 +81,8 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
         }
 
         selected.forEach {
-            it.namedExprs().forEach { labeled ->
-                if (labeled.expr != labeled.name) scope.internal(labeled.name)
-                scope.external(labeled.name)
-            }
+            if (it.expr != it.name) scope.internal(it.name)
+            scope.external(it.name)
         }
     }
 }
@@ -85,9 +91,6 @@ data class BuiltValuesQuery(
     val values: RowSequence
 ): BuiltSubquery {
     override val columns: LabelList get() = values.columns
-
-    override fun exports(): Sequence<Reference<*>> =
-        columns.values.asSequence()
 
     override fun populateScope(scope: Scope) { }
 }

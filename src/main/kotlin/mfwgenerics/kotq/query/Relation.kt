@@ -3,6 +3,7 @@ package mfwgenerics.kotq.query
 import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.RelvarColumn
+import mfwgenerics.kotq.expr.SelectionBuilder
 import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.query.built.BuiltSubquery
 
@@ -11,6 +12,10 @@ sealed interface Relation: AliasedRelation {
 
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(this, null)
+
+    override fun buildIntoSelection(selection: SelectionBuilder) {
+        selection.fromRelation(this)
+    }
 }
 
 interface Relvar: Relation {
@@ -21,11 +26,7 @@ interface Relvar: Relation {
 
 class Subquery(
     val of: BuiltSubquery
-): Relation {
-    override fun namedExprs(): List<SelectedExpr<*>> {
-        error("not implemented")
-    }
-}
+): Relation
 
 class Cte(
     val identifier: IdentifierName = IdentifierName()
@@ -35,8 +36,4 @@ class Cte(
 
     override fun hashCode(): Int = identifier.hashCode()
     override fun toString(): String = "$identifier"
-
-    override fun namedExprs(): List<SelectedExpr<*>> {
-        error("not implemented")
-    }
 }

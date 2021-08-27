@@ -42,8 +42,9 @@ sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
 
     val identifier: IdentifierName?
 
-    override fun namedExprs(): List<SelectedExpr<*>> =
-        listOf(SelectedExpr(this, this))
+    override fun buildIntoSelection(selection: SelectionBuilder) {
+        selection.expression(this, this)
+    }
 }
 
 class AliasedReference<T : Any>(
