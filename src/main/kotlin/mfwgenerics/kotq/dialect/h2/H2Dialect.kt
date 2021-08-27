@@ -355,7 +355,7 @@ class H2Dialect: SqlDialect {
         fun compileQueryWhere(query: BuiltSelectQuery) {
             compileRelation(query.relation)
 
-            query.joins.forEach { join ->
+            query.joins.asReversed().forEach { join ->
                 sql.addSql("\n")
                 sql.addSql(join.type.sql)
                 sql.addSql(" ")

@@ -374,8 +374,8 @@ class TestH2 {
             ))
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
             .leftJoin(cte.alias(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
-                .and(alias[PurchaseTable.price] less -400))
-            .select(CustomerTable.firstName, PurchaseTable.price, alias[PurchaseTable.price], cte)
+                .and(PurchaseTable.price less -600))
+            .select(CustomerTable.firstName, PurchaseTable.price, alias[PurchaseTable.price])
             .performWith(cxn)
             .map { row -> row.labels.values.map { row[it] } }
             .toList()
