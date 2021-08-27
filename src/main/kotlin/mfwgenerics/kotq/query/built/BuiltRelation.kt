@@ -1,9 +1,6 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.query.Alias
-import mfwgenerics.kotq.query.Relation
-import mfwgenerics.kotq.query.Relvar
-import mfwgenerics.kotq.query.Subquery
+import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.sql.Scope
 
 data class BuiltRelation(
@@ -13,25 +10,18 @@ data class BuiltRelation(
     val computedAlias = alias?: Alias()
 
     fun populateScope(scope: Scope) {
-        when (relation) {
-            is Relvar -> {
-                relation.columns.forEach { column ->
-                    scope.internal(
-                        alias?.get(column)?:column,
-                        column.symbol,
-                        computedAlias
-                    )
-                }
-            }
-            is Subquery -> {
-                relation.of.columns.values.forEach { name ->
-                    if (alias == null) {
-                        scope.internal(name, scope.names[name], computedAlias)
-                    } else {
-                        scope.internal(computedAlias[name], scope.names[name], computedAlias)
-                    }
-                }
-            }
+        val names = when (relation) {
+            is Relvar -> relation.columns.map { it to it.symbol }
+            is Subquery -> relation.of.columns.values.map { it to scope.names[it] }
+            is Cte -> scope.cteColumns(relation).values.map { it to scope.names[it] }
+        }
+
+        names.forEach { (name, symbol) ->
+            scope.internal(
+                alias?.get(name)?:name,
+                symbol,
+                computedAlias
+            )
         }
     }
 }

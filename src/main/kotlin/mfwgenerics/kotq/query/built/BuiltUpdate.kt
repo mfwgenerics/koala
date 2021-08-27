@@ -1,6 +1,8 @@
 package mfwgenerics.kotq.query.built
 
 import mfwgenerics.kotq.Assignment
+import mfwgenerics.kotq.query.Cte
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.sql.Scope
 
 class BuiltUpdate: BuiltStatement {

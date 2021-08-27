@@ -3,6 +3,7 @@ package mfwgenerics.kotq.sql
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.query.Cte
+import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.window.WindowLabel
 
 /* TODO restrict names to identifier characters */
@@ -22,8 +23,15 @@ class Scope(
 
     private object Internal: Registered
 
+    private val ctes = hashMapOf<Cte, LabelList>()
     private val external = hashMapOf<Reference<*>, String>()
     private val internal = hashMapOf<Reference<*>, Registered>()
+
+    fun cte(cte: Cte, labels: LabelList) {
+        ctes[cte] = labels
+    }
+
+    fun cteColumns(cte: Cte): LabelList = ctes.getValue(cte)
 
     fun external(name: Reference<*>, symbol: String? = null) {
         check (external.putIfAbsent(name, symbol?:names[name]) == null)

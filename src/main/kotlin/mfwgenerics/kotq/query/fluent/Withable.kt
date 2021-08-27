@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.AliasedQueryable
+import mfwgenerics.kotq.query.CtedQueryable
 import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.query.built.*
 
@@ -8,13 +8,13 @@ interface Withable: Withed {
     private class WithQuery(
         val of: Withable,
         val type: WithType,
-        val queries: List<AliasedQueryable>
+        val queries: List<CtedQueryable>
     ): Withed, BuildsIntoSelect {
         override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
             out.withType = type
             out.withs = queries.map {
                 BuiltWith(
-                    it.alias,
+                    it.cte,
                     it.queryable.buildQuery()
                 )
             }
@@ -26,7 +26,7 @@ interface Withable: Withed {
             out.withType = type
             out.withs = queries.map {
                 BuiltWith(
-                    it.alias,
+                    it.cte,
                     it.queryable.buildQuery()
                 )
             }
@@ -35,8 +35,8 @@ interface Withable: Withed {
         }
     }
 
-    fun with(vararg queries: AliasedQueryable): Withed =
+    fun with(vararg queries: CtedQueryable): Withed =
         WithQuery(this, WithType.NOT_RECURSIVE, queries.asList())
-    fun withRecursive(vararg queries: AliasedQueryable): Withed =
+    fun withRecursive(vararg queries: CtedQueryable): Withed =
         WithQuery(this, WithType.RECURSIVE, queries.asList())
 }

@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.query.built
 
 import mfwgenerics.kotq.expr.*
+import mfwgenerics.kotq.query.Cte
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.LockMode
 import mfwgenerics.kotq.query.WithType
@@ -60,24 +61,30 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
     override lateinit var columns: LabelList
         private set
 
-    fun buildSelection(references: List<NamedExprs>) {
-        val builder = SelectionBuilder()
+    fun buildSelection(references: List<SelectArgument>, includeAll: Boolean) {
+        val builder = SelectionBuilder(withs.associateBy({ it.cte }) { it.query.columns })
+
+        if (includeAll) {
+            joins.forEach { builder.fromRelation(it.to) }
+        }
 
         references.forEach {
             it.buildIntoSelection(builder)
         }
 
         @Suppress("unchecked_cast")
-        selected = builder.entries.map { (k, v) -> SelectedExpr(v as Expr<Any>, k as Reference<Any>) }
+        selected = builder.toList()
     }
 
     override fun populateScope(scope: Scope) {
+        withs.forEach {
+            scope.cte(it.cte, it.query.columns)
+        }
+
         relation.populateScope(scope)
 
-        joins.forEach { it.populateScope(scope) }
-
-        withs.forEach {
-            // TODO
+        joins.forEach { join ->
+            join.populateScope(scope)
         }
 
         selected.forEach {

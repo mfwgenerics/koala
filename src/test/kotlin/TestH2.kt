@@ -363,6 +363,24 @@ class TestH2 {
         )
 
         createAndPopulate(cxn)
+
+        val alias = alias()
+        val cte = cte()
+
+        val rows = CustomerTable
+            .with(cte `as` PurchaseTable.select(
+                PurchaseTable,
+                -PurchaseTable.price `as` PurchaseTable.price
+            ))
+            .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
+            .leftJoin(cte.alias(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
+                .and(alias[PurchaseTable.price] less -400))
+            .select(CustomerTable.firstName, PurchaseTable.price, alias[PurchaseTable.price], cte)
+            .performWith(cxn)
+            .map { row -> row.labels.values.map { row[it] } }
+            .toList()
+
+        println(rows)
     }
 
     @Test

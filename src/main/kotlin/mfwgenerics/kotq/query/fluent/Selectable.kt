@@ -3,9 +3,8 @@ package mfwgenerics.kotq.query.fluent
 import mfwgenerics.kotq.Assignment
 import mfwgenerics.kotq.Updated
 import mfwgenerics.kotq.expr.SelectedExpr
-import mfwgenerics.kotq.expr.NamedExprs
+import mfwgenerics.kotq.expr.SelectArgument
 import mfwgenerics.kotq.expr.Reference
-import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.Relvar
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.*
@@ -13,27 +12,31 @@ import mfwgenerics.kotq.query.built.*
 interface Selectable: BuildsIntoSelect {
     private class Select<T : Any>(
         val of: Selectable,
-        val references: List<NamedExprs>
+        val references: List<SelectArgument>,
+        val includeAll: Boolean
     ): SelectedJust<T>, BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
         override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
-            out.buildSelection(references)
+            out.buildSelection(references, includeAll)
             return of
         }
     }
 
-    private fun <T : Any> selectInternal(references: List<NamedExprs>): SelectedJust<T> =
-        Select(this, references)
+    private fun <T : Any> selectInternal(references: List<SelectArgument>, includeAll: Boolean): SelectedJust<T> =
+        Select(this, references, includeAll)
 
-    fun select(vararg references: NamedExprs): Subqueryable =
-        selectInternal<Nothing>(references.asList())
+    fun selectAll(vararg references: SelectArgument): Subqueryable =
+        selectInternal<Nothing>(references.asList(), true)
+
+    fun select(vararg references: SelectArgument): Subqueryable =
+        selectInternal<Nothing>(references.asList(), false)
 
     fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
-        selectInternal(listOf(labeled))
+        selectInternal(listOf(labeled), false)
 
     fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
-        selectInternal(listOf(reference))
+        selectInternal(listOf(reference), false)
 
     private class Update(
         val of: Selectable,

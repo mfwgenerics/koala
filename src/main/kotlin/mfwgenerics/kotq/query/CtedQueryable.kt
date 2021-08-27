@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.query
 
-class AliasedQueryable(
-    val alias: Cte,
+class CtedQueryable(
+    val cte: Cte,
     val queryable: Subqueryable
 )

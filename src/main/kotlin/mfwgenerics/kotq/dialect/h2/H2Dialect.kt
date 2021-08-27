@@ -334,7 +334,10 @@ class H2Dialect: SqlDialect {
                         null
                     }
                 }
-                is Cte -> TODO()
+                is Cte -> {
+                    sql.addSql(scope[baseRelation])
+                    null
+                }
             }
 
             sql.addSql(" ")
@@ -418,7 +421,7 @@ class H2Dialect: SqlDialect {
 
                     it.query.populateScope(innerScope)
 
-                    sql.addSql(scope[it.alias])
+                    sql.addSql(scope[it.cte])
                     sql.addSql(" AS (")
 
                     Compilation(

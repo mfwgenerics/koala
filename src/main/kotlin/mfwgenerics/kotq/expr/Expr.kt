@@ -37,7 +37,7 @@ sealed interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggre
     }
 }
 
-sealed interface Reference<T : Any>: Expr<T>, NamedExprs {
+sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
     val type: KClass<T>
 
     val identifier: IdentifierName?
@@ -51,7 +51,7 @@ class AliasedReference<T : Any>(
     override val type: KClass<T>,
     val of: Alias,
     val reference: Reference<T>
-): Reference<T>, NamedExprs {
+): Reference<T>, SelectArgument {
     override val identifier: IdentifierName? get() = null
 
     override fun equals(other: Any?): Boolean =

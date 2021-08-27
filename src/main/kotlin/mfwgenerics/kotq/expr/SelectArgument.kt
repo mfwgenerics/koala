@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.expr
 
-interface NamedExprs {
+interface SelectArgument {
     fun buildIntoSelection(selection: SelectionBuilder)
 }
