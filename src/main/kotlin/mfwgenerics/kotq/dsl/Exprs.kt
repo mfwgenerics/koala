@@ -52,7 +52,7 @@ inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T>): E
 fun <T : Any> cast(from: Expr<*>, to: DataType<T>): Expr<T> =
     CastExpr(from, to)
 
-inline fun <reified T : Any> literal(value: T?): Expr<T> =
+inline fun <reified T : Any> literal(value: T?): Literal<T> =
     Literal(T::class, value)
 
 fun <T : Any> all(subquery: SelectedJust<T>): ComparisonOperand<T> =

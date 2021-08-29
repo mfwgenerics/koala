@@ -6,6 +6,7 @@ import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
+import mfwgenerics.kotq.dsl.literal
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.*
@@ -21,7 +22,7 @@ import kotlin.reflect.KClass
 class H2Dialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
-            is Literal -> sql.addValue(expr.value)
+            is Literal -> sql.addValue(expr)
             else -> error("not implemented")
         }
     }
@@ -264,7 +265,7 @@ class H2Dialect: SqlDialect {
                         }
                     }
                 }
-                is Literal<*> -> sql.addValue(expr.value)
+                is Literal<*> -> sql.addValue(expr)
                 is Reference<*> -> { compileReference(expr) }
                 is AggregatedExpr<*> -> {
                     val built = expr.buildAggregated()
@@ -464,14 +465,14 @@ class H2Dialect: SqlDialect {
 
             select.limit?.let {
                 sql.addSql("\nLIMIT ")
-                sql.addValue(it)
+                sql.addValue(literal(it))
             }
 
             if (select.offset != 0) {
                 check (select.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
-                sql.addValue(select.offset)
+                sql.addValue(literal(select.offset))
             }
 
             select.locking?.let { locking ->
@@ -494,7 +495,11 @@ class H2Dialect: SqlDialect {
                 rowPrefix.next {
                     sql.addSql("(")
                     sql.prefix("", ", ").forEach(columns.values) {
-                        sql.addValue(iter[it])
+                        @Suppress("unchecked_cast")
+                        sql.addValue(Literal(
+                            it.type as KClass<Any>,
+                            iter[it]
+                        ))
                     }
                     sql.addSql(")")
                 }

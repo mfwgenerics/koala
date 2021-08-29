@@ -1,16 +1,18 @@
 package mfwgenerics.kotq.sql
 
+import mfwgenerics.kotq.expr.Literal
+
 class SqlTextBuilder {
     private val contents = StringBuilder()
-    private val params = arrayListOf<Any?>()
-
+    private val params = arrayListOf<Literal<*>>()
+    
     fun addSql(sql: String) {
         contents.append(sql)
     }
 
     fun addSql(sql: StandardSql) { addSql(sql.sql) }
 
-    fun addValue(value: Any?) {
+    fun addValue(value: Literal<*>?) {
         if (value == null) {
             addSql("NULL")
         } else {

@@ -24,7 +24,7 @@ class ConnectionWithDialect(
         val result = jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
 
         sql.parameters.forEachIndexed { ix, it ->
-            result.setObject(ix + 1, it)
+            result.setObject(ix + 1, it.value)
         }
 
         return result
@@ -34,7 +34,7 @@ class ConnectionWithDialect(
         val result = jdbc.prepareStatement(sql.sql)
 
         sql.parameters.forEachIndexed { ix, it ->
-            result.setObject(ix + 1, it)
+            result.setObject(ix + 1, it.value)
         }
 
         return result
