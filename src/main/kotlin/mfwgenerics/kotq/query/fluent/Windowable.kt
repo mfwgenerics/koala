@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
-import mfwgenerics.kotq.query.built.BuiltSelectQuery
+import mfwgenerics.kotq.query.built.BuildsIntoQueryBody
+import mfwgenerics.kotq.query.built.BuiltQueryBody
 import mfwgenerics.kotq.window.LabeledWindow
 
 interface Windowable: UnionableUnionOperand {
@@ -9,7 +9,7 @@ interface Windowable: UnionableUnionOperand {
         val lhs: Windowable,
         val windows: List<LabeledWindow>
     ): UnionableUnionOperand {
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
+        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody {
             out.windows = windows
             return lhs
         }

@@ -1,11 +1,11 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.Updated
 import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.Queryable
+import mfwgenerics.kotq.query.Updated
 import mfwgenerics.kotq.query.built.BuiltReturningInsert
 import mfwgenerics.kotq.query.built.BuiltSubquery
 import mfwgenerics.kotq.query.fluent.Inserted

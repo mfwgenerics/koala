@@ -6,5 +6,6 @@ enum class GroupedOperationType(
     override val sql: String
 ): StandardSql {
     MAX("MAX"),
-    SUM("SUM")
+    SUM("SUM"),
+    COUNT("COUNT")
 }

@@ -1,5 +1,7 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
+import mfwgenerics.kotq.query.built.BuiltUnionOperand
 
-interface UnionOperand: BuildsIntoSelect
+interface UnionOperand {
+    fun buildUnionOperand(): BuiltUnionOperand
+}

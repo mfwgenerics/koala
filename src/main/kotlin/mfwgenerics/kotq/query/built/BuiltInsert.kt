@@ -1,7 +1,5 @@
 package mfwgenerics.kotq.query.built
 
-import mfwgenerics.kotq.query.Cte
-import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.sql.Scope
 

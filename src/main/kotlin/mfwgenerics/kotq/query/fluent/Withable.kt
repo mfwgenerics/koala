@@ -9,7 +9,7 @@ interface Withable: Withed {
         val of: Withable,
         val type: WithType,
         val queries: List<CtedQueryable>
-    ): Withed, BuildsIntoSelect {
+    ): Withed, BuildsIntoQueryBody {
         override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
             out.withType = type
             out.withs = queries.map {
@@ -22,7 +22,7 @@ interface Withable: Withed {
             return of
         }
 
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
+        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody {
             out.withType = type
             out.withs = queries.map {
                 BuiltWith(

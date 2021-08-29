@@ -397,7 +397,7 @@ class TestH2 {
     }
 
     @Test
-    fun `various selections`() {
+    fun `union all and count`() {
         val cxn = ConnectionWithDialect(
             H2Dialect(),
             DriverManager.getConnection("jdbc:h2:mem:")
@@ -405,12 +405,21 @@ class TestH2 {
 
         createAndPopulate(cxn)
 
-        val alias = alias()
+        val count = name<Int>()
 
-        PurchaseTable
-            .alias(alias)
-            .select(PurchaseTable.alias(alias))
+        val purchaseCount = PurchaseTable
+            .select(count(literal(1)) `as` count)
             .performWith(cxn)
+            .single()[count]!!
+
+        val doubleCount = PurchaseTable
+            .unionAll(PurchaseTable)
+            .selectAll()
+            .performWith(cxn)
+            .count()
+
+        assert(purchaseCount == 4)
+        assert(doubleCount == 8)
     }
 
     @Test

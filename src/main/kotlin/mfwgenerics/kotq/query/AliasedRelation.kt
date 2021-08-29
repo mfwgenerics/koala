@@ -12,7 +12,7 @@ interface AliasedRelation: Withable, SelectArgument {
 
     fun buildQueryRelation(): BuiltRelation
 
-    override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+    override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
         out.relation = buildQueryRelation()
         return null
     }

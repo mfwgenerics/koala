@@ -27,7 +27,7 @@ sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
     override fun populateScope(scope: Scope)
 }
 
-class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
+class BuiltQueryBody {
     lateinit var relation: BuiltRelation
 
     var withType = WithType.NOT_RECURSIVE
@@ -51,34 +51,7 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
 
     var locking: LockMode? = null
 
-    var references: List<SelectArgument> = emptyList()
-    var includeAll = false
-
-    var selected: List<SelectedExpr<*>> = emptyList()
-        private set(value) {
-            columns = LabelList(value.map { it.name })
-            field = value
-        }
-
-    override lateinit var columns: LabelList
-        private set
-
-    fun buildSelection() {
-        val builder = SelectionBuilder(withs.associateBy({ it.cte }) { it.query.columns })
-
-        if (includeAll) {
-            joins.forEach { builder.fromRelation(it.to) }
-        }
-
-        references.forEach {
-            it.buildIntoSelection(builder)
-        }
-
-        @Suppress("unchecked_cast")
-        selected = builder.toList()
-    }
-
-    override fun populateScope(scope: Scope) {
+    fun populateScope(scope: Scope) {
         withs.forEach {
             scope.cte(it.cte, it.query.columns)
         }
@@ -88,6 +61,37 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
         joins.forEach { join ->
             join.populateScope(scope)
         }
+    }
+}
+
+class BuiltSelectQuery(
+    val body: BuiltQueryBody,
+    val selected: List<SelectedExpr<*>>
+): BuiltSubquery, BuiltStatement {
+    constructor(
+        body: BuiltQueryBody,
+        references: List<SelectArgument>,
+        includeAll: Boolean = false
+    ): this(
+        body,
+        SelectionBuilder(body.withs.associateBy({ it.cte }) { it.query.columns })
+            .also { builder ->
+                if (includeAll) {
+                    builder.fromRelation(body.relation)
+                    body.joins.forEach { builder.fromRelation(it.to) }
+                }
+
+                references.forEach {
+                    it.buildIntoSelection(builder)
+                }
+            }
+            .toList()
+    )
+
+    override val columns: LabelList = LabelList(selected.map { it.name })
+
+    override fun populateScope(scope: Scope) {
+        body.populateScope(scope)
 
         selected.forEach {
             if (it.expr != it.name) scope.internal(it.name)

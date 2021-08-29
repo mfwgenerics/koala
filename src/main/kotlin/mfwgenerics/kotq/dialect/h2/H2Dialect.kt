@@ -353,7 +353,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQueryWhere(query: BuiltSelectQuery) {
+        fun compileQueryWhere(query: BuiltQueryBody) {
             compileRelation(query.relation)
 
             query.joins.asReversed().forEach { join ->
@@ -371,7 +371,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileSelectBody(body: BuiltSelectQuery) {
+        fun compileSelectBody(body: BuiltQueryBody) {
             compileQueryWhere(body)
 
             sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
@@ -398,14 +398,17 @@ class H2Dialect: SqlDialect {
         ) {
             sql.addSql("\n")
             sql.addSql(operation.type.sql)
+            if (operation.distinctness == Distinctness.ALL) sql.addSql(" ALL")
             sql.addSql("\n")
+
+            val selectQuery = operation.body.toSelectQuery(outerSelect)
 
             Compilation(
                 scope.innerScope().also {
-                    operation.body.populateScope(it)
+                    selectQuery.populateScope(it)
                 },
                 sql
-            ).compileSelect(outerSelect, operation.body)
+            ).compileSelect(outerSelect, selectQuery)
         }
 
         fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
@@ -435,9 +438,9 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileSelect(outerSelect: List<SelectedExpr<*>>, select: BuiltSelectQuery) {
-            val withs = select.withs
+            val withs = select.body.withs
 
-            compileWiths(select.withType, withs)
+            compileWiths(select.body.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
 
@@ -454,28 +457,28 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("\nFROM ")
 
-            compileSelectBody(select)
+            compileSelectBody(select.body)
 
-            select.setOperations.forEach {
+            select.body.setOperations.forEach {
                 compileSetOperation(select.selected, it)
             }
 
-            if (select.orderBy.isNotEmpty()) sql.addSql("\n")
-            compileOrderBy(select.orderBy)
+            if (select.body.orderBy.isNotEmpty()) sql.addSql("\n")
+            compileOrderBy(select.body.orderBy)
 
-            select.limit?.let {
+            select.body.limit?.let {
                 sql.addSql("\nLIMIT ")
                 sql.addValue(literal(it))
             }
 
-            if (select.offset != 0) {
-                check (select.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+            if (select.body.offset != 0) {
+                check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
-                sql.addValue(literal(select.offset))
+                sql.addValue(literal(select.body.offset))
             }
 
-            select.locking?.let { locking ->
+            select.body.locking?.let { locking ->
                 when (locking) {
                     LockMode.SHARE -> sql.addSql("\nFOR UPDATE")
                     LockMode.UPDATE -> sql.addSql("\nFOR SHARED")
@@ -541,7 +544,7 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileUpdate(update: BuiltUpdate) {
-            val query = update.select
+            val query = update.query
 
             compileWiths(query.withType, query.withs)
 
@@ -549,7 +552,7 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("UPDATE ")
 
-            compileRelation(update.select.relation)
+            compileRelation(update.query.relation)
 
             sql.addSql("\nSET ")
 

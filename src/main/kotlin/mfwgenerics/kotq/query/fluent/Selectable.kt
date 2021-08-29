@@ -1,27 +1,25 @@
 package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.Assignment
-import mfwgenerics.kotq.Updated
-import mfwgenerics.kotq.expr.SelectedExpr
-import mfwgenerics.kotq.expr.SelectArgument
 import mfwgenerics.kotq.expr.Reference
-import mfwgenerics.kotq.query.Relvar
+import mfwgenerics.kotq.expr.SelectArgument
+import mfwgenerics.kotq.expr.SelectedExpr
+import mfwgenerics.kotq.query.Deleted
 import mfwgenerics.kotq.query.Subqueryable
+import mfwgenerics.kotq.query.Updated
 import mfwgenerics.kotq.query.built.*
 
-interface Selectable: BuildsIntoSelect {
+interface Selectable: BuildsIntoQueryBody {
     private class Select<T : Any>(
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): SelectedJust<T>, BuildsIntoSelect {
-        override fun buildQuery(): BuiltSubquery = buildSelect()
-
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
-            out.references = references
-            out.includeAll = includeAll
-            return of
-        }
+    ): SelectedJust<T> {
+        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+            of.buildSelect(),
+            references,
+            includeAll
+        )
     }
 
     private fun <T : Any> selectInternal(references: List<SelectArgument>, includeAll: Boolean): SelectedJust<T> =
@@ -43,18 +41,21 @@ interface Selectable: BuildsIntoSelect {
         val of: Selectable,
         val assignments: List<Assignment<*>>
     ): Updated {
-        override fun buildsIntoUpdate(out: BuiltUpdate): BuildsIntoUpdate? {
-            out.select = of.buildSelect()
-            out.assignments = assignments
-            return null
-        }
+        override fun buildUpdate() = BuiltUpdate(
+            of.buildSelect(),
+            assignments
+        )
     }
 
     fun update(vararg assignments: Assignment<*>): Updated =
         Update(this, assignments.asList())
 
-    /* Relation rather than Table e.g. self join delete may delete by alias */
-    fun delete(vararg relations: Relvar): Nothing =
-        TODO()
+    private class Delete(
+        val of: Selectable
+    ): Deleted {
+        override fun buildDelete() = BuiltDelete(of.buildSelect())
+    }
+
+    fun delete(): Deleted = Delete(this)
 }
 

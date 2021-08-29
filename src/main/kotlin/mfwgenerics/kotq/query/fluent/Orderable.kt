@@ -1,15 +1,15 @@
 package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.expr.Ordinal
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
-import mfwgenerics.kotq.query.built.BuiltSelectQuery
+import mfwgenerics.kotq.query.built.BuildsIntoQueryBody
+import mfwgenerics.kotq.query.built.BuiltQueryBody
 
 interface Orderable: Offsetable {
     private class OrderBy(
         val of: Orderable,
         val ordinals: List<Ordinal<*>>
     ): Offsetable {
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
             out.orderBy = ordinals
             return of
         }

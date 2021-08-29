@@ -6,5 +6,5 @@ import mfwgenerics.kotq.query.SetOperationType
 data class BuiltSetOperation(
     val type: SetOperationType,
     val distinctness: Distinctness,
-    val body: BuiltSelectQuery
+    val body: BuiltUnionOperand
 )

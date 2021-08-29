@@ -1,9 +1,7 @@
 package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.IdentifierName
-import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.expr.RelvarColumn
-import mfwgenerics.kotq.expr.SelectionBuilder
 import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.query.built.BuiltSubquery
 

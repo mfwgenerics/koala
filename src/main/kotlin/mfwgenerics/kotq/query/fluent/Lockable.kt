@@ -1,15 +1,15 @@
 package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.query.LockMode
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
-import mfwgenerics.kotq.query.built.BuiltSelectQuery
+import mfwgenerics.kotq.query.built.BuildsIntoQueryBody
+import mfwgenerics.kotq.query.built.BuiltQueryBody
 
 interface Lockable: Selectable {
     private class LockQuery(
         val of: Lockable,
         val mode: LockMode
     ): Selectable {
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
             out.locking = mode
 
             return of

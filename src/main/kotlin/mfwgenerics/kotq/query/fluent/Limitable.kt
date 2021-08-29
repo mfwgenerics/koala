@@ -1,14 +1,14 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.built.BuildsIntoSelect
-import mfwgenerics.kotq.query.built.BuiltSelectQuery
+import mfwgenerics.kotq.query.built.BuildsIntoQueryBody
+import mfwgenerics.kotq.query.built.BuiltQueryBody
 
 interface Limitable: Lockable {
     private class Limit(
         val of: Limitable,
         val rows: Int
     ): Lockable {
-        override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect? {
+        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
             out.limit = rows
 
             return of
