@@ -1,7 +1,6 @@
 package mfwgenerics.kotq.query.built
 
 import mfwgenerics.kotq.expr.*
-import mfwgenerics.kotq.query.Cte
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.query.LockMode
 import mfwgenerics.kotq.query.WithType
@@ -52,6 +51,9 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
 
     var locking: LockMode? = null
 
+    var references: List<SelectArgument> = emptyList()
+    var includeAll = false
+
     var selected: List<SelectedExpr<*>> = emptyList()
         private set(value) {
             columns = LabelList(value.map { it.name })
@@ -61,7 +63,7 @@ class BuiltSelectQuery: BuiltSubquery, BuiltStatement {
     override lateinit var columns: LabelList
         private set
 
-    fun buildSelection(references: List<SelectArgument>, includeAll: Boolean) {
+    fun buildSelection() {
         val builder = SelectionBuilder(withs.associateBy({ it.cte }) { it.query.columns })
 
         if (includeAll) {

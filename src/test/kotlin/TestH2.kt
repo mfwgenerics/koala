@@ -375,12 +375,25 @@ class TestH2 {
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
             .leftJoin(cte.alias(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
                 .and(PurchaseTable.price less -600))
-            .select(CustomerTable.firstName, PurchaseTable.price, alias[PurchaseTable.price])
+            .select(cte, CustomerTable.firstName, cte.alias(alias))
             .performWith(cxn)
-            .map { row -> row.labels.values.map { row[it] } }
+            .map { row ->
+                row.labels.values.map { row[it] }
+            }
             .toList()
 
-        println(rows)
+        val expected = listOf(
+            listOf(1, 2, 1, "Apple", -150, 20, "Jane", null, null, null, null, null, null),
+            listOf(3, 1, 1, "Hammer", -8000, null, "Jane", 1, 2, 1, "Apple", -150, 20),
+            listOf(3, 1, 1, "Hammer", -8000, null, "Jane", 3, 1, 1, "Hammer", -8000, null),
+            listOf(2, 2, 2, "Pear", -200, null, "Bob", null, null, null, null, null, null),
+            listOf(4, 3, 2, "Pen", -500, null, "Bob", null, null, null, null, null, null)
+        )
+
+        assertListOfListsEquals(
+            expected,
+            rows
+        )
     }
 
     @Test

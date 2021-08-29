@@ -13,7 +13,8 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
         override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
-            out.buildSelection(references, false)
+            out.references = references
+            out.includeAll = false
             return of
         }
     }

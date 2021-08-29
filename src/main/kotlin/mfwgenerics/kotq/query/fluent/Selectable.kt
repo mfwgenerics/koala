@@ -18,7 +18,8 @@ interface Selectable: BuildsIntoSelect {
         override fun buildQuery(): BuiltSubquery = buildSelect()
 
         override fun buildIntoSelect(out: BuiltSelectQuery): BuildsIntoSelect {
-            out.buildSelection(references, includeAll)
+            out.references = references
+            out.includeAll = includeAll
             return of
         }
     }
