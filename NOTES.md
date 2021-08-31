@@ -14,6 +14,8 @@ SQL query/statement dsl:
 
 Misc:
  
+* Share test code
+* Figure out cleanup for mysql
 * throw exception on UPDATE/DELETE with no where clause?
 * SELECT optional for subUNION (provided by outer query)
 * backtick escape names and prevent auto-generated name collision
