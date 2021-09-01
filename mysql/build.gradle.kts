@@ -6,4 +6,6 @@ dependencies {
     implementation(project(":core"))
 
     implementation("mysql:mysql-connector-java:8.0.26")
+
+    testImplementation(project(":core", "testArchive"))
 }
