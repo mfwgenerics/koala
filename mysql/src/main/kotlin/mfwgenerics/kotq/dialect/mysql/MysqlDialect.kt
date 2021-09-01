@@ -2,6 +2,7 @@ package mfwgenerics.kotq.dialect.mysql
 
 import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
@@ -60,8 +61,9 @@ class MysqlDialect: SqlDialect {
 
         sql.addSql(table.relvarName)
         sql.parenthesize {
-            sql.prefix("", ", ").forEach(table.columns) {
-                sql.addSql("\n")
+            val comma = sql.prefix("\n", ",\n")
+
+            comma.forEach(table.columns) {
                 val def = it.builtDef
 
                 sql.addSql(it.symbol)
@@ -85,6 +87,22 @@ class MysqlDialect: SqlDialect {
                     compileDefaultExpr(sql, finalExpr)
                 }
             }
+
+            table.primaryKey?.let { pk ->
+                comma.next {
+                    sql.addSql("CONSTRAINT ")
+                    sql.addIdentifier(pk.name)
+                    sql.addSql(" PRIMARY KEY (")
+                    sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                        when (it) {
+                            is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                            else -> error("expression keys unsupported")
+                        }
+                    }
+                    sql.addSql(")")
+                }
+            }
+
             sql.addSql("\n")
         }
     }

@@ -10,6 +10,10 @@ class SqlTextBuilder {
         contents.append(sql)
     }
 
+    fun addIdentifier(id: String) {
+        addSql("`$id`")
+    }
+
     fun addSql(sql: StandardSql) { addSql(sql.sql) }
 
     fun addValue(value: Literal<*>?) {
