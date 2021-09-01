@@ -13,20 +13,25 @@ open class Table(
     private val internalColumns = arrayListOf<TableColumn<*>>()
     override val columns: List<TableColumn<*>> get() = internalColumns
 
-    private val usedNames: HashSet<String> = hashSetOf()
+    private val usedIndexNames: HashSet<String> = hashSetOf()
+    private val usedColumnNames: HashSet<String> = hashSetOf()
 
-    private fun takeName(name: String) {
-        check(usedNames.add(name)) { "name $name is already in use" }
+    private fun takeIndexName(name: String) {
+        check(usedIndexNames.add(name)) { "index name $name is already in use" }
+    }
+
+    private fun takeFieldName(name: String) {
+        check(usedColumnNames.add(name)) { "field name $name is already in use" }
     }
 
     fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
-        takeName(name)
+        takeFieldName(name)
 
         return TableColumn(this, name, def).also { internalColumns.add(it) }
     }
 
     fun <T : Any> column(name: String, def: DataType<T>): TableColumn<T> {
-        takeName(name)
+        takeFieldName(name)
 
         return TableColumn(this, name, BaseColumnType(def)).also { internalColumns.add(it) }
     }
@@ -38,9 +43,9 @@ open class Table(
     val indexes: List<BuiltNamedIndex> get() = internalIndexes
 
     fun primaryKey(name: String, keys: KeyList) {
-        checkNotNull(primaryKey) { "duplicate primary key $name" }
+        check(primaryKey == null) { "duplicate primary key $name" }
 
-        takeName(name)
+        takeIndexName(name)
 
         primaryKey = BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.PRIMARY,
@@ -49,7 +54,7 @@ open class Table(
     }
 
     fun uniqueIndex(name: String, keys: KeyList) {
-        takeName(name)
+        takeIndexName(name)
 
         internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.UNIQUE,
@@ -58,7 +63,7 @@ open class Table(
     }
 
     fun index(name: String, keys: KeyList) {
-        takeName(name)
+        takeIndexName(name)
 
         internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.INDEX,

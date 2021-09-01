@@ -67,6 +67,10 @@ abstract class BaseTest {
         val id = column("id", INTEGER.autoIncrement())
 
         val name = column("name", VARCHAR(100))
+
+        init {
+            primaryKey("id", keys(id))
+        }
     }
 
     object CustomerTable: Table("Customer") {
@@ -74,6 +78,10 @@ abstract class BaseTest {
 
         val firstName = column("firstName", VARCHAR(100))
         val lastName = column("lastName", VARCHAR(100))
+
+        init {
+            primaryKey("id", keys(id))
+        }
     }
 
     object PurchaseTable: Table("Purchase") {
@@ -86,6 +94,10 @@ abstract class BaseTest {
 
         val price = column("price", INTEGER)
         val discount = column("discount", INTEGER.nullable())
+
+        init {
+            primaryKey("id", keys(id))
+        }
     }
 
     // TODO use an assertion library
