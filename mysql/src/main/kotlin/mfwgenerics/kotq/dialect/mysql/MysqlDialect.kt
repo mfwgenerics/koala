@@ -210,7 +210,7 @@ class MysqlDialect: SqlDialect {
                 FLOAT -> TODO()
                 INSTANT -> TODO()
                 SMALLINT -> TODO()
-                INTEGER -> sql.addSql("INTEGER")
+                INTEGER -> sql.addSql("SIGNED")
                 TINYINT -> TODO()
                 is RAW -> TODO()
                 TIME -> TODO()
@@ -224,7 +224,7 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {
+        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -236,13 +236,13 @@ class MysqlDialect: SqlDialect {
 
             when (query) {
                 is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
-                is BuiltValuesQuery -> compilation.compileValues(query)
+                is BuiltValuesQuery -> compilation.compileValues(query, forInsert)
             }
         }
 
         fun compileSubqueryExpr(subquery: BuiltSubquery) {
             sql.parenthesize {
-                compileQuery(emptyList(), subquery)
+                compileQuery(emptyList(), subquery, false)
             }
         }
 
@@ -344,7 +344,7 @@ class MysqlDialect: SqlDialect {
                         Compilation(
                             innerScope,
                             sql = sql
-                        ).compileQuery(emptyList(), baseRelation.of)
+                        ).compileQuery(emptyList(), baseRelation.of, false)
                     }
 
                     if (baseRelation.of is BuiltValuesQuery) {
@@ -449,7 +449,7 @@ class MysqlDialect: SqlDialect {
                     Compilation(
                         scope = innerScope,
                         sql = sql
-                    ).compileQuery(emptyList(), it.query)
+                    ).compileQuery(emptyList(), it.query, false)
 
                     sql.addSql(")")
                 }
@@ -504,7 +504,7 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery) {
+        fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
             val values = query.values
 
             val columns = values.columns
@@ -514,6 +514,8 @@ class MysqlDialect: SqlDialect {
 
             while (iter.next()) {
                 rowPrefix.next {
+                    if (!forInsert) sql.addSql("ROW ")
+
                     sql.addSql("(")
                     sql.prefix("", ", ").forEach(columns.values) {
                         @Suppress("unchecked_cast")
@@ -558,7 +560,7 @@ class MysqlDialect: SqlDialect {
 
             sql.addSql("\n")
 
-            compileQuery(emptyList(), insert.query)
+            compileQuery(emptyList(), insert.query, true)
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -608,11 +610,11 @@ class MysqlDialect: SqlDialect {
 
         when (statement) {
             is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
-            is BuiltValuesQuery -> compilation.compileValues(statement)
+            is BuiltValuesQuery -> compilation.compileValues(statement, false)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)
         }
 
-        return compilation.sql.toSql()
+        return compilation.sql.toSql().also { println(it) }
     }
 }

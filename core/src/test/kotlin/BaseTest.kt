@@ -2,6 +2,8 @@ import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.Table.Companion.autoIncrement
+import mfwgenerics.kotq.ddl.Table.Companion.nullable
+import mfwgenerics.kotq.ddl.Table.Companion.reference
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
@@ -289,8 +291,8 @@ abstract class BaseTest {
                 .select(PurchaseTable.id)
             ))
             .update(
-                CustomerTable.firstName setTo "Bawb",
-                CustomerTable.lastName setTo CustomerTable.firstName
+                CustomerTable.lastName setTo CustomerTable.firstName,
+                CustomerTable.firstName setTo "Bawb"
             )
             .performWith(cxn)
 
@@ -320,9 +322,13 @@ abstract class BaseTest {
             .insert(PurchaseTable
                 .where((PurchaseTable.id eq bobId).and(PurchaseTable.product eq "Pear"))
                 .select(
+                    PurchaseTable.shop,
+                    PurchaseTable.customer,
+
                     literal("NanoPear") `as` PurchaseTable.product,
-                    PurchaseTable,
                     cast(PurchaseTable.price / 100, INTEGER) `as` PurchaseTable.price,
+
+                    PurchaseTable.discount
                 )
             )
             .performWith(cxn)
@@ -365,13 +371,20 @@ abstract class BaseTest {
         val cte = cte()
 
         val rows = CustomerTable
-            .with(cte `as` PurchaseTable.select(
-                PurchaseTable,
-                -PurchaseTable.price `as` PurchaseTable.price
-            ))
+            .with(cte `as` PurchaseTable
+                .select(
+                    PurchaseTable,
+                    -PurchaseTable.price `as` PurchaseTable.price
+                )
+            )
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
             .leftJoin(cte.alias(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
                 .and(PurchaseTable.price less -600))
+            .orderBy(
+                CustomerTable.id,
+                PurchaseTable.id,
+                alias[PurchaseTable.id]
+            )
             .select(cte, CustomerTable.firstName, cte.alias(alias))
             .performWith(cxn)
             .map { row ->
@@ -386,6 +399,9 @@ abstract class BaseTest {
             listOf(2, 2, 2, "Pear", -200, null, "Bob", null, null, null, null, null, null),
             listOf(4, 3, 2, "Pen", -500, null, "Bob", null, null, null, null, null, null)
         )
+
+        println(expected)
+        println(rows)
 
         assertListOfListsEquals(
             expected,
