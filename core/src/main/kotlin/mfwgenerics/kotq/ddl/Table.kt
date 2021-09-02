@@ -5,6 +5,7 @@ import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
 import mfwgenerics.kotq.expr.Expr
+import mfwgenerics.kotq.expr.RelvarColumn
 import mfwgenerics.kotq.query.Relvar
 
 open class Table(
@@ -13,25 +14,20 @@ open class Table(
     private val internalColumns = arrayListOf<TableColumn<*>>()
     override val columns: List<TableColumn<*>> get() = internalColumns
 
-    private val usedIndexNames: HashSet<String> = hashSetOf()
-    private val usedColumnNames: HashSet<String> = hashSetOf()
+    private val usedNames: HashSet<String> = hashSetOf()
 
-    private fun takeIndexName(name: String) {
-        check(usedIndexNames.add(name)) { "index name $name is already in use" }
-    }
-
-    private fun takeFieldName(name: String) {
-        check(usedColumnNames.add(name)) { "field name $name is already in use" }
+    private fun takeName(name: String) {
+        check(usedNames.add(name)) { "field name $name is already in use" }
     }
 
     fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
-        takeFieldName(name)
+        takeName(name)
 
         return TableColumn(this, name, def).also { internalColumns.add(it) }
     }
 
     fun <T : Any> column(name: String, def: DataType<T>): TableColumn<T> {
-        takeFieldName(name)
+        takeName(name)
 
         return TableColumn(this, name, BaseColumnType(def)).also { internalColumns.add(it) }
     }
@@ -42,10 +38,19 @@ open class Table(
     val internalIndexes = arrayListOf<BuiltNamedIndex>()
     val indexes: List<BuiltNamedIndex> get() = internalIndexes
 
+    fun nameKeys(keys: KeyList): String = keys.keys.asSequence()
+        .map {
+            when (it) {
+                is RelvarColumn -> it.symbol
+                else -> error("$it can not be named")
+            }
+        }
+        .joinToString("_")
+
     fun primaryKey(name: String, keys: KeyList) {
         check(primaryKey == null) { "duplicate primary key $name" }
 
-        takeIndexName(name)
+        takeName(name)
 
         primaryKey = BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.PRIMARY,
@@ -53,8 +58,11 @@ open class Table(
         ))
     }
 
+    fun primaryKey(keys: KeyList) =
+        primaryKey("${relvarName}_${nameKeys(keys)}_pkey", keys)
+
     fun uniqueIndex(name: String, keys: KeyList) {
-        takeIndexName(name)
+        takeName(name)
 
         internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.UNIQUE,
@@ -63,7 +71,7 @@ open class Table(
     }
 
     fun index(name: String, keys: KeyList) {
-        takeIndexName(name)
+        takeName(name)
 
         internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.INDEX,

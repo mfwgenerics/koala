@@ -42,7 +42,11 @@ class ConnectionWithDialect(
 
     fun ddl(diff: SchemaDiff) {
         dialect.ddl(diff).forEach {
-            prepare(it).execute()
+            try {
+                prepare(it).execute()
+            } catch (ex: Exception) {
+                throw GeneratedSqlException(it, ex)
+            }
         }
     }
 
@@ -59,7 +63,11 @@ class ConnectionWithDialect(
 
         val sql = dialect.compile(built)
 
-        prepare(sql).execute()
+        try {
+            prepare(sql).execute()
+        } catch (ex: Exception) {
+            throw GeneratedSqlException(sql, ex)
+        }
     }
 
     fun query(queryable: Queryable): RowSequence {
@@ -81,7 +89,11 @@ class ConnectionWithDialect(
 
                 if (!column.builtDef.autoIncrement) err()
 
-                prepared.execute()
+                try {
+                    prepared.execute()
+                } catch (ex: Exception) {
+                    throw GeneratedSqlException(sql, ex)
+                }
 
                 return object : RowSequence {
                     override val columns: LabelList = LabelList(built.returning)
@@ -96,7 +108,11 @@ class ConnectionWithDialect(
 
                 val prepared = prepare(sql)
 
-                val results = prepared.executeQuery()
+                val results = try {
+                    prepared.executeQuery()
+                } catch (ex: Exception) {
+                    throw GeneratedSqlException(sql, ex)
+                }
 
                 return object : RowSequence {
                     override val columns: LabelList = built.columns

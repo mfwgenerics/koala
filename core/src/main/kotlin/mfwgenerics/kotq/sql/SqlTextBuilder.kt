@@ -2,7 +2,9 @@ package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.expr.Literal
 
-class SqlTextBuilder {
+class SqlTextBuilder(
+    private val quoteStyle: IdentifierQuoteStyle
+) {
     private val contents = StringBuilder()
     private val params = arrayListOf<Literal<*>>()
     
@@ -11,7 +13,16 @@ class SqlTextBuilder {
     }
 
     fun addIdentifier(id: String) {
-        addSql("`$id`")
+        addSql(quoteStyle.quote)
+        addSql(id)
+        addSql(quoteStyle.quote)
+    }
+
+    fun addResolved(resolved: Resolved) {
+        resolved.alias?.let {
+            addSql("$it.")
+        }
+        addIdentifier(resolved.innerName)
     }
 
     fun addSql(sql: StandardSql) { addSql(sql.sql) }

@@ -1,19 +1,19 @@
-import mfwgenerics.kotq.mysql.MysqlDialect
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.postgres.PostgresDialect
 import mfwgenerics.kotq.test.TestDatabase
 import java.sql.DriverManager
 import kotlin.test.Test
 
-class TestMysql: BaseTest() {
+class TestPostgres: BaseTest() {
     override fun connect(db: String): TestDatabase {
-        val outerCxn = DriverManager.getConnection("jdbc:mysql://localhost:3306/","root","my-secret-pw")
+        val outerCxn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
 
         outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
         return object : TestDatabase {
             override val cxn: ConnectionWithDialect = ConnectionWithDialect(
-                MysqlDialect(),
-                DriverManager.getConnection("jdbc:mysql://localhost:3306/$db", "root", "my-secret-pw")
+                PostgresDialect(),
+                DriverManager.getConnection("jdbc:postgresql://localhost:5432/$db", "postgres", "mysecretpassword")
             )
 
             override fun drop() {
@@ -24,14 +24,7 @@ class TestMysql: BaseTest() {
     }
 
     @Test
-    fun `select version`() = withCxn { cxn ->
-        val rs = cxn
-            .jdbc
-            .prepareStatement("SELECT VERSION()")
-            .executeQuery()
-
-        while (rs.next()) {
-            println(rs.getString(1))
-        }
+    fun empty() {
+        /* prevents test runner from skipping the base class tests */
     }
 }

@@ -54,6 +54,24 @@ class Scope(
         internal.putIfAbsent(name, Internal)
     }
 
+    fun resolve(name: Reference<*>): Resolved {
+        val registered = internal[name]
+            ?: return checkNotNull(enclosing?.resolve(name)) {
+                "$name not in scope ${System.identityHashCode(this)}"
+            }
+
+        return when (registered) {
+            is UnderAlias -> Resolved(
+                alias = names[registered.alias],
+                innerName = registered.innerName
+            )
+            Internal -> Resolved(
+                alias = null,
+                innerName = names[name]
+            )
+        }
+    }
+
     operator fun get(name: Reference<*>): String {
         val registered = internal[name]
             ?: return checkNotNull(enclosing?.get(name)) {

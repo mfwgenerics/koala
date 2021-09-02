@@ -6,7 +6,7 @@ docker run --publish 3306:3306 --name mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw 
 
 SECONDS=0
 
-until mysql -u root -h 127.0.0.1 -pmy-secret-pw -e "drop database if exists testdb; create database testdb" 2> /dev/null;
+until mysql -u root -h 127.0.0.1 -pmy-secret-pw 2> /dev/null;
 do
   ((SECONDS < 120)) || exit;
   sleep 1;

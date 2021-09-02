@@ -1,7 +1,8 @@
-package mfwgenerics.kotq.dialect.h2
+package mfwgenerics.kotq.postgres
 
 import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
@@ -16,7 +17,7 @@ import mfwgenerics.kotq.window.*
 import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
-class H2Dialect: SqlDialect {
+class PostgresDialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addValue(expr)
@@ -52,20 +53,34 @@ class H2Dialect: SqlDialect {
         }
     }
 
+    private fun compileSerialType(sql: SqlTextBuilder, type: DataType<*>) {
+        when (type) {
+            SMALLINT -> sql.addSql("SMALLSERIAL")
+            INTEGER -> sql.addSql("SERIAL")
+            BIGINT -> sql.addSql("BIGSERIAL")
+            else -> error("no serial type corresponds to $type")
+        }
+    }
+
     private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
         sql.addSql("CREATE TABLE ")
 
-        sql.addSql(table.relvarName)
+        sql.addIdentifier(table.relvarName)
         sql.parenthesize {
-            sql.prefix("", ", ").forEach(table.columns) {
-                sql.addSql("\n")
+            val comma = sql.prefix("\n", ",\n")
+
+            comma.forEach(table.columns) {
                 val def = it.builtDef
 
-                sql.addSql(it.symbol)
+                sql.addIdentifier(it.symbol)
                 sql.addSql(" ")
-                compileDataType(sql, def.columnType.dataType)
 
-                if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+                if (def.autoIncrement) {
+                    compileSerialType(sql, def.columnType.dataType)
+                } else {
+                    compileDataType(sql, def.columnType.dataType)
+                }
+
                 if (def.notNull) sql.addSql(" NOT NULL")
 
                 def.default?.let { default ->
@@ -82,6 +97,22 @@ class H2Dialect: SqlDialect {
                     compileDefaultExpr(sql, finalExpr)
                 }
             }
+
+            table.primaryKey?.let { pk ->
+                comma.next {
+                    sql.addSql("CONSTRAINT ")
+                    sql.addIdentifier(pk.name)
+                    sql.addSql(" PRIMARY KEY (")
+                    sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                        when (it) {
+                            is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                            else -> error("expression keys unsupported")
+                        }
+                    }
+                    sql.addSql(")")
+                }
+            }
+
             sql.addSql("\n")
         }
     }
@@ -94,7 +125,7 @@ class H2Dialect: SqlDialect {
 
             compileCreateTable(sql, table)
 
-            results.add(sql.toSql())
+            results.add(sql.toSql().also { println(it) })
         }
 
         return results
@@ -105,7 +136,7 @@ class H2Dialect: SqlDialect {
         val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
     ) {
         fun compileReference(name: Reference<*>) {
-            sql.addSql(scope[name])
+            sql.addResolved(scope.resolve(name))
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
@@ -203,7 +234,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {
+        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -215,17 +246,21 @@ class H2Dialect: SqlDialect {
 
             when (query) {
                 is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
-                is BuiltValuesQuery -> compilation.compileValues(query)
+                is BuiltValuesQuery -> compilation.compileValues(query, forInsert)
             }
         }
 
         fun compileSubqueryExpr(subquery: BuiltSubquery) {
             sql.parenthesize {
-                compileQuery(emptyList(), subquery)
+                compileQuery(emptyList(), subquery, false)
             }
         }
 
         fun exhaustive(value: Any?) { }
+
+        fun compileSetLhs(expr: Reference<*>, emitParens: Boolean = true) {
+            sql.addIdentifier(scope.resolve(expr).innerName)
+        }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
             exhaustive(when (expr) {
@@ -311,7 +346,7 @@ class H2Dialect: SqlDialect {
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addSql(baseRelation.relvarName)
+                    sql.addIdentifier(baseRelation.relvarName)
                     null
                 }
                 is Subquery -> {
@@ -323,7 +358,7 @@ class H2Dialect: SqlDialect {
                         Compilation(
                             innerScope,
                             sql = sql
-                        ).compileQuery(emptyList(), baseRelation.of)
+                        ).compileQuery(emptyList(), baseRelation.of, false)
                     }
 
                     if (baseRelation.of is BuiltValuesQuery) {
@@ -428,7 +463,7 @@ class H2Dialect: SqlDialect {
                     Compilation(
                         scope = innerScope,
                         sql = sql
-                    ).compileQuery(emptyList(), it.query)
+                    ).compileQuery(emptyList(), it.query, false)
 
                     sql.addSql(")")
                 }
@@ -448,7 +483,7 @@ class H2Dialect: SqlDialect {
                     selectPrefix.next {
                         compileExpr(it.expr, false)
                         sql.addSql(" ")
-                        sql.addSql(scope.nameOf(it.name))
+                        sql.addIdentifier(scope.nameOf(it.name))
                     }
                 }
 
@@ -483,7 +518,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery) {
+        fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
             val values = query.values
 
             val columns = values.columns
@@ -522,7 +557,7 @@ class H2Dialect: SqlDialect {
             val tableColumnMap = relvar.columns.associateBy { it }
             val columns = insert.query.columns
 
-            sql.addSql(relvar.relvarName)
+            sql.addIdentifier(relvar.relvarName)
             sql.addSql(" ")
 
             sql.parenthesize {
@@ -531,13 +566,13 @@ class H2Dialect: SqlDialect {
                         "can't insert $it into ${relvar.relvarName}"
                     }
 
-                    sql.addSql(column.symbol)
+                    sql.addIdentifier(column.symbol)
                 }
             }
 
             sql.addSql("\n")
 
-            compileQuery(emptyList(), insert.query)
+            compileQuery(emptyList(), insert.query, true)
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -556,13 +591,13 @@ class H2Dialect: SqlDialect {
             val updatePrefix = sql.prefix("", ", ")
 
             check (query.joins.isEmpty()) {
-                "H2 does not support JOIN in update"
+                "JOIN in update not supported"
             }
 
             update.assignments
                 .forEach {
                     updatePrefix.next {
-                        compileExpr(it.reference, false)
+                        compileSetLhs(it.reference)
                         sql.addSql(" = ")
                         compileExpr(it.expr)
                     }
@@ -587,7 +622,7 @@ class H2Dialect: SqlDialect {
 
         when (statement) {
             is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
-            is BuiltValuesQuery -> compilation.compileValues(statement)
+            is BuiltValuesQuery -> compilation.compileValues(statement, false)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)
         }

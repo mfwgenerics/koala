@@ -41,3 +41,8 @@ Error handling:
 Refactoring:
 * Clean up spaghetti of update/insert/select distinctions
 * Deep nested field accesses in H2 compiler
+* Sort out huge mess around quoting/non-quoting identifiers and aliases:
+   1. user provided names should be case-sensitive and always quoted.
+   2. generated names chosen such that they don't require case sensitivity or quoting
+   3. Use type wrappers to differentiate between the different cases?
+   4. identifiers should be whitelisted or marked for escaping?  

@@ -2,8 +2,6 @@ import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.Table.Companion.autoIncrement
-import mfwgenerics.kotq.ddl.Table.Companion.nullable
-import mfwgenerics.kotq.ddl.Table.Companion.reference
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
@@ -11,15 +9,26 @@ import mfwgenerics.kotq.jdbc.ConnectionWithDialect
 import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
+import mfwgenerics.kotq.test.TestDatabase
+import java.security.SecureRandom
+import kotlin.math.absoluteValue
 import kotlin.test.Test
 
 abstract class BaseTest {
-    abstract fun connect(): ConnectionWithDialect
+    abstract fun connect(db: String): TestDatabase
+
+    inline fun withCxn(block: (ConnectionWithDialect) -> Unit) {
+        val testDb = connect("db${SecureRandom().nextLong().absoluteValue}")
+
+        try {
+            block(testDb.cxn)
+        } finally {
+            testDb.drop()
+        }
+    }
 
     @Test
-    fun `triangular numbers from values clause subquery`() {
-        val cxn = connect()
-
+    fun `triangular numbers from values clause subquery`() = withCxn { cxn ->
         val number = name<Int>("number")
         val summed = name<Int>("sumUnder")
 
@@ -29,7 +38,7 @@ abstract class BaseTest {
         val alias = alias("A")
 
         val results = values((1..20).asSequence(), number)
-        { value(number, it) }
+            { value(number, it) }
             .subquery()
             .orderBy(castNumber.desc())
             .select(
@@ -61,8 +70,6 @@ abstract class BaseTest {
             .joinToString("\n")
 
         assert(expected == results)
-
-        cxn.jdbc.close()
     }
 
     object ShopTable: Table("Shop") {
@@ -71,7 +78,7 @@ abstract class BaseTest {
         val name = column("name", VARCHAR(100))
 
         init {
-            primaryKey("id", keys(id))
+            primaryKey(keys(id))
         }
     }
 
@@ -82,7 +89,7 @@ abstract class BaseTest {
         val lastName = column("lastName", VARCHAR(100))
 
         init {
-            primaryKey("id", keys(id))
+            primaryKey(keys(id))
         }
     }
 
@@ -98,7 +105,7 @@ abstract class BaseTest {
         val discount = column("discount", INTEGER.nullable())
 
         init {
-            primaryKey("id", keys(id))
+            primaryKey(keys(id))
         }
     }
 
@@ -192,9 +199,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `stringy joins`() {
-        val cxn = connect()
-
+    fun `stringy joins`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         val expectedPurchaseItems = listOf(
@@ -278,9 +283,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `update through not exists`() {
-        val cxn = connect()
-
+    fun `update through not exists`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         CustomerTable
@@ -305,9 +308,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `insert from select and subquery comparisons`() {
-        val cxn = connect()
-
+    fun `insert from select and subquery comparisons`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         val (bobId, janeId) = CustomerTable
@@ -362,9 +363,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `join to cte`() {
-        val cxn = connect()
-
+    fun `join to cte`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         val alias = alias()
@@ -410,9 +409,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `union all and count`() {
-        val cxn = connect()
-
+    fun `union all and count`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         val count = name<Int>()
@@ -433,9 +430,7 @@ abstract class BaseTest {
     }
 
     @Test
-    fun `table diff`() {
-        val cxn = connect()
-
+    fun `table diff`() = withCxn { cxn ->
         cxn.ddl(createTables(
             CustomerTable
         ))

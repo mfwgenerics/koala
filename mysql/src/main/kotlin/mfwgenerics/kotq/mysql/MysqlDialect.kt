@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.dialect.mysql
+package mfwgenerics.kotq.mysql
 
 import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
@@ -12,10 +12,7 @@ import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.query.built.*
-import mfwgenerics.kotq.sql.NameRegistry
-import mfwgenerics.kotq.sql.Scope
-import mfwgenerics.kotq.sql.SqlText
-import mfwgenerics.kotq.sql.SqlTextBuilder
+import mfwgenerics.kotq.sql.*
 import mfwgenerics.kotq.window.*
 import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
@@ -111,7 +108,7 @@ class MysqlDialect: SqlDialect {
         val results = mutableListOf<SqlText>()
 
         diff.tables.created.forEach { (_, table) ->
-            val sql = SqlTextBuilder()
+            val sql = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
 
             compileCreateTable(sql, table)
 
@@ -123,7 +120,7 @@ class MysqlDialect: SqlDialect {
 
     private class Compilation(
         val scope: Scope,
-        val sql: SqlTextBuilder = SqlTextBuilder()
+        val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
     ) {
         fun compileReference(name: Reference<*>) {
             sql.addSql(scope[name])
@@ -615,6 +612,6 @@ class MysqlDialect: SqlDialect {
             is BuiltUpdate -> compilation.compileUpdate(statement)
         }
 
-        return compilation.sql.toSql().also { println(it) }
+        return compilation.sql.toSql()
     }
 }
