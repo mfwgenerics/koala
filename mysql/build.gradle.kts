@@ -3,9 +3,13 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":jdbc"))
 
     implementation("mysql:mysql-connector-java:8.0.26")
 
-    testImplementation(project(":core", "testArchive"))
+    testImplementation(project(":jdbc", "testArchive"))
+}
+
+tasks.test {
+    maxParallelForks = 16
 }

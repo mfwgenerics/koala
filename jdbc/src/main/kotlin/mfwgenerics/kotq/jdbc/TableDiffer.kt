@@ -6,6 +6,7 @@ import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.BaseColumnType
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.built.BuiltColumnDef
+import mfwgenerics.kotq.ddl.diff.ChangedDefault
 import mfwgenerics.kotq.ddl.diff.ColumnDefinitionDiff
 import mfwgenerics.kotq.ddl.diff.TableDiff
 import java.sql.DatabaseMetaData

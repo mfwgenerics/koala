@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.jdbc
+package mfwgenerics.kotq.ddl.diff
 
 import mfwgenerics.kotq.ddl.built.BuiltColumnDefault
 

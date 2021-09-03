@@ -1,7 +1,6 @@
 package mfwgenerics.kotq.ddl.diff
 
 import mfwgenerics.kotq.ddl.ColumnType
-import mfwgenerics.kotq.jdbc.ChangedDefault
 
 data class ColumnDefinitionDiff(
     val type: ColumnType<*>?,

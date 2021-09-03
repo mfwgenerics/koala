@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":jdbc"))
 
     implementation("org.postgresql:postgresql:42.2.23")
 
-    testImplementation(project(":core", "testArchive"))
+    testImplementation(project(":jdbc", "testArchive"))
 }
