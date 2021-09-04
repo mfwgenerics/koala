@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.sql
 
 import mfwgenerics.kotq.expr.Literal
+import mfwgenerics.kotq.expr.SelectedExpr
 
 class SqlTextBuilder(
     private val quoteStyle: IdentifierQuoteStyle

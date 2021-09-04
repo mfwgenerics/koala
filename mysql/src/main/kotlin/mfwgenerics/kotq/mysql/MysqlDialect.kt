@@ -6,7 +6,7 @@ import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
-import mfwgenerics.kotq.dialect.SqlDialect
+import mfwgenerics.kotq.dialect.*
 import mfwgenerics.kotq.dsl.literal
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
@@ -120,20 +120,34 @@ class MysqlDialect: SqlDialect {
 
     private class Compilation(
         val scope: Scope,
-        val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
-    ) {
-        fun compileReference(name: Reference<*>) {
-            sql.addSql(scope[name])
+        override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
+    ): ExpressionCompiler {
+        override fun <T : Any> reference(context: ExpressionContext, value: Reference<T>) {
+            compileReference(value)
         }
 
-        fun compileOrderBy(ordinals: List<Ordinal<*>>) {
-            sql.prefix("ORDER BY ", ", ").forEach(ordinals) {
-                val orderKey = it.toOrderKey()
+        override fun subquery(context: ExpressionContext, subquery: BuiltSubquery) {
+            compileSubqueryExpr(subquery)
+        }
 
-                compileExpr(orderKey.expr, false)
+        override fun aggregatable(context: ExpressionContext, aggregatable: BuiltAggregatable) {
+            compileAggregatable(aggregatable)
+        }
 
-                sql.addSql(" ${orderKey.order.sql}")
-            }
+        override fun <T : Any> dataTypeForCast(to: DataType<T>) {
+            compileCastDataType(to)
+        }
+
+        override fun window(out: SqlTextBuilder, window: BuiltWindow) {
+            compileWindow(window)
+        }
+
+        fun compileReference(name: Reference<*>) {
+            sql.addResolved(scope.resolve(name))
+        }
+
+        fun compileOrderBy(ordinals: List<Ordinal<*>>) = sql.orderByClause(ordinals) {
+            compileExpr(it, false)
         }
 
         fun compileAggregatable(aggregatable: BuiltAggregatable) {
@@ -144,18 +158,8 @@ class MysqlDialect: SqlDialect {
             if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
         }
 
-        fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) {
-            when (marker) {
-                CurrentRow -> sql.addSql("CURRENT ROW")
-                is Following<*> -> {
-                    compileExpr(marker.offset)
-                }
-                is Preceding<*> -> {
-                    compileExpr(marker.offset)
-                }
-                Unbounded -> sql.addSql("UNBOUNDED $direction")
-            }
-        }
+        fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) =
+            sql.compileRangeMarker(direction, marker) { compileExpr(it) }
 
         fun compileWindow(window: BuiltWindow) {
             val partitionedBy = window.partitions.partitions
@@ -243,87 +247,11 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun exhaustive(value: Any?) { }
-
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            exhaustive(when (expr) {
-                is OperationExpr<*> -> {
-                    when (expr.type.fixity) {
-                        OperationFixity.PREFIX -> {
-                            sql.parenthesize(emitParens) {
-                                sql.addSql(expr.type.sql)
-                                sql.addSql(" ")
-                                compileExpr(expr.args.single(), false)
-                            }
-                        }
-                        OperationFixity.POSTFIX -> {
-                            sql.parenthesize(emitParens) {
-                                compileExpr(expr.args.single(), false)
-                                sql.addSql(" ")
-                                sql.addSql(expr.type.sql)
-                            }
-                        }
-                        OperationFixity.INFIX -> {
-                            sql.parenthesize(emitParens) {
-                                sql.prefix("", " ${expr.type.sql} ").forEach(expr.args) {
-                                    compileExpr(it)
-                                }
-                            }
-                        }
-                        OperationFixity.APPLY -> {
-                            sql.addSql(expr.type.sql)
-                            sql.parenthesize {
-                                sql.prefix("", ", ").forEach(expr.args) {
-                                    compileExpr(it, false)
-                                }
-                            }
-                        }
-                    }
-                }
-                is Literal<*> -> sql.addLiteral(expr)
-                is Reference<*> -> { compileReference(expr) }
-                is AggregatedExpr<*> -> {
-                    val built = expr.buildAggregated()
-
-                    sql.addSql(built.expr.type.sql)
-                    sql.parenthesize {
-                        sql.prefix("", ", ").forEach(built.expr.args) {
-                            compileAggregatable(it)
-                        }
-                    }
-
-                    // h2 doesn't actually support this - maybe have convert to a CASE
-                    built.filter?.let { filter ->
-                        sql.addSql(" FILTER(WHERE ")
-                        compileExpr(filter, false)
-                        sql.addSql(")")
-                    }
-
-                    built.over?.let { window ->
-                        sql.addSql(" OVER (")
-                        compileWindow(window)
-                        sql.addSql(")")
-                    }
-                }
-                is CastExpr<*> -> {
-                    sql.addSql("CAST")
-                    sql.parenthesize {
-                        compileExpr(expr.of, false)
-                        sql.addSql(" AS ")
-                        compileCastDataType(expr.type)
-                    }
-                }
-                is SubqueryExpr -> compileSubqueryExpr(expr.subquery)
-                is ExprListExpr<*> -> sql.parenthesize {
-                    sql.prefix("", ", ").forEach(expr.exprs) {
-                        compileExpr(it, false)
-                    }
-                }
-                is ComparedQuery<*> -> {
-                    sql.addSql(expr.type)
-                    compileSubqueryExpr(expr.subquery)
-                }
-            })
+            return expr.compile(
+                ExpressionContext(needsParens = emitParens),
+                this
+            )
         }
 
         fun compileRelation(relation: BuiltRelation) {
@@ -371,14 +299,10 @@ class MysqlDialect: SqlDialect {
         fun compileQueryWhere(query: BuiltQueryBody) {
             compileRelation(query.relation)
 
-            query.joins.asReversed().forEach { join ->
-                sql.addSql("\n")
-                sql.addSql(join.type.sql)
-                sql.addSql(" ")
-                compileRelation(join.to)
-                sql.addSql(" ON ")
-                compileExpr(join.on, false)
-            }
+            sql.compileJoins(query.joins.asReversed(),
+                compileRelation = { compileRelation(it) },
+                compileExpr = { compileExpr(it, false) }
+            )
 
             query.where?.let {
                 sql.addSql("\nWHERE ")
@@ -461,14 +385,11 @@ class MysqlDialect: SqlDialect {
 
             val selectPrefix = sql.prefix("SELECT ", "\n, ")
 
-            (select.selected.takeIf { it.isNotEmpty() }?:outerSelect)
-                .forEach {
-                    selectPrefix.next {
-                        compileExpr(it.expr, false)
-                        sql.addSql(" ")
-                        sql.addSql(scope.nameOf(it.name))
-                    }
-                }
+            sql.selectClause(select.selected.takeIf { it.isNotEmpty() }?:outerSelect) {
+                compileExpr(it.expr, false)
+                sql.addSql(" ")
+                sql.addSql(scope.nameOf(it.name))
+            }
 
             sql.addSql("\nFROM ")
 
