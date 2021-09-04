@@ -10,14 +10,14 @@ import kotlin.reflect.KClass
 
 sealed class DataType<T : Any>(
     override val type: KClass<T>
-): MappedDataType<T, T> {
+): MappedDataType<T, T>() {
     abstract override fun equals(other: Any?): Boolean
     abstract override fun hashCode(): Int
 
     override val dataType: DataType<T> get() = this
 
-    override fun convert(from: T): T = from
-    override fun unconvert(from: T): T = from
+    override fun convert(value: T): T = value
+    override fun unconvert(value: T): T = value
 }
 
 sealed class PrimitiveDataType<T : Any>(

@@ -1,6 +1,10 @@
 package mfwgenerics.kotq.jdbc
 
+import mfwgenerics.kotq.data.MappedDataType
+import mfwgenerics.kotq.data.TypeMappings
+import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
+import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.query.LabelList
@@ -20,21 +24,31 @@ class ConnectionWithDialect(
     val dialect: SqlDialect,
     val jdbc: Connection
 ) {
-    fun prepareWithGeneratedKeys(sql: SqlText): PreparedStatement {
-        val result = jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
+    private val typeMappings = TypeMappings()
 
-        sql.parameters.forEachIndexed { ix, it ->
-            result.setObject(ix + 1, it.value)
+    fun createTable(vararg tables: Table) {
+        ddl(createTables(*tables))
+
+        tables.forEach { table ->
+            table.columns.forEach {
+                typeMappings.register(it.builtDef.columnType)
+            }
         }
-
-        return result
     }
 
-    fun prepare(sql: SqlText): PreparedStatement {
-        val result = jdbc.prepareStatement(sql.sql)
+    fun <F : Any, T : Any> registerType(mapping: MappedDataType<T, F>) {
+        typeMappings.register(mapping)
+    }
+
+    private fun prepare(sql: SqlText, generatedKeys: Boolean = false): PreparedStatement {
+        val result = if (generatedKeys) {
+            jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
+        } else {
+            jdbc.prepareStatement(sql.sql)
+        }
 
         sql.parameters.forEachIndexed { ix, it ->
-            result.setObject(ix + 1, it.value)
+            result.setObject(ix + 1, typeMappings.unconvert(it).value)
         }
 
         return result
@@ -79,7 +93,7 @@ class ConnectionWithDialect(
 
                 val sql = dialect.compile(built.insert)
 
-                val prepared = prepareWithGeneratedKeys(sql)
+                val prepared = prepare(sql, true)
 
                 val keys = built.returning
                 if (keys.size != 1) err()
@@ -99,7 +113,7 @@ class ConnectionWithDialect(
                     override val columns: LabelList = LabelList(built.returning)
 
                     override fun rowIterator(): RowIterator {
-                        return AdaptedResultSet(columns, prepared.generatedKeys)
+                        return AdaptedResultSet(typeMappings, columns, prepared.generatedKeys)
                     }
                 }
             }
@@ -118,7 +132,7 @@ class ConnectionWithDialect(
                     override val columns: LabelList = built.columns
 
                     override fun rowIterator(): RowIterator {
-                        return AdaptedResultSet(columns, results)
+                        return AdaptedResultSet(typeMappings, columns, results)
                     }
                 }
             }

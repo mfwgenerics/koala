@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.jdbc
 
+import mfwgenerics.kotq.data.TypeMappings
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.values.PreLabeledRow
@@ -8,24 +9,24 @@ import mfwgenerics.kotq.values.ValuesRow
 import java.sql.ResultSet
 
 class AdaptedResultSet(
+    private val typeMappings: TypeMappings,
     override val labels: LabelList,
     val resultSet: ResultSet
 ): RowIterator {
     override fun <T : Any> get(reference: Reference<T>): T? {
         val ix = 1 + (labels.positionOf(reference) ?: return null)
 
-        @Suppress("unchecked_cast")
-        val result = when (reference.type) {
-            Int::class -> resultSet.getInt(ix)
-            Long::class -> resultSet.getLong(ix)
-            Float::class -> resultSet.getFloat(ix)
-            Double::class -> resultSet.getDouble(ix)
-            else -> return resultSet.getObject(ix) as T?
-        } as T?
+        return typeMappings.convert(reference.type) { converted ->
+            val result = when (converted) {
+                Int::class -> resultSet.getInt(ix)
+                Long::class -> resultSet.getLong(ix)
+                Float::class -> resultSet.getFloat(ix)
+                Double::class -> resultSet.getDouble(ix)
+                else -> resultSet.getObject(ix)
+            }
 
-        if (resultSet.wasNull()) return null
-
-        return result
+            result?.takeUnless { resultSet.wasNull() }
+        }
     }
 
     override fun next(): Boolean =

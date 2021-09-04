@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.ddl
 
 import mfwgenerics.kotq.data.DataType
+import mfwgenerics.kotq.data.MappedDataType
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
@@ -26,7 +27,7 @@ open class Table(
         return TableColumn(this, name, def).also { internalColumns.add(it) }
     }
 
-    fun <T : Any> column(name: String, def: DataType<T>): TableColumn<T> {
+    fun <T : Any> column(name: String, def: MappedDataType<*, T>): TableColumn<T> {
         takeName(name)
 
         return TableColumn(this, name, BaseColumnType(def)).also { internalColumns.add(it) }

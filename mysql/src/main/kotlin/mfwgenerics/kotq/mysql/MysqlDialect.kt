@@ -13,7 +13,7 @@ import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.query.built.*
 import mfwgenerics.kotq.sql.*
-import mfwgenerics.kotq.window.*
+import mfwgenerics.kotq.window.FrameRangeMarker
 import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 

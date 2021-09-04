@@ -1,7 +1,6 @@
 import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
@@ -110,11 +109,11 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     fun createAndPopulate(cxn: ConnectionWithDialect) {
-        cxn.ddl(createTables(
+        cxn.createTable(
             ShopTable,
             CustomerTable,
             PurchaseTable
-        ))
+        )
 
         val shopIds = ShopTable
             .insert(values(
@@ -410,5 +409,47 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assert(purchaseCount == 4)
         assert(doubleCount == 8)
+    }
+
+    enum class NumberEnum {
+        ONE, TWO, THREE
+    }
+
+    enum class ColorEnum {
+        RED, GREEN, BLUE
+    }
+
+    enum class FruitEnum {
+        APPLE, BANANA, ORANGE
+    }
+
+    object MappingsTable: Table("Customer") {
+        val number = column("number", VARCHAR(100).map({ NumberEnum.valueOf(it) }, { "$it" }))
+        val color = column("color", VARCHAR(101).map({ ColorEnum.valueOf(it) }, { "$it" }))
+        val fruit = column("fruit", INTEGER.map({ FruitEnum.values()[it] }, { it.ordinal }))
+    }
+
+    @Test
+    fun `inserting and selecting from mapped columns`() = withCxn { cxn ->
+        cxn.createTable(MappingsTable)
+
+        MappingsTable
+            .insert(values(
+                rowOf(
+                    MappingsTable.number setTo NumberEnum.TWO,
+                    MappingsTable.color setTo ColorEnum.BLUE,
+                    MappingsTable.fruit setTo FruitEnum.BANANA
+                )
+            ))
+            .performWith(cxn)
+
+        val result = MappingsTable
+            .selectAll()
+            .performWith(cxn)
+            .single()
+
+        assert(result[MappingsTable.number] == NumberEnum.TWO)
+        assert(result[MappingsTable.color] == ColorEnum.BLUE)
+        assert(result[MappingsTable.fruit] == FruitEnum.BANANA)
     }
 }
