@@ -53,6 +53,31 @@ class MysqlDialect: SqlDialect {
         }
     }
 
+    private fun compileColumnDef(sql: SqlTextBuilder, column: TableColumn<*>) {
+        val def = column.builtDef
+
+        sql.addSql(column.symbol)
+        sql.addSql(" ")
+        compileDataType(sql, def.columnType.dataType)
+
+        if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+        if (def.notNull) sql.addSql(" NOT NULL")
+
+        def.default?.let { default ->
+            @Suppress("unchecked_cast")
+            val finalExpr = when (default) {
+                is ColumnDefaultExpr -> default.expr
+                is ColumnDefaultValue -> Literal(
+                    def.columnType.type as KClass<Any>,
+                    default.value
+                )
+            }
+
+            sql.addSql(" DEFAULT ")
+            compileDefaultExpr(sql, finalExpr)
+        }
+    }
+
     private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
         sql.addSql("CREATE TABLE ")
 
@@ -61,28 +86,7 @@ class MysqlDialect: SqlDialect {
             val comma = sql.prefix("\n", ",\n")
 
             comma.forEach(table.columns) {
-                val def = it.builtDef
-
-                sql.addSql(it.symbol)
-                sql.addSql(" ")
-                compileDataType(sql, def.columnType.dataType)
-
-                if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
-                if (def.notNull) sql.addSql(" NOT NULL")
-
-                def.default?.let { default ->
-                    @Suppress("unchecked_cast")
-                    val finalExpr = when (default) {
-                        is ColumnDefaultExpr -> default.expr
-                        is ColumnDefaultValue -> Literal(
-                            def.columnType.type as KClass<Any>,
-                            default.value
-                        )
-                    }
-
-                    sql.addSql(" DEFAULT ")
-                    compileDefaultExpr(sql, finalExpr)
-                }
+                compileColumnDef(sql, it)
             }
 
             table.primaryKey?.let { pk ->
@@ -113,6 +117,19 @@ class MysqlDialect: SqlDialect {
             compileCreateTable(sql, table)
 
             results.add(sql.toSql())
+        }
+
+        diff.tables.altered.forEach { (_, table) ->
+            table.alteration.columns.altered.forEach { (_, column) ->
+                val sql = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
+
+                sql.addSql("ALTER TABLE ")
+                sql.addIdentifier(table.value.relvarName)
+                sql.addSql(" MODIFY COLUMN ")
+                compileColumnDef(sql, column.value)
+
+                results.add(sql.toSql())
+            }
         }
 
         return results

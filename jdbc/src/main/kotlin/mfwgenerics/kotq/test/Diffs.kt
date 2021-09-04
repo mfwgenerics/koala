@@ -1,13 +1,11 @@
 package mfwgenerics.kotq.test
 
+import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.BuiltColumnDef
 import mfwgenerics.kotq.ddl.built.BuiltColumnDefault
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
-import mfwgenerics.kotq.ddl.diff.ColumnDefinitionDiff
-import mfwgenerics.kotq.ddl.diff.Diff
-import mfwgenerics.kotq.ddl.diff.SchemaDiff
-import mfwgenerics.kotq.ddl.diff.TableDiff
+import mfwgenerics.kotq.ddl.diff.*
 
 interface DiffMatcher<in C, in A> {
     fun matchCreated(name: String, expected: C, actual: C)
@@ -41,15 +39,17 @@ private fun matchColumnDefaults(name: String, expected: BuiltColumnDefault?, act
     }
 }
 
-object ColumnDiffMatcher: DiffMatcher<BuiltColumnDef, ColumnDefinitionDiff> {
-    override fun matchCreated(name: String, expected: BuiltColumnDef, actual: BuiltColumnDef) {
-        matchValues("$name.`columnType.dataType`", expected.columnType.dataType, actual.columnType.dataType)
-        matchValues("$name.autoIncrement", expected.autoIncrement, actual.autoIncrement)
-        matchValues("$name.notNull", expected.notNull, actual.notNull)
+object ColumnDiffMatcher: DiffMatcher<TableColumn<*>, ColumnDefinitionDiff> {
+    override fun matchCreated(name: String, expected: TableColumn<*>, actual: TableColumn<*>) {
+        matchValues("$name.symbol", expected.symbol, actual.symbol)
 
-        matchColumnDefaults("$name.default", expected.default, actual.default)
+        matchValues("$name.`columnType.dataType`", expected.builtDef.columnType.dataType, actual.builtDef.columnType.dataType)
+        matchValues("$name.autoIncrement", expected.builtDef.autoIncrement, actual.builtDef.autoIncrement)
+        matchValues("$name.notNull", expected.builtDef.notNull, actual.builtDef.notNull)
 
-        matchValues("$name.references", expected.references, actual.references)
+        matchColumnDefaults("$name.default", expected.builtDef.default, actual.builtDef.default)
+
+        matchValues("$name.references", expected.builtDef.references, actual.builtDef.references)
     }
 
     override fun matchAltered(name: String, expected: ColumnDefinitionDiff, actual: ColumnDefinitionDiff) {
@@ -87,7 +87,10 @@ fun <K, C, A> Diff<K, C, A>.assertMatch(name: String, actual: Diff<K, C, A>, mat
     }
 
     altered.forEach { (key, value) ->
-        matcher.matchAltered("$name.created.${key}", value, actual.altered.getValue(key))
+        val alteration = actual.altered.getValue(key)
+
+        matcher.matchCreated("$name.created.${key}", value.value, alteration.value)
+        matcher.matchAltered("$name.altered.${key}", value.alteration, alteration.alteration)
     }
 }
 

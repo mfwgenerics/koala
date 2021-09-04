@@ -5,10 +5,12 @@ import mfwgenerics.kotq.data.SMALLINT
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.BaseColumnType
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.BuiltColumnDef
 import mfwgenerics.kotq.ddl.diff.ChangedDefault
 import mfwgenerics.kotq.ddl.diff.ColumnDefinitionDiff
 import mfwgenerics.kotq.ddl.diff.TableDiff
+import mfwgenerics.kotq.ddl.diff.Alteration
 import java.sql.DatabaseMetaData
 import java.sql.Types
 
@@ -21,14 +23,9 @@ class TableDiffer(
     ): TableDiff {
         val tableName = table.relvarName
 
-        val expectedColumnsByName = hashMapOf<String, BuiltColumnDef>()
+        val expectedColumnsByName = hashMapOf<String, TableColumn<*>>()
 
-        table.columns.associateByTo(
-            expectedColumnsByName,
-            { it.symbol }
-        ) {
-            it.builtDef
-        }
+        table.columns.associateByTo(expectedColumnsByName) { it.symbol }
 
         val columns = metadata.getColumns(dbName, null, tableName, null)
 
@@ -51,7 +48,9 @@ class TableDiffer(
                 else -> error("unrecognized SQL datatype $dt")
             }
 
-            val expectedDataType = expected.columnType.dataType
+            val def = expected.builtDef
+
+            val expectedDataType = def.columnType.dataType
 
             val isAutoincrement = when (columns.getString("IS_AUTOINCREMENT")) {
                 "YES" -> true
@@ -64,23 +63,23 @@ class TableDiffer(
                     BaseColumnType(expectedDataType)
                 } else null,
                 notNull = when (columns.getString("IS_NULLABLE")) {
-                    "YES" -> if (expected.notNull) expected.notNull else null
-                    "NO" -> if (!expected.notNull) expected.notNull else null
+                    "YES" -> if (def.notNull) def.notNull else null
+                    "NO" -> if (!def.notNull) def.notNull else null
                     else -> null
                 },
                 changedDefault = when (columns.getString("COLUMN_DEF")) {
-                    null -> if (expected.default != null) {
-                        ChangedDefault(expected.default)
+                    null -> if (def.default != null) {
+                        ChangedDefault(def.default)
                     } else null
-                    else -> if (expected.default == null && !isAutoincrement) {
-                        ChangedDefault(expected.default)
+                    else -> if (def.default == null && !isAutoincrement) {
+                        ChangedDefault(def.default)
                     } else null
                 },
                 isAutoIncrement = null
             )
 
             if (!diff.doesNothing()) {
-                result.columns.altered[name] = diff
+                result.columns.altered[name] = Alteration(expected, diff)
             }
         }
 

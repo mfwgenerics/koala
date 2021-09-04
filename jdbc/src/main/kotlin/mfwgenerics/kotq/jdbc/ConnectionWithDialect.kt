@@ -57,6 +57,7 @@ class ConnectionWithDialect(
     fun ddl(diff: SchemaDiff) {
         dialect.ddl(diff).forEach {
             try {
+                println(it)
                 prepare(it).execute()
             } catch (ex: Exception) {
                 throw GeneratedSqlException(it, ex)
