@@ -5,6 +5,8 @@ import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
+import mfwgenerics.kotq.dialect.ExpressionCompiler
+import mfwgenerics.kotq.dialect.ExpressionContext
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.dsl.literal
 import mfwgenerics.kotq.expr.*
@@ -19,7 +21,7 @@ import kotlin.reflect.KClass
 class H2Dialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
-            is Literal -> sql.addValue(expr)
+            is Literal -> sql.addLiteral(expr)
             else -> error("not implemented")
         }
     }
@@ -102,11 +104,14 @@ class H2Dialect: SqlDialect {
 
     private class Compilation(
         val scope: Scope,
-        val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
-    ) {
+        override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
+    ): ExpressionCompiler {
         fun compileReference(name: Reference<*>) {
             sql.addSql(scope[name])
         }
+
+        override fun <T : Any> reference(context: ExpressionContext, value: Reference<T>) =
+            compileReference(value)
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
             sql.prefix("ORDER BY ", ", ").forEach(ordinals) {
@@ -125,6 +130,9 @@ class H2Dialect: SqlDialect {
 
             if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
         }
+
+        override fun aggregatable(context: ExpressionContext, aggregatable: BuiltAggregatable) =
+            compileAggregatable(aggregatable)
 
         fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) {
             when (marker) {
@@ -180,6 +188,10 @@ class H2Dialect: SqlDialect {
             }
         }
 
+        override fun window(out: SqlTextBuilder, window: BuiltWindow) {
+            compileWindow(window)
+        }
+
         fun compileCastDataType(type: DataType<*>) {
             when (type) {
                 DATE -> TODO()
@@ -203,6 +215,9 @@ class H2Dialect: SqlDialect {
             }
         }
 
+        override fun <T : Any> dataTypeForCast(to: DataType<T>) =
+            compileCastDataType(to)
+
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {
             val innerScope = scope.innerScope()
 
@@ -225,87 +240,13 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun exhaustive(value: Any?) { }
+        override fun subquery(context: ExpressionContext, subquery: BuiltSubquery) =
+            compileSubqueryExpr(subquery)
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            exhaustive(when (expr) {
-                is OperationExpr<*> -> {
-                    when (expr.type.fixity) {
-                        OperationFixity.PREFIX -> {
-                            sql.parenthesize(emitParens) {
-                                sql.addSql(expr.type.sql)
-                                sql.addSql(" ")
-                                compileExpr(expr.args.single(), false)
-                            }
-                        }
-                        OperationFixity.POSTFIX -> {
-                            sql.parenthesize(emitParens) {
-                                compileExpr(expr.args.single(), false)
-                                sql.addSql(" ")
-                                sql.addSql(expr.type.sql)
-                            }
-                        }
-                        OperationFixity.INFIX -> {
-                            sql.parenthesize(emitParens) {
-                                sql.prefix("", " ${expr.type.sql} ").forEach(expr.args) {
-                                    compileExpr(it)
-                                }
-                            }
-                        }
-                        OperationFixity.APPLY -> {
-                            sql.addSql(expr.type.sql)
-                            sql.parenthesize {
-                                sql.prefix("", ", ").forEach(expr.args) {
-                                    compileExpr(it, false)
-                                }
-                            }
-                        }
-                    }
-                }
-                is Literal<*> -> sql.addValue(expr)
-                is Reference<*> -> { compileReference(expr) }
-                is AggregatedExpr<*> -> {
-                    val built = expr.buildAggregated()
-
-                    sql.addSql(built.expr.type.sql)
-                    sql.parenthesize {
-                        sql.prefix("", ", ").forEach(built.expr.args) {
-                            compileAggregatable(it)
-                        }
-                    }
-
-                    // h2 doesn't actually support this - maybe have convert to a CASE
-                    built.filter?.let { filter ->
-                        sql.addSql(" FILTER(WHERE ")
-                        compileExpr(filter, false)
-                        sql.addSql(")")
-                    }
-
-                    built.over?.let { window ->
-                        sql.addSql(" OVER (")
-                        compileWindow(window)
-                        sql.addSql(")")
-                    }
-                }
-                is CastExpr<*> -> {
-                    sql.addSql("CAST")
-                    sql.parenthesize {
-                        compileExpr(expr.of, false)
-                        sql.addSql(" AS ")
-                        compileCastDataType(expr.type)
-                    }
-                }
-                is SubqueryExpr -> compileSubqueryExpr(expr.subquery)
-                is ExprListExpr<*> -> sql.parenthesize {
-                    sql.prefix("", ", ").forEach(expr.exprs) {
-                        compileExpr(it, false)
-                    }
-                }
-                is ComparedQuery<*> -> {
-                    sql.addSql(expr.type)
-                    compileSubqueryExpr(expr.subquery)
-                }
-            })
+            return expr.compile(ExpressionContext(
+                emitParens
+            ), this)
         }
 
         fun compileRelation(relation: BuiltRelation) {
@@ -465,14 +406,14 @@ class H2Dialect: SqlDialect {
 
             select.body.limit?.let {
                 sql.addSql("\nLIMIT ")
-                sql.addValue(literal(it))
+                sql.addLiteral(literal(it))
             }
 
             if (select.body.offset != 0) {
                 check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
-                sql.addValue(literal(select.body.offset))
+                sql.addLiteral(literal(select.body.offset))
             }
 
             select.body.locking?.let { locking ->
@@ -496,7 +437,7 @@ class H2Dialect: SqlDialect {
                     sql.addSql("(")
                     sql.prefix("", ", ").forEach(columns.values) {
                         @Suppress("unchecked_cast")
-                        sql.addValue(Literal(
+                        sql.addLiteral(Literal(
                             it.type as KClass<Any>,
                             iter[it]
                         ))

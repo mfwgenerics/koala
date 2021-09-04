@@ -27,7 +27,7 @@ class SqlTextBuilder(
 
     fun addSql(sql: StandardSql) { addSql(sql.sql) }
 
-    fun addValue(value: Literal<*>?) {
+    fun addLiteral(value: Literal<*>?) {
         if (value == null) {
             addSql("NULL")
         } else {

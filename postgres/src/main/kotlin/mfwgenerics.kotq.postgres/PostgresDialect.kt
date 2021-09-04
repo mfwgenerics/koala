@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
 class PostgresDialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
-            is Literal -> sql.addValue(expr)
+            is Literal -> sql.addLiteral(expr)
             else -> error("not implemented")
         }
     }
@@ -297,7 +297,7 @@ class PostgresDialect: SqlDialect {
                         }
                     }
                 }
-                is Literal<*> -> sql.addValue(expr)
+                is Literal<*> -> sql.addLiteral(expr)
                 is Reference<*> -> { compileReference(expr) }
                 is AggregatedExpr<*> -> {
                     val built = expr.buildAggregated()
@@ -500,14 +500,14 @@ class PostgresDialect: SqlDialect {
 
             select.body.limit?.let {
                 sql.addSql("\nLIMIT ")
-                sql.addValue(literal(it))
+                sql.addLiteral(literal(it))
             }
 
             if (select.body.offset != 0) {
                 check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
-                sql.addValue(literal(select.body.offset))
+                sql.addLiteral(literal(select.body.offset))
             }
 
             select.body.locking?.let { locking ->
@@ -531,7 +531,7 @@ class PostgresDialect: SqlDialect {
                     sql.addSql("(")
                     sql.prefix("", ", ").forEach(columns.values) {
                         @Suppress("unchecked_cast")
-                        sql.addValue(Literal(
+                        sql.addLiteral(Literal(
                             it.type as KClass<Any>,
                             iter[it]
                         ))
