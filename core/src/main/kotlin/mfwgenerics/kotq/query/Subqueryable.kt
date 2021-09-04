@@ -6,4 +6,5 @@ interface Subqueryable: Queryable {
     override fun buildQuery(): BuiltSubquery
 
     fun subquery() = Subquery(buildQuery())
+    fun subquery(alias: Alias) = subquery().`as`(alias)
 }

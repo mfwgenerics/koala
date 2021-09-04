@@ -125,7 +125,7 @@ class PostgresDialect: SqlDialect {
 
             compileCreateTable(sql, table)
 
-            results.add(sql.toSql().also { println(it) })
+            results.add(sql.toSql())
         }
 
         return results

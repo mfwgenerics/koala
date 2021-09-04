@@ -3,7 +3,7 @@ import mfwgenerics.kotq.jdbc.ConnectionWithDialect
 import mfwgenerics.kotq.test.TestDatabase
 import java.sql.DriverManager
 
-class TestH2: BaseTest() {
+class TestH2: QueryTests() {
     override fun connect(db: String): TestDatabase = object : TestDatabase {
         override val cxn: ConnectionWithDialect = ConnectionWithDialect(
             H2Dialect(),

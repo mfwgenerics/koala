@@ -1,32 +1,15 @@
 import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.ddl.Table.Companion.autoIncrement
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.ConnectionWithDialect
-import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
-import mfwgenerics.kotq.test.TestDatabase
-import java.security.SecureRandom
-import kotlin.math.absoluteValue
 import kotlin.test.Test
 
-abstract class BaseTest {
-    abstract fun connect(db: String): TestDatabase
-
-    inline fun withCxn(block: (ConnectionWithDialect) -> Unit) {
-        val testDb = connect("db${SecureRandom().nextLong().absoluteValue}")
-
-        try {
-            block(testDb.cxn)
-        } finally {
-            testDb.drop()
-        }
-    }
-
+abstract class QueryTests: ProvideTestDatabase {
     @Test
     fun `triangular numbers from values clause subquery`() = withCxn { cxn ->
         val number = name<Int>("number")
@@ -49,7 +32,7 @@ abstract class BaseTest {
                     ) `as` summed
             )
             .subquery()
-            .alias(alias)
+            .`as`(alias)
             .where(alias[summed] greater 9)
             .select(alias[number], alias[summed])
             .performWith(cxn)
@@ -268,7 +251,7 @@ abstract class BaseTest {
                 max(PurchaseTable.price) `as` PurchaseTable.price
             )
             .subquery()
-            .alias(mp)
+            .`as`(mp)
             .innerJoin(PurchaseTable, (mp[PurchaseTable.shop] eq PurchaseTable.shop).and(
                 mp[PurchaseTable.price] eq PurchaseTable.price
             ))
@@ -377,14 +360,14 @@ abstract class BaseTest {
                 )
             )
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
-            .leftJoin(cte.alias(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
+            .leftJoin(cte.`as`(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
                 .and(PurchaseTable.price less -600))
             .orderBy(
                 CustomerTable.id,
                 PurchaseTable.id,
                 alias[PurchaseTable.id]
             )
-            .select(cte, CustomerTable.firstName, cte.alias(alias))
+            .select(cte, CustomerTable.firstName, cte.`as`(alias))
             .performWith(cxn)
             .map { row ->
                 row.labels.values.map { row[it] }
@@ -427,25 +410,5 @@ abstract class BaseTest {
 
         assert(purchaseCount == 4)
         assert(doubleCount == 8)
-    }
-
-    @Test
-    fun `table diff`() = withCxn { cxn ->
-        cxn.ddl(createTables(
-            CustomerTable
-        ))
-
-        val changedCustomerTable = Table("Customer").apply {
-            column("id", INTEGER.autoIncrement())
-
-            column("firstName", VARCHAR(100))
-            column("lastName", VARCHAR(100))
-        }
-
-        val diff = TableDiffer(cxn.jdbc.metaData).diffTable(
-            changedCustomerTable
-        )
-
-        println(diff)
     }
 }

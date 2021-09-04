@@ -6,7 +6,7 @@ import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.query.built.BuiltSubquery
 
 sealed interface Relation: AliasedRelation {
-    fun alias(alias: Alias): AliasedRelation = Aliased(this, alias)
+    fun `as`(alias: Alias): AliasedRelation = Aliased(this, alias)
 
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(this, null)

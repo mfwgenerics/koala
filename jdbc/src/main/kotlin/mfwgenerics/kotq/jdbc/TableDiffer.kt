@@ -13,31 +13,31 @@ import java.sql.DatabaseMetaData
 import java.sql.Types
 
 class TableDiffer(
+    val dbName: String,
     val metadata: DatabaseMetaData
 ) {
     fun diffTable(
-        table: Table,
-        caseMode: CaseMode = CaseMode.UPPERCASE
+        table: Table
     ): TableDiff {
-        val tableName = caseMode.applyTo(table.relvarName.uppercase())
+        val tableName = table.relvarName
 
         val expectedColumnsByName = hashMapOf<String, BuiltColumnDef>()
 
         table.columns.associateByTo(
             expectedColumnsByName,
-            { caseMode.applyTo(it.symbol) }
+            { it.symbol }
         ) {
             it.builtDef
         }
 
-        val columns = metadata.getColumns(null, null, tableName, null)
+        val columns = metadata.getColumns(dbName, null, tableName, null)
 
         val result = TableDiff()
 
         while (columns.next()) {
             val name = columns.getString("COLUMN_NAME")
 
-            val expected = expectedColumnsByName.remove(caseMode.applyTo(name))
+            val expected = expectedColumnsByName.remove(name)
 
             if (expected == null) {
                 result.columns.dropped.add(name)
@@ -68,7 +68,7 @@ class TableDiffer(
                     "NO" -> if (!expected.notNull) expected.notNull else null
                     else -> null
                 },
-                default = when (columns.getString("COLUMN_DEF")) {
+                changedDefault = when (columns.getString("COLUMN_DEF")) {
                     null -> if (expected.default != null) {
                         ChangedDefault(expected.default)
                     } else null

@@ -57,6 +57,8 @@ class VARCHAR(
 ): DataType<String>(String::class) {
     override fun equals(other: Any?): Boolean = other is VARCHAR && maxLength == other.maxLength
     override fun hashCode(): Int = maxLength.hashCode()
+
+    override fun toString(): String = "VARCHAR($maxLength)"
 }
 
 class VARBINARY(

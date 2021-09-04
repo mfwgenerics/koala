@@ -4,7 +4,7 @@ import mfwgenerics.kotq.test.TestDatabase
 import java.sql.DriverManager
 import kotlin.test.Test
 
-class TestPostgres: BaseTest() {
+class TestPostgres: QueryTests() {
     override fun connect(db: String): TestDatabase {
         val outerCxn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
 

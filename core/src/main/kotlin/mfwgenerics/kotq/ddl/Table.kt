@@ -47,6 +47,9 @@ open class Table(
         }
         .joinToString("_")
 
+    fun nameIndex(keys: KeyList, suffix: String): String =
+        "${relvarName}_${nameKeys(keys)}_$suffix"
+
     fun primaryKey(name: String, keys: KeyList) {
         check(primaryKey == null) { "duplicate primary key $name" }
 
@@ -59,15 +62,19 @@ open class Table(
     }
 
     fun primaryKey(keys: KeyList) =
-        primaryKey("${relvarName}_${nameKeys(keys)}_pkey", keys)
+        primaryKey(nameIndex(keys, "pkey"), keys)
 
-    fun uniqueIndex(name: String, keys: KeyList) {
+    fun uniqueKey(name: String, keys: KeyList) {
         takeName(name)
 
         internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.UNIQUE,
             keys = keys
         )))
+    }
+
+    fun uniqueKey(keys: KeyList) {
+        uniqueKey(nameIndex(keys, "key"), keys)
     }
 
     fun index(name: String, keys: KeyList) {
@@ -77,6 +84,10 @@ open class Table(
             type = IndexType.INDEX,
             keys = keys
         )))
+    }
+
+    fun index(keys: KeyList) {
+        index(nameIndex(keys, "idx"), keys)
     }
 
     companion object {
