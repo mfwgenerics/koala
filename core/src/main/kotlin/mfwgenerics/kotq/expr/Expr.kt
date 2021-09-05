@@ -11,22 +11,22 @@ import mfwgenerics.kotq.query.built.BuiltSubquery
 import kotlin.reflect.KClass
 
 sealed interface QuasiExpr {
-    fun compile(context: ExpressionContext, compiler: ExpressionCompiler)
+    fun compile(emitParens: Boolean, compiler: ExpressionCompiler)
 }
 
 class SubqueryExpr(
     val subquery: BuiltSubquery
 ): QuasiExpr {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        compiler.subquery(context, subquery)
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        compiler.subquery(emitParens, subquery)
     }
 }
 
 class ExprListExpr<T : Any>(
     val exprs: Collection<Expr<T>>
 ): QuasiExpr {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        with (compiler) { listExpr(context, exprs) }
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        with (compiler) { listExpr(emitParens, exprs) }
     }
 }
 
@@ -36,12 +36,12 @@ class ComparedQuery<T : Any>(
     val type: ComparedQueryType,
     val subquery: BuiltSubquery
 ): ComparisonOperand<T> {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        with (compiler) { compared(context, type, subquery) }
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        with (compiler) { compared(emitParens, type, subquery) }
     }
 }
 
-sealed interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggregatable<T> {
+fun interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
     fun asc() = OrderKey(SortOrder.ASC, this)
@@ -62,8 +62,8 @@ sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
         selection.expression(this, this)
     }
 
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        with (compiler) { reference(context, this@Reference) }
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        with (compiler) { reference(emitParens, this@Reference) }
     }
 }
 
@@ -95,8 +95,8 @@ abstract class NamedReference<T : Any>(
 }
 
 interface AggregatedExpr<T : Any>: Expr<T>, BuildsIntoAggregatedExpr {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        compiler.aggregated(context, buildAggregated())
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        compiler.aggregated(emitParens, buildAggregated())
     }
 }
 
@@ -104,8 +104,8 @@ class CastExpr<T : Any>(
     val of: Expr<*>,
     val type: DataType<T>
 ): Expr<T> {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        compiler.cast(context, of, type)
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        compiler.cast(emitParens, of, type)
     }
 }
 
@@ -113,8 +113,8 @@ class Literal<T : Any>(
     val type: KClass<T>,
     val value: T?
 ): Expr<T> {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        compiler.literal(context, this@Literal)
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        compiler.literal(emitParens, this@Literal)
     }
 }
 
@@ -122,7 +122,7 @@ class OperationExpr<T : Any>(
     val type: OperationType,
     val args: Collection<QuasiExpr>
 ): Expr<T> {
-    override fun compile(context: ExpressionContext, compiler: ExpressionCompiler) {
-        compiler.operation(context, type, args)
+    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
+        compiler.operation(emitParens, type, args)
     }
 }

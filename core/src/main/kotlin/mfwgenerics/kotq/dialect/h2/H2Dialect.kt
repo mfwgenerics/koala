@@ -110,7 +110,7 @@ class H2Dialect: SqlDialect {
             sql.addSql(scope[name])
         }
 
-        override fun <T : Any> reference(context: ExpressionContext, value: Reference<T>) =
+        override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
             compileReference(value)
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
@@ -131,7 +131,7 @@ class H2Dialect: SqlDialect {
             if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
         }
 
-        override fun aggregatable(context: ExpressionContext, aggregatable: BuiltAggregatable) =
+        override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) =
             compileAggregatable(aggregatable)
 
         fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) {
@@ -188,7 +188,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        override fun window(out: SqlTextBuilder, window: BuiltWindow) {
+        override fun window(window: BuiltWindow) {
             compileWindow(window)
         }
 
@@ -240,13 +240,11 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        override fun subquery(context: ExpressionContext, subquery: BuiltSubquery) =
+        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) =
             compileSubqueryExpr(subquery)
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            return expr.compile(ExpressionContext(
-                emitParens
-            ), this)
+            return expr.compile(emitParens, this)
         }
 
         fun compileRelation(relation: BuiltRelation) {

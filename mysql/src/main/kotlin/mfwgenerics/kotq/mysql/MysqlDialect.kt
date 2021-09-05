@@ -109,45 +109,61 @@ class MysqlDialect: SqlDialect {
     }
 
     override fun ddl(diff: SchemaDiff): List<SqlText> {
-        val results = mutableListOf<SqlText>()
+        val results = mutableListOf<(SqlTextBuilder) -> Unit>()
 
         diff.tables.created.forEach { (_, table) ->
-            val sql = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
-
-            compileCreateTable(sql, table)
-
-            results.add(sql.toSql())
-        }
-
-        diff.tables.altered.forEach { (_, table) ->
-            table.alteration.columns.altered.forEach { (_, column) ->
-                val sql = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
-
-                sql.addSql("ALTER TABLE ")
-                sql.addIdentifier(table.value.relvarName)
-                sql.addSql(" MODIFY COLUMN ")
-                compileColumnDef(sql, column.value)
-
-                results.add(sql.toSql())
+            results.add { sql ->
+                compileCreateTable(sql, table)
             }
         }
 
-        return results
+        diff.tables.altered.forEach { (_, table) ->
+            table.alteration.columns.created.forEach { (_, column) ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addIdentifier(table.value.relvarName)
+                    sql.addSql(" ADD COLUMN ")
+                    compileColumnDef(sql, column)
+                }
+            }
+
+            table.alteration.columns.altered.forEach { (_, column) ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addIdentifier(table.value.relvarName)
+                    sql.addSql(" MODIFY COLUMN ")
+                    compileColumnDef(sql, column.value)
+                }
+            }
+
+            table.alteration.columns.dropped.forEach { column ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addIdentifier(table.value.relvarName)
+                    sql.addSql(" DROP COLUMN ")
+                    sql.addIdentifier(column)
+                }
+            }
+        }
+
+        return results.map {
+            SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS).also(it).toSql()
+        }
     }
 
     private class Compilation(
         val scope: Scope,
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
     ): ExpressionCompiler {
-        override fun <T : Any> reference(context: ExpressionContext, value: Reference<T>) {
+        override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
             compileReference(value)
         }
 
-        override fun subquery(context: ExpressionContext, subquery: BuiltSubquery) {
+        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) {
             compileSubqueryExpr(subquery)
         }
 
-        override fun aggregatable(context: ExpressionContext, aggregatable: BuiltAggregatable) {
+        override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) {
             compileAggregatable(aggregatable)
         }
 
@@ -155,7 +171,7 @@ class MysqlDialect: SqlDialect {
             compileCastDataType(to)
         }
 
-        override fun window(out: SqlTextBuilder, window: BuiltWindow) {
+        override fun window(window: BuiltWindow) {
             compileWindow(window)
         }
 
@@ -266,7 +282,7 @@ class MysqlDialect: SqlDialect {
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
             return expr.compile(
-                ExpressionContext(needsParens = emitParens),
+                emitParens,
                 this
             )
         }
