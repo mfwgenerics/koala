@@ -1,8 +1,11 @@
 package mfwgenerics.kotq.ddl.diff
 
 import mfwgenerics.kotq.ddl.ColumnType
+import mfwgenerics.kotq.ddl.TableColumn
 
-data class ColumnDefinitionDiff(
+data class ColumnDiff(
+    val newColumn: TableColumn<*>,
+
     val type: ColumnType<*>? = null,
     val notNull: Boolean? = null,
     val changedDefault: ChangedDefault? = null,

@@ -61,8 +61,8 @@ open class Table(
     fun nameIndex(keys: KeyList, suffix: String): String =
         "${relvarName}_${nameKeys(keys)}_$suffix"
 
-    fun primaryKey(name: String, keys: KeyList) {
-        check(primaryKey == null) { "duplicate primary key $name" }
+    fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
+        check(primaryKey == null) { "multiple primary keys $name, $keys" }
 
         takeName(name)
 
@@ -70,36 +70,39 @@ open class Table(
             type = IndexType.PRIMARY,
             keys = keys
         ))
+
+        return primaryKey!!
     }
 
-    fun primaryKey(keys: KeyList) =
-        primaryKey(nameIndex(keys, "pkey"), keys)
-
-    fun uniqueKey(name: String, keys: KeyList) {
+    fun uniqueKey(name: String, keys: KeyList): BuiltNamedIndex {
         takeName(name)
 
-        internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
+        val result = BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.UNIQUE,
             keys = keys
-        )))
+        ))
+
+        internalIndexes.add(result)
+
+        return result
     }
 
-    fun uniqueKey(keys: KeyList) {
-        uniqueKey(nameIndex(keys, "key"), keys)
-    }
-
-    fun index(name: String, keys: KeyList) {
+    fun index(name: String, keys: KeyList): BuiltNamedIndex {
         takeName(name)
 
-        internalIndexes.add(BuiltNamedIndex(name, BuiltIndexDef(
+        val result = BuiltNamedIndex(name, BuiltIndexDef(
             type = IndexType.INDEX,
             keys = keys
-        )))
+        ))
+
+        internalIndexes.add(result)
+
+        return result
     }
 
-    fun index(keys: KeyList) {
-        index(nameIndex(keys, "idx"), keys)
-    }
+    fun primaryKey(keys: KeyList) = primaryKey(nameIndex(keys, "pkey"), keys)
+    fun uniqueKey(keys: KeyList) = uniqueKey(nameIndex(keys, "key"), keys)
+    fun index(keys: KeyList) = index(nameIndex(keys, "idx"), keys)
 
     companion object {
         fun <T : Any> DataType<T>.autoIncrement() = BaseColumnType(this).autoIncrement()

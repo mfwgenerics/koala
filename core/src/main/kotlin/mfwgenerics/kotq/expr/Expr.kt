@@ -2,7 +2,7 @@ package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 
-interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggregatable<T> {
+sealed interface Expr<T : Any>: ComparisonOperand<T>, Ordinal<T>, OrderableAggregatable<T> {
     override fun toOrderKey(): OrderKey<T> = OrderKey(SortOrder.ASC, this)
 
     fun asc() = OrderKey(SortOrder.ASC, this)

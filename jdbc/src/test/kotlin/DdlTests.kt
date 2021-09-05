@@ -2,10 +2,10 @@ import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.BaseColumnType
 import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.ddl.Table.Companion.autoIncrement
+import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.ddl.diff.Alteration
-import mfwgenerics.kotq.ddl.diff.ColumnDefinitionDiff
+import mfwgenerics.kotq.ddl.diff.ColumnDiff
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.ddl.diff.TableDiff
 import mfwgenerics.kotq.dsl.keys
@@ -23,6 +23,8 @@ abstract class DdlTests: ProvideTestDatabase {
 
         init {
             primaryKey(keys(id))
+
+            uniqueKey(keys(lastName, firstName))
         }
     }
 
@@ -39,14 +41,11 @@ abstract class DdlTests: ProvideTestDatabase {
         expected.assertMatch(diff)
 
         cxn.ddl(SchemaDiff().apply {
-            tables.altered[table.relvarName] = Alteration(
-                table,
-                diff
-            )
+            tables.altered[table.relvarName] = diff
         })
 
         val newDiff = differ.diffTable(table)
-        TableDiff().assertMatch(newDiff)
+        TableDiff(table).assertMatch(newDiff)
     }
 
     @Test
@@ -55,11 +54,11 @@ abstract class DdlTests: ProvideTestDatabase {
             CustomerTable
         ))
 
-        testExpectedTableDiff(cxn, TableDiff(), CustomerTable)
+        testExpectedTableDiff(cxn, TableDiff(CustomerTable), CustomerTable)
     }
 
     @Test
-    fun `change varchar lengths`() = withCxn { cxn ->
+    fun `change varchar lengths and add unique key`() = withCxn { cxn ->
         cxn.ddl(createTables(
             CustomerTable
         ))
@@ -70,21 +69,26 @@ abstract class DdlTests: ProvideTestDatabase {
             val firstName = column("firstName", VARCHAR(101))
             val lastName = column("lastName", VARCHAR(100))
 
+            val namesKey = uniqueKey(keys(firstName, lastName))
+
             init {
                 primaryKey(keys(id))
             }
         }
 
         testExpectedTableDiff(cxn,
-            TableDiff()
+            TableDiff(CustomerTable)
                 .apply {
                     columns.apply {
-                        altered["firstName"] = Alteration(
-                            value = differentTable.firstName,
-                            alteration = ColumnDefinitionDiff(
-                                type = BaseColumnType(VARCHAR(101))
-                            )
+                        altered["firstName"] = ColumnDiff(
+                            newColumn = differentTable.firstName,
+                            type = BaseColumnType(VARCHAR(101))
                         )
+                    }
+
+                    indexes.apply {
+                        created["Customer_firstName_lastName_key"] = differentTable.namesKey.def
+                        dropped.add("Customer_lastName_firstName_key")
                     }
                 },
             differentTable

@@ -377,9 +377,6 @@ abstract class QueryTests: ProvideTestDatabase {
             listOf(4, 3, 2, "Pen", -500, null, "Bob", null, null, null, null, null, null)
         )
 
-        println(expected)
-        println(rows)
-
         assertListOfListsEquals(
             expected,
             rows

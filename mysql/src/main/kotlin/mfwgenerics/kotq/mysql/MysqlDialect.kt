@@ -1,8 +1,10 @@
 package mfwgenerics.kotq.mysql
 
 import mfwgenerics.kotq.data.*
+import mfwgenerics.kotq.ddl.IndexType
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
+import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
@@ -18,9 +20,10 @@ import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class MysqlDialect: SqlDialect {
-    private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
+    private fun compileDdlExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addLiteral(expr)
+            is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
             else -> error("not implemented")
         }
     }
@@ -56,7 +59,7 @@ class MysqlDialect: SqlDialect {
     private fun compileColumnDef(sql: SqlTextBuilder, column: TableColumn<*>) {
         val def = column.builtDef
 
-        sql.addSql(column.symbol)
+        sql.addIdentifier(column.symbol)
         sql.addSql(" ")
         compileDataType(sql, def.columnType.dataType)
 
@@ -74,7 +77,23 @@ class MysqlDialect: SqlDialect {
             }
 
             sql.addSql(" DEFAULT ")
-            compileDefaultExpr(sql, finalExpr)
+            compileDdlExpr(sql, finalExpr)
+        }
+    }
+
+    private fun compileIndexDef(sql: SqlTextBuilder, name: String, def: BuiltIndexDef) {
+        sql.addSql(when (def.type) {
+            IndexType.PRIMARY -> "PRIMARY KEY"
+            IndexType.UNIQUE -> "UNIQUE KEY"
+            IndexType.INDEX -> "INDEX"
+        })
+
+        sql.addSql(" ")
+        sql.addIdentifier(name)
+        sql.parenthesize {
+            sql.prefix("", ", ").forEach(def.keys.keys) { key ->
+                compileDdlExpr(sql, key)
+            }
         }
     }
 
@@ -104,6 +123,12 @@ class MysqlDialect: SqlDialect {
                 }
             }
 
+            table.indexes.forEach { index ->
+                comma.next {
+                    compileIndexDef(sql, index.name, index.def)
+                }
+            }
+
             sql.addSql("\n")
         }
     }
@@ -118,31 +143,56 @@ class MysqlDialect: SqlDialect {
         }
 
         diff.tables.altered.forEach { (_, table) ->
-            table.alteration.columns.created.forEach { (_, column) ->
+            table.columns.created.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.value.relvarName)
+                    sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" ADD COLUMN ")
                     compileColumnDef(sql, column)
                 }
             }
 
-            table.alteration.columns.altered.forEach { (_, column) ->
+            table.columns.altered.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.value.relvarName)
+                    sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" MODIFY COLUMN ")
-                    compileColumnDef(sql, column.value)
+                    compileColumnDef(sql, column.newColumn)
                 }
             }
 
-            table.alteration.columns.dropped.forEach { column ->
+            table.columns.dropped.forEach { column ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.value.relvarName)
+                    sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" DROP COLUMN ")
                     sql.addIdentifier(column)
                 }
+            }
+
+            table.indexes.created.forEach { (name, index) ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addSql(" ADD ")
+                    compileIndexDef(sql, name, index)
+                }
+            }
+
+            table.indexes.dropped.forEach { name ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addSql(" DROP INDEX ")
+                    sql.addIdentifier(name)
+                }
+            }
+        }
+
+        diff.tables.dropped.forEach { table ->
+            results.add { sql ->
+                sql.addSql("DROP TABLE ")
+                sql.addIdentifier(table)
             }
         }
 
