@@ -1,11 +1,10 @@
-package mfwgenerics.kotq.query.fluent
+package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.expr.Reference
-import mfwgenerics.kotq.query.Returning
 import mfwgenerics.kotq.query.built.BuildsIntoInsert
 import mfwgenerics.kotq.query.built.BuiltReturningInsert
 
-interface Inserted: BuildsIntoInsert {
+interface Inserted: Performable<Unit>, BuildsIntoInsert {
     private class InsertedReturning(
         val inserted: Inserted,
         val returning: List<Reference<*>> = emptyList()

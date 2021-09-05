@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.query.fluent
 
 import mfwgenerics.kotq.dsl.Insert
+import mfwgenerics.kotq.query.Inserted
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.BuildsIntoInsert
 

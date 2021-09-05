@@ -7,12 +7,9 @@ import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.createTables
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.SqlDialect
-import mfwgenerics.kotq.query.LabelList
-import mfwgenerics.kotq.query.Queryable
-import mfwgenerics.kotq.query.Updated
+import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.query.built.BuiltReturningInsert
 import mfwgenerics.kotq.query.built.BuiltSubquery
-import mfwgenerics.kotq.query.fluent.Inserted
 import mfwgenerics.kotq.sql.SqlText
 import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.RowSequence
@@ -138,4 +135,12 @@ class ConnectionWithDialect(
             }
         }
     }
+
+    /* can't correctly type this without something like GADTs */
+    @Suppress("unchecked_cast", "implicit_cast_to_any")
+    fun <T> perform(performable: Performable<T>): T = when (performable) {
+        is Inserted -> execute(performable)
+        is Queryable -> query(performable)
+        is Updated -> execute(performable)
+    } as T
 }

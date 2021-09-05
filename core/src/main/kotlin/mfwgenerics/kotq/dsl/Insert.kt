@@ -3,7 +3,7 @@ package mfwgenerics.kotq.dsl
 import mfwgenerics.kotq.query.built.BuildsIntoInsert
 import mfwgenerics.kotq.query.built.BuiltInsert
 import mfwgenerics.kotq.query.built.BuiltSubquery
-import mfwgenerics.kotq.query.fluent.Inserted
+import mfwgenerics.kotq.query.Inserted
 import mfwgenerics.kotq.query.fluent.Withed
 
 class Insert(
