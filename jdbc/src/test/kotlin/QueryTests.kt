@@ -76,7 +76,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     object PurchaseTable: Table("Purchase") {
-        val id = column("id", INTEGER.autoIncrement())
+        val id = column("id", INTEGER.autoIncrement().primaryKey())
 
         val shop = column("shop", INTEGER.reference(ShopTable.id))
         val customer = column("customer", INTEGER.reference(CustomerTable.id))
@@ -85,10 +85,6 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val price = column("price", INTEGER)
         val discount = column("discount", INTEGER.nullable())
-
-        init {
-            primaryKey(keys(id))
-        }
     }
 
     // TODO use an assertion library

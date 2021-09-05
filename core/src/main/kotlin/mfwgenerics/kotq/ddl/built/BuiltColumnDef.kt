@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.ddl.built
 
 import mfwgenerics.kotq.data.MappedDataType
+import mfwgenerics.kotq.ddl.IndexType
 import mfwgenerics.kotq.ddl.TableColumn
 
 class BuiltColumnDef {
@@ -12,4 +13,6 @@ class BuiltColumnDef {
     var default: BuiltColumnDefault? = null
 
     var references: TableColumn<*>? = null
+
+    var markedAsKey: IndexType? = null
 }

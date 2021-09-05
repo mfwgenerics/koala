@@ -5,6 +5,7 @@ import mfwgenerics.kotq.data.MappedDataType
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
+import mfwgenerics.kotq.dsl.keys
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.RelvarColumn
 import mfwgenerics.kotq.query.Relvar
@@ -24,14 +25,23 @@ open class Table(
     fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
         takeName(name)
 
-        return TableColumn(this, name, def).also { internalColumns.add(it) }
+        val column = TableColumn(this, name, def)
+
+        column.builtDef.markedAsKey?.let {
+            when (it) {
+                IndexType.PRIMARY -> primaryKey(keys(column))
+                IndexType.UNIQUE -> uniqueKey(keys(column))
+                IndexType.INDEX -> index(keys(column))
+            }
+        }
+
+        internalColumns.add(column)
+
+        return column
     }
 
-    fun <T : Any> column(name: String, def: MappedDataType<*, T>): TableColumn<T> {
-        takeName(name)
-
-        return TableColumn(this, name, BaseColumnType(def)).also { internalColumns.add(it) }
-    }
+    fun <T : Any> column(name: String, def: MappedDataType<*, T>): TableColumn<T> =
+        column(name, BaseColumnType(def))
 
     var primaryKey: BuiltNamedIndex? = null
         private set
