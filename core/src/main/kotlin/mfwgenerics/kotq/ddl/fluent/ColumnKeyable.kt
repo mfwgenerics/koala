@@ -1,7 +1,6 @@
 package mfwgenerics.kotq.ddl.fluent
 
 import mfwgenerics.kotq.ddl.IndexType
-import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.BuildsIntoColumnDef
 import mfwgenerics.kotq.ddl.built.BuiltColumnDef
 

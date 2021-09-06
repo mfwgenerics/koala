@@ -4,7 +4,10 @@ import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.BuiltColumnDefault
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
-import mfwgenerics.kotq.ddl.diff.*
+import mfwgenerics.kotq.ddl.diff.ColumnDiff
+import mfwgenerics.kotq.ddl.diff.Diff
+import mfwgenerics.kotq.ddl.diff.SchemaDiff
+import mfwgenerics.kotq.ddl.diff.TableDiff
 
 interface DiffMatcher<in C, in A> {
     fun matchCreated(name: String, expected: C, actual: C)

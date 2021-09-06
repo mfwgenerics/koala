@@ -10,7 +10,6 @@ import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.diff.ChangedDefault
 import mfwgenerics.kotq.ddl.diff.ColumnDiff
 import mfwgenerics.kotq.ddl.diff.TableDiff
-import mfwgenerics.kotq.ddl.diff.Alteration
 import java.sql.DatabaseMetaData
 import java.sql.Types
 

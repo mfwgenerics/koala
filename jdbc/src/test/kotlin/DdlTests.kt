@@ -2,14 +2,12 @@ import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.BaseColumnType
 import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.createTables
-import mfwgenerics.kotq.ddl.diff.Alteration
 import mfwgenerics.kotq.ddl.diff.ColumnDiff
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.ddl.diff.TableDiff
 import mfwgenerics.kotq.dsl.keys
-import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.TableDiffer
 import mfwgenerics.kotq.test.assertMatch
 import kotlin.test.Test
@@ -29,7 +27,7 @@ abstract class DdlTests: ProvideTestDatabase {
     }
 
     private fun testExpectedTableDiff(
-        cxn: ConnectionWithDialect,
+        cxn: JdbcConnection,
         expected: TableDiff,
         table: Table
     ) {

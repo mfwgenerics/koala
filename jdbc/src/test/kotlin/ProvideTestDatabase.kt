@@ -1,18 +1,20 @@
-import mfwgenerics.kotq.jdbc.ConnectionWithDialect
-import mfwgenerics.kotq.test.TestDatabase
+import mfwgenerics.kotq.jdbc.JdbcConnection
+import mfwgenerics.kotq.jdbc.JdbcDatabase
 import java.security.SecureRandom
 import kotlin.math.absoluteValue
 
 interface ProvideTestDatabase {
-    fun connect(db: String): TestDatabase
+    fun connect(db: String): JdbcDatabase
 
-    fun withCxn(block: (ConnectionWithDialect) -> Unit) {
+    fun withCxn(block: (JdbcConnection) -> Unit) {
         val testDb = connect("db${SecureRandom().nextLong().absoluteValue}")
 
         try {
-            block(testDb.cxn)
+            testDb.transact {
+                block(it)
+            }
         } finally {
-            testDb.drop()
+            testDb.close()
         }
     }
 }

@@ -1,8 +1,7 @@
-import mfwgenerics.kotq.test.TestDatabase
 import kotlin.test.Test
 
 class MysqlQueryTests: QueryTests() {
-    override fun connect(db: String): TestDatabase = MysqlTestDatabase(db)
+    override fun connect(db: String) = MysqlTestDatabase(db)
 
     @Test
     fun `select version`() = withCxn { cxn ->

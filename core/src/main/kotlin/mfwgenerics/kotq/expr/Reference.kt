@@ -1,7 +1,6 @@
 package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.IdentifierName
-import mfwgenerics.kotq.dialect.ExpressionCompiler
 import mfwgenerics.kotq.query.Alias
 import kotlin.reflect.KClass
 
@@ -14,9 +13,6 @@ sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
         selection.expression(this, this)
     }
 
-    override fun compile(emitParens: Boolean, compiler: ExpressionCompiler) {
-        with (compiler) { reference(emitParens, this@Reference) }
-    }
 }
 
 class AliasedReference<T : Any>(

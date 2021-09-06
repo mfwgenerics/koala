@@ -1,26 +1,27 @@
-import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.jdbc.JdbcDatabase
+import mfwgenerics.kotq.jdbc.JdbcProvider
 import mfwgenerics.kotq.postgres.PostgresDialect
-import mfwgenerics.kotq.test.TestDatabase
+import java.sql.Connection
 import java.sql.DriverManager
 import kotlin.test.Test
 
 class TestPostgres: QueryTests() {
-    override fun connect(db: String): TestDatabase {
+    override fun connect(db: String): JdbcDatabase {
         val outerCxn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
 
         outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
-        return object : TestDatabase {
-            override val cxn: ConnectionWithDialect = ConnectionWithDialect(
-                PostgresDialect(),
-                DriverManager.getConnection("jdbc:postgresql://localhost:5432/$db", "postgres", "mysecretpassword")
-            )
+        return JdbcDatabase(
+            PostgresDialect(),
+            object : JdbcProvider {
+                override fun connect(): Connection =
+                    DriverManager.getConnection("jdbc:postgresql://localhost:5432/$db", "postgres", "mysecretpassword")
 
-            override fun drop() {
-                cxn.jdbc.close()
-                outerCxn.prepareStatement("DROP DATABASE $db").execute()
+                override fun close() {
+                    outerCxn.prepareStatement("DROP DATABASE $db").execute()
+                }
             }
-        }
+        )
     }
 
     @Test

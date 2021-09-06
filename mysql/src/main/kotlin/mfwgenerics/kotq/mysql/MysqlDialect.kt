@@ -331,10 +331,7 @@ class MysqlDialect: SqlDialect {
         }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            return expr.compile(
-                emitParens,
-                this
-            )
+            sql.compileExpr(expr, emitParens, this)
         }
 
         fun compileRelation(relation: BuiltRelation) {
@@ -465,8 +462,6 @@ class MysqlDialect: SqlDialect {
             compileWiths(select.body.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
-
-            val selectPrefix = sql.prefix("SELECT ", "\n, ")
 
             sql.selectClause(select.selected.takeIf { it.isNotEmpty() }?:outerSelect) {
                 compileExpr(it.expr, false)

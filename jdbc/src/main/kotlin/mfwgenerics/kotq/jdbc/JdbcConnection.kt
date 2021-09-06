@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.data.MappedDataType
+import mfwgenerics.kotq.KotqConnection
 import mfwgenerics.kotq.data.TypeMappings
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
@@ -17,12 +17,11 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.Statement
 
-class ConnectionWithDialect(
-    val dialect: SqlDialect,
-    val jdbc: Connection
-) {
-    private val typeMappings = TypeMappings()
-
+class JdbcConnection(
+    val jdbc: Connection,
+    private val dialect: SqlDialect,
+    private val typeMappings: TypeMappings = TypeMappings()
+): KotqConnection {
     fun createTable(vararg tables: Table) {
         ddl(createTables(*tables))
 
@@ -31,10 +30,6 @@ class ConnectionWithDialect(
                 typeMappings.register(it.builtDef.columnType)
             }
         }
-    }
-
-    fun <F : Any, T : Any> registerType(mapping: MappedDataType<T, F>) {
-        typeMappings.register(mapping)
     }
 
     private fun prepare(sql: SqlText, generatedKeys: Boolean = false): PreparedStatement {
@@ -61,7 +56,7 @@ class ConnectionWithDialect(
         }
     }
 
-    fun execute(insert: Inserted) {
+    private fun execute(insert: Inserted) {
         val built = insert.buildInsert()
 
         val sql = dialect.compile(built)
@@ -69,7 +64,7 @@ class ConnectionWithDialect(
         prepare(sql).execute()
     }
 
-    fun execute(updated: Updated) {
+    private fun execute(updated: Updated) {
         val built = updated.buildUpdate()
 
         val sql = dialect.compile(built)
@@ -81,7 +76,7 @@ class ConnectionWithDialect(
         }
     }
 
-    fun query(queryable: Queryable): RowSequence {
+    private fun query(queryable: Queryable): RowSequence {
         val built = queryable.buildQuery()
 
         when (built) {
@@ -138,9 +133,21 @@ class ConnectionWithDialect(
 
     /* can't correctly type this without something like GADTs */
     @Suppress("unchecked_cast", "implicit_cast_to_any")
-    fun <T> perform(performable: Performable<T>): T = when (performable) {
+    override fun <T> perform(performable: Performable<T>): T = when (performable) {
         is Inserted -> execute(performable)
         is Queryable -> query(performable)
         is Updated -> execute(performable)
     } as T
+
+    override fun commit() {
+        jdbc.commit()
+    }
+
+    override fun rollback() {
+        jdbc.rollback()
+    }
+
+    override fun close() {
+        jdbc.close()
+    }
 }

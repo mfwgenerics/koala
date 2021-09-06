@@ -1,24 +1,23 @@
-import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.jdbc.JdbcDatabase
+import mfwgenerics.kotq.jdbc.JdbcProvider
 import mfwgenerics.kotq.mysql.MysqlDialect
-import mfwgenerics.kotq.test.TestDatabase
+import java.sql.Connection
 import java.sql.DriverManager
 
-class MysqlTestDatabase(
-    val db: String
-): TestDatabase {
+fun MysqlTestDatabase(db: String): JdbcDatabase {
     val outerCxn = DriverManager.getConnection("jdbc:mysql://localhost:3306/","root","my-secret-pw")
 
-    init {
-        outerCxn.prepareStatement("CREATE DATABASE $db").execute()
-    }
+    outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
-    override val cxn: ConnectionWithDialect = ConnectionWithDialect(
+    return JdbcDatabase(
         MysqlDialect(),
-        DriverManager.getConnection("jdbc:mysql://localhost:3306/$db", "root", "my-secret-pw")
-    )
+        object : JdbcProvider {
+            override fun connect(): Connection =
+                DriverManager.getConnection("jdbc:mysql://localhost:3306/$db", "root", "my-secret-pw")
 
-    override fun drop() {
-        cxn.jdbc.close()
-        outerCxn.prepareStatement("DROP DATABASE $db").execute()
-    }
+            override fun close() {
+                outerCxn.prepareStatement("DROP DATABASE $db").execute()
+            }
+        }
+    )
 }

@@ -3,7 +3,7 @@ import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.expr.`as`
-import mfwgenerics.kotq.jdbc.ConnectionWithDialect
+import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
@@ -104,7 +104,7 @@ abstract class QueryTests: ProvideTestDatabase {
         }
     }
 
-    fun createAndPopulate(cxn: ConnectionWithDialect) {
+    fun createAndPopulate(cxn: JdbcConnection) {
         cxn.createTable(
             ShopTable,
             CustomerTable,

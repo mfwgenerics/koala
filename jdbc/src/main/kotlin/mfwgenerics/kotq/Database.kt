@@ -1,24 +1,25 @@
 package mfwgenerics.kotq
 
-abstract class Database {
-    abstract fun transaction(
-        isolation: Isolation
-    ): Transaction
+import mfwgenerics.kotq.ddl.Table
 
-    inline fun <T> transact(
+abstract class Database<C : KotqConnection> {
+    abstract fun declare(vararg tables: Table)
+
+    abstract fun connect(isolation: Isolation): C
+    abstract fun close()
+
+    inline fun <R> transact(
         isolation: Isolation = Isolation.REPEATABLE_READ,
-        operation: (Transaction) -> T
-    ): T {
-        val txn = transaction(isolation)
+        operation: (C) -> R
+    ): R {
+        val txn = connect(isolation)
 
         return try {
             val result = operation(txn)
-            txn.done()
-
+            txn.commit()
             result
-        } catch (ex: Throwable) {
-            txn.done(CommitMode.ROLLBACK)
-            throw ex
+        } finally {
+            txn.close()
         }
     }
 }

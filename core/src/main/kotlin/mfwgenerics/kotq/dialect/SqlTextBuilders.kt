@@ -1,8 +1,6 @@
 package mfwgenerics.kotq.dialect
 
-import mfwgenerics.kotq.expr.Expr
-import mfwgenerics.kotq.expr.Ordinal
-import mfwgenerics.kotq.expr.SelectedExpr
+import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.built.BuiltJoin
 import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.sql.SqlTextBuilder
@@ -50,5 +48,91 @@ fun SqlTextBuilder.compileJoins(
         compileRelation(join.to)
         addSql(" ON ")
         compileExpr(join.on)
+    }
+}
+
+fun SqlTextBuilder.compileExpr(
+    expr: QuasiExpr,
+    emitParens: Boolean,
+    impl: ExpressionCompiler
+) {
+    when (expr) {
+        is AggregatedExpr<*> -> {
+            val aggregated = expr.buildAggregated()
+
+            addSql(aggregated.expr.type.sql)
+            parenthesize {
+                prefix("", ", ").forEach(aggregated.expr.args) {
+                    impl.aggregatable(false, it)
+                }
+            }
+
+            aggregated.filter?.let { filter ->
+                addSql(" FILTER(WHERE ")
+
+                compileExpr(filter, false, impl)
+
+                addSql(")")
+            }
+
+            aggregated.over?.let { window ->
+                addSql(" OVER (")
+                impl.window(window)
+                addSql(")")
+            }
+        }
+        is CastExpr<*> -> {
+            addSql("CAST")
+            parenthesize {
+                compileExpr(expr.of, false, impl)
+                addSql(" AS ")
+                impl.dataTypeForCast(expr.type)
+            }
+        }
+        is ComparedQuery<*> -> {
+            addSql(expr.type)
+            impl.subquery(false, expr.subquery)
+        }
+        is ExprListExpr<*> -> {
+            parenthesize {
+                prefix("", ", ").forEach(expr.exprs) {
+                    compileExpr(it, false, impl)
+                }
+            }
+        }
+        is Literal<*> -> addLiteral(expr)
+        is OperationExpr<*> -> {
+            when (expr.type.fixity) {
+                OperationFixity.PREFIX -> parenthesize(emitParens) {
+                    addSql(expr.type.sql)
+                    addSql(" ")
+
+                    compileExpr(expr.args.single(), false, impl)
+                }
+                OperationFixity.POSTFIX -> parenthesize(emitParens) {
+                    compileExpr(expr.args.single(), false, impl)
+                    addSql(" ")
+                    addSql(expr.type.sql)
+                }
+                OperationFixity.INFIX -> parenthesize(emitParens) {
+                    prefix("", " ${expr.type.sql} ").forEach(expr.args) {
+                        compileExpr(it, true, impl)
+                    }
+                }
+                OperationFixity.APPLY -> {
+                    addSql(expr.type.sql)
+                    parenthesize {
+                        prefix("", ", ").forEach(expr.args) {
+                            compileExpr(expr, false, impl)
+                        }
+                    }
+                }
+            }
+        }
+        is Reference<*> -> impl.reference(false, expr)
+        is SubqueryExpr -> {
+            impl.subquery(false, expr.subquery)
+        }
+        else -> error("missed case $expr")
     }
 }

@@ -7,8 +7,8 @@ import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.ExpressionCompiler
-import mfwgenerics.kotq.dialect.ExpressionContext
 import mfwgenerics.kotq.dialect.SqlDialect
+import mfwgenerics.kotq.dialect.compileExpr
 import mfwgenerics.kotq.dsl.literal
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
@@ -263,7 +263,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            return expr.compile(emitParens, this)
+            sql.compileExpr(expr, emitParens, this)
         }
 
         fun compileRelation(relation: BuiltRelation) {
