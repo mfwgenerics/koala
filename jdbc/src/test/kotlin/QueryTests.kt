@@ -445,4 +445,43 @@ abstract class QueryTests: ProvideTestDatabase {
         assert(result[MappingsTable.color] == ColorEnum.BLUE)
         assert(result[MappingsTable.fruit] == FruitEnum.BANANA)
     }
+
+    @Test
+    fun `case expressions`() = withCxn { cxn ->
+        createAndPopulate(cxn)
+
+        val n0 = name<String>()
+        val n1 = name<String>()
+        val n2 = name<String>()
+        val n3 = name<String>()
+
+        val results = PurchaseTable
+            .select(
+                case(PurchaseTable.product,
+                    when_("Apple") then "aPPLE"
+                ) `as` n0,
+                case(
+                    when_(PurchaseTable.product eq "Apple") then "Apple?",
+                    when_(PurchaseTable.product eq "Pen") then "Pen?"
+                ) `as` n1,
+                case(PurchaseTable.product,
+                    when_("Hammer") then "'ammer"
+                ) else_ "'lse" `as` n2,
+                case(
+                    when_(PurchaseTable.product neq "Pear") then "not a pear"
+                ) else_ PurchaseTable.product `as` n3
+            )
+            .performWith(cxn)
+            .map { listOf(it[n0], it[n1], it[n2], it[n3]) }
+            .toList()
+
+        val expected = listOf(
+            listOf("aPPLE", "Apple?", "'lse", "not a pear"),
+            listOf(null, null, "'lse", "Pear"),
+            listOf(null, null, "'ammer", "not a pear"),
+            listOf(null, "Pen?", "'lse", "not a pear")
+        )
+
+        assertListOfListsEquals(expected, results)
+    }
 }

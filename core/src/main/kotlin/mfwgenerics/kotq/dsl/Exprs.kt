@@ -83,3 +83,15 @@ inline operator fun <reified T : Number> Expr<T>.minus(rhs: T): Expr<T> =
 
 operator fun <T : Number> Expr<T>.unaryMinus(): Expr<T> =
     OperationType.UNARY_MINUS(this)
+
+fun <T : Any, R : Any> case(expr: Expr<T>, vararg cases: CaseWhenThen<T, R>): ElseableCaseExpr<T, R> =
+    ElseableCaseExpr(false, expr, cases.asList(), null)
+
+fun <R : Any> case(vararg cases: CaseWhenThen<Boolean, R>): ElseableCaseExpr<Boolean, R> =
+    ElseableCaseExpr(true, literal(true), cases.asList(), null)
+
+fun <T : Any> when_(expr: Expr<T>): CaseWhen<T> = CaseWhen(expr)
+inline fun <reified T : Any> when_(expr: T): CaseWhen<T> = when_(literal(expr))
+
+inline infix fun <T : Any, reified R : Any> ElseableCaseExpr<T, R>.else_(expr: R): Expr<R> =
+    CaseExpr(isGeneralCase, onExpr, cases, literal(expr))

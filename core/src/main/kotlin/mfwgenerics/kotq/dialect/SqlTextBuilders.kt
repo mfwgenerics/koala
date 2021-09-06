@@ -133,6 +133,25 @@ fun SqlTextBuilder.compileExpr(
         is SubqueryExpr -> {
             impl.subquery(false, expr.subquery)
         }
+        is CaseExpr<*, *> -> parenthesize(emitParens) {
+            addSql("CASE ")
+
+            if (!expr.isGeneralCase) compileExpr(expr.onExpr, true, impl)
+
+            expr.cases.forEach { whenThen ->
+                addSql("\nWHEN ")
+                compileExpr(whenThen.whenExpr, false, impl)
+                addSql(" THEN ")
+                compileExpr(whenThen.thenExpr, true, impl)
+            }
+
+            expr.elseExpr?.let {
+                addSql("\nELSE ")
+                compileExpr(it, false, impl)
+            }
+
+            addSql("\nEND")
+        }
         else -> error("missed case $expr")
     }
 }
