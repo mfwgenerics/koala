@@ -9,6 +9,18 @@ import kotlin.test.Test
 
 abstract class QueryTests: ProvideTestDatabase {
     @Test
+    fun `perform values directly`() = withCxn { cxn ->
+        val number = name<Int>()
+
+        val result = values((1..20).asSequence(), number)
+            { value(number, it) }
+            .performWith(cxn)
+            .sumOf { it[number]!! }
+
+        assert(result == 210)
+    }
+
+    @Test
     fun `triangular numbers from values clause subquery`() = withCxn { cxn ->
         val number = name<Int>("number")
         val summed = name<Int>("sumUnder")
@@ -20,7 +32,6 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val results = values((1..20).asSequence(), number)
             { value(number, it) }
-            .subquery()
             .orderBy(castNumber.desc())
             .select(
                 number,
@@ -303,7 +314,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     PurchaseTable.shop,
                     PurchaseTable.customer,
 
-                    literal("NanoPear") `as` PurchaseTable.product,
+                    value("NanoPear") `as` PurchaseTable.product,
                     cast(PurchaseTable.price / 100, INTEGER) `as` PurchaseTable.price,
 
                     PurchaseTable.discount
@@ -389,7 +400,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val count = name<Int>()
 
         val purchaseCount = PurchaseTable
-            .select(count(literal(1)) `as` count)
+            .select(count(value(1)) `as` count)
             .performWith(cxn)
             .single()[count]!!
 
@@ -485,15 +496,25 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `standalone coalesce`() = withCxn { cxn ->
-        val n0 = name<Int>()
-        val n1 = name<String>()
+    fun `standalone coalesce and scalar query`() = withCxn { cxn ->
+        val n0 = name<Int>("n0")
+        val n1 = name<String>("n1")
+        val n3 = name<Int>("n3")
 
-        val result = select(12 `as` n0, coalesce(literal(null), literal("String")) `as` n1)
+        val valuesQuery = values((1..5).asSequence(), n0)
+            { value(n0, it) }
+            .select(sum(cast(n0, INTEGER)) `as` n3)
+
+        val result = select(
+                12 `as` n0,
+                coalesce(value(null), value("String")) `as` n1,
+                value(valuesQuery) `as` n3
+            )
             .performWith(cxn)
             .single()
 
         assert(result[n0] == 12)
         assert(result[n1] == "String")
+        assert(result[n3] == 15)
     }
 }

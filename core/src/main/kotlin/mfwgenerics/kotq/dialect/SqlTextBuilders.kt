@@ -130,7 +130,7 @@ fun SqlTextBuilder.compileExpr(
             }
         }
         is Reference<*> -> impl.reference(false, expr)
-        is SubqueryExpr -> {
+        is SubqueryExpr<*> -> {
             impl.subquery(false, expr.subquery)
         }
         is CaseExpr<*, *> -> parenthesize(emitParens) {

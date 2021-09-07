@@ -16,12 +16,12 @@ fun currentRow(): FrameRangeMarker<Nothing> =
 fun <T : Any> preceding(offset: Expr<T>): FrameRangeMarker<Expr<T>> =
     Preceding(offset)
 inline fun <reified T : Any> preceding(offset: T): FrameRangeMarker<Expr<T>> =
-    Preceding(literal(offset))
+    Preceding(value(offset))
 
 fun <T : Any> following(offset: Expr<T>): FrameRangeMarker<Expr<T>> =
     Following(offset)
 inline fun <reified T : Any> following(offset: T): FrameRangeMarker<Expr<T>> =
-    Following(literal(offset))
+    Following(value(offset))
 
 fun window(identifier: String? = null): WindowLabel =
     WindowLabel(IdentifierName(identifier))

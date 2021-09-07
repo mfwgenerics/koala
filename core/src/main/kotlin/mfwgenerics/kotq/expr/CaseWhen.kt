@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.expr
 
-import mfwgenerics.kotq.dsl.literal
+import mfwgenerics.kotq.dsl.value
 
 class CaseWhen<T : Any>(
     private val matcher: Expr<T>
@@ -9,5 +9,5 @@ class CaseWhen<T : Any>(
         CaseWhenThen(matcher, expr)
 
     inline infix fun <reified R : Any> then(expr: R): CaseWhenThen<T, R> =
-        then(literal(expr))
+        then(value(expr))
 }

@@ -89,7 +89,7 @@ class Scope(
     operator fun get(alias: Alias): String = names[alias]
     operator fun get(cte: Cte): String = names[cte]
 
-    fun nameOf(name: Reference<*>): String = external[name]!!
+    fun nameOf(name: Reference<*>): String = external[name]?:names[name]
     fun nameOf(label: WindowLabel): String = names[label]
 
     override fun toString(): String = "scope-${System.identityHashCode(this)}"

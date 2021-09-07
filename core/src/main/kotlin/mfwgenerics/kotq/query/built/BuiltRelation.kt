@@ -14,6 +14,7 @@ data class BuiltRelation(
             is Relvar -> relation.columns.map { it to it.symbol }
             is Subquery -> relation.of.columns.values.map { it to scope.names[it] }
             is Cte -> scope.cteColumns(relation).values.map { it to scope.names[it] }
+            is Values -> relation.columns.values.map { it to scope.names[it] }
         }
 
         names.forEach { (name, symbol) ->

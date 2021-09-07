@@ -8,7 +8,7 @@ import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.ExpressionCompiler
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.dialect.compileExpr
-import mfwgenerics.kotq.dsl.literal
+import mfwgenerics.kotq.dsl.value
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
 import mfwgenerics.kotq.query.*
@@ -271,6 +271,12 @@ class H2Dialect: SqlDialect {
                         null
                     }
                 }
+                is Values -> {
+                    sql.parenthesize {
+                        compileValues(BuiltValuesQuery(baseRelation))
+                    }
+                    baseRelation.columns
+                }
                 is Cte -> {
                     sql.addSql(scope[baseRelation])
                     null
@@ -405,14 +411,14 @@ class H2Dialect: SqlDialect {
 
             select.body.limit?.let {
                 sql.addSql("\nLIMIT ")
-                sql.addLiteral(literal(it))
+                sql.addLiteral(value(it))
             }
 
             if (select.body.offset != 0) {
                 check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
-                sql.addLiteral(literal(select.body.offset))
+                sql.addLiteral(value(select.body.offset))
             }
 
             select.body.locking?.let { locking ->
@@ -455,8 +461,7 @@ class H2Dialect: SqlDialect {
 
             val relvar = when (val relation = insert.relation.relation) {
                 is Relvar -> relation
-                is Subquery -> error("can not insert into subquery")
-                is Cte -> error("can not insert into CTE")
+                else -> error("unsuitable subject for insert")
             }
 
             val tableColumnMap = relvar.columns.associateBy { it }

@@ -3,74 +3,70 @@ package mfwgenerics.kotq.dsl
 import mfwgenerics.kotq.LiteralAssignment
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
+import mfwgenerics.kotq.query.Values
 import mfwgenerics.kotq.values.*
 
 inline fun <T> values(
     source: Sequence<T>,
     vararg references: Reference<*>,
     crossinline writer: RowWriter.(T) -> Unit
-): RowSequence {
-    return object : RowSequence {
-        override val columns = LabelList(references.asList())
+): Values {
+    val columns = LabelList(references.asList())
 
-        override fun rowIterator(): RowIterator {
-            var row = PreLabeledRow(columns)
+    return Values(columns) {
+        var row = PreLabeledRow(columns)
 
-            val iter = source.iterator()
+        val iter = source.iterator()
 
-            return object : RowIterator, ValuesRow by row {
-                override fun next(): Boolean {
-                    if (!iter.hasNext()) return false
+        object : RowIterator, ValuesRow by row {
+            override fun next(): Boolean {
+                if (!iter.hasNext()) return false
 
-                    row.clear()
-                    row.writer(iter.next())
+                row.clear()
+                row.writer(iter.next())
 
-                    return true
-                }
+                return true
+            }
 
-                override fun consume(): ValuesRow {
-                    val result = row
-                    row = PreLabeledRow(labels)
-                    return result
-                }
+            override fun consume(): ValuesRow {
+                val result = row
+                row = PreLabeledRow(labels)
+                return result
             }
         }
     }
 }
 
-
 fun values(
     vararg rows: ValuesRow
-): RowSequence {
+): Values {
     val labelSet = hashSetOf<Reference<*>>()
 
     rows.forEach {
         labelSet.addAll(it.labels.values)
     }
 
-    return object : RowSequence {
-        override val columns: LabelList = LabelList(labelSet.toList())
+    val columns = LabelList(labelSet.toList())
 
-        override fun rowIterator(): RowIterator {
-            val iter = rows.iterator()
+    return Values(columns) {
+        val iter = rows.iterator()
 
-            return object : RowIterator {
-                override val labels: LabelList get() = columns
-                lateinit var row: ValuesRow
+        object : RowIterator {
+            override val labels: LabelList get() = columns
+            lateinit var row: ValuesRow
 
-                override fun next(): Boolean {
-                    if (!iter.hasNext()) return false
+            override fun next(): Boolean {
+                if (!iter.hasNext()) return false
 
-                    row = iter.next()
+                row = iter.next()
 
-                    return true
-                }
-
-                override fun consume(): ValuesRow = row
-
-                override fun <T : Any> get(reference: Reference<T>): T? =
-                    row[reference]
+                return true
             }
+
+            override fun consume(): ValuesRow = row
+
+            override fun <T : Any> get(reference: Reference<T>): T? =
+                row[reference]
         }
     }
 }

@@ -4,6 +4,9 @@ import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.expr.RelvarColumn
 import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.query.built.BuiltSubquery
+import mfwgenerics.kotq.query.built.BuiltValuesQuery
+import mfwgenerics.kotq.values.RowIterator
+import mfwgenerics.kotq.values.RowSequence
 
 sealed interface Relation: AliasedRelation {
     fun `as`(alias: Alias): AliasedRelation = Aliased(this, alias)
@@ -21,6 +24,14 @@ interface Relvar: Relation {
 class Subquery(
     val of: BuiltSubquery
 ): Relation
+
+class Values(
+    override val columns: LabelList,
+    private val impl: () -> RowIterator
+): Relation, Subqueryable, RowSequence {
+    override fun rowIterator(): RowIterator = impl()
+    override fun buildQuery(): BuiltSubquery = BuiltValuesQuery(this)
+}
 
 class Cte(
     val identifier: IdentifierName = IdentifierName()

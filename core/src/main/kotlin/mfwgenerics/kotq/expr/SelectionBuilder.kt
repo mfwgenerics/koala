@@ -1,9 +1,6 @@
 package mfwgenerics.kotq.expr
 
-import mfwgenerics.kotq.query.Cte
-import mfwgenerics.kotq.query.LabelList
-import mfwgenerics.kotq.query.Relvar
-import mfwgenerics.kotq.query.Subquery
+import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.query.built.BuiltRelation
 
 class SelectionBuilder(
@@ -13,10 +10,11 @@ class SelectionBuilder(
 
     fun fromRelation(built: BuiltRelation) {
         val exports = when (val relation = built.relation) {
-            is Cte -> with.getValue(relation).values.asSequence()
-            is Relvar -> relation.columns.asSequence()
-            is Subquery -> relation.of.columns.values.asSequence()
-        }
+            is Cte -> with.getValue(relation).values
+            is Relvar -> relation.columns
+            is Subquery -> relation.of.columns.values
+            is Values -> relation.columns.values
+        }.asSequence()
 
         exports.forEach {
             val ref = built.alias?.get(it)?:it

@@ -2,7 +2,6 @@ package mfwgenerics.kotq.expr
 
 import mfwgenerics.kotq.query.built.BuiltSubquery
 
-class SubqueryExpr(
+class SubqueryExpr<T : Any>(
     val subquery: BuiltSubquery
-): QuasiExpr {
-}
+): Expr<T>
