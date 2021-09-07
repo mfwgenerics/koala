@@ -20,8 +20,10 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
         val references: List<SelectArgument>
     ): SelectedUnionOperand {
         override fun buildQuery() = BuiltSelectQuery(
+            false,
             of.buildSelect(),
-            references
+            references,
+            false
         )
 
         override fun buildUnionOperand() =
@@ -32,7 +34,7 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
         val query: BuiltQueryBody
     ): BuiltUnionOperand {
         override fun toSelectQuery(selected: List<SelectedExpr<*>>): BuiltSelectQuery =
-            BuiltSelectQuery(query, selected)
+            BuiltSelectQuery(false, query, selected)
     }
 
     override fun buildUnionOperand(): BuiltUnionOperand =

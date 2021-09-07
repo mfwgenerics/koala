@@ -16,6 +16,7 @@ interface Selectable: BuildsIntoQueryBody {
         val includeAll: Boolean
     ): SelectedJust<T> {
         override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+            false,
             of.buildSelect(),
             references,
             includeAll

@@ -8,6 +8,3 @@ data class SelectedExpr<T : Any>(
         selection.expression(expr, name)
     }
 }
-
-infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): SelectedExpr<T> =
-    SelectedExpr(this, reference)

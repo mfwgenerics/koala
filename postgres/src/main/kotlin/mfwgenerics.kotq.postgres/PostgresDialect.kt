@@ -410,6 +410,7 @@ class PostgresDialect: SqlDialect {
                     }
                 }
 
+            if (select.standalone) return
             sql.addSql("\nFROM ")
 
             compileSelectBody(select.body)

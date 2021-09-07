@@ -51,10 +51,12 @@ class BuiltQueryBody {
 
     var locking: LockMode? = null
 
-    fun populateScope(scope: Scope) {
+    fun populateScope(scope: Scope, standalone: Boolean) {
         withs.forEach {
             scope.cte(it.cte, it.query.columns)
         }
+
+        if (standalone) return
 
         relation.populateScope(scope)
 
@@ -65,14 +67,17 @@ class BuiltQueryBody {
 }
 
 class BuiltSelectQuery(
+    val standalone: Boolean,
     val body: BuiltQueryBody,
     val selected: List<SelectedExpr<*>>
 ): BuiltSubquery, BuiltStatement {
     constructor(
+        standalone: Boolean,
         body: BuiltQueryBody,
         references: List<SelectArgument>,
         includeAll: Boolean = false
     ): this(
+        standalone,
         body,
         SelectionBuilder(body.withs.associateBy({ it.cte }) { it.query.columns })
             .also { builder ->
@@ -91,7 +96,7 @@ class BuiltSelectQuery(
     override val columns: LabelList = LabelList(selected.map { it.name })
 
     override fun populateScope(scope: Scope) {
-        body.populateScope(scope)
+        body.populateScope(scope, standalone)
 
         selected.forEach {
             if (it.expr != it.name) scope.internal(it.name)

@@ -391,6 +391,7 @@ class H2Dialect: SqlDialect {
                     }
                 }
 
+            if (select.standalone) return
             sql.addSql("\nFROM ")
 
             compileSelectBody(select.body)

@@ -31,7 +31,9 @@ enum class OperationType(
     MULTIPLY("*", OperationFixity.INFIX),
     DIVIDE("/", OperationFixity.INFIX),
 
-    UNARY_MINUS("-", OperationFixity.PREFIX);
+    UNARY_MINUS("-", OperationFixity.PREFIX),
+
+    COALESCE("COALESCE", OperationFixity.APPLY);
 
     operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
         OperationExpr(this, args.toList())

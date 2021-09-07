@@ -6,6 +6,6 @@ class BuiltDelete(
     val query: BuiltQueryBody
 ): BuiltStatement {
     override fun populateScope(scope: Scope) {
-        query.populateScope(scope)
+        query.populateScope(scope, false)
     }
 }

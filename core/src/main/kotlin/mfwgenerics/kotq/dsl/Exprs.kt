@@ -5,6 +5,12 @@ import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.fluent.SelectedJust
 
+infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): SelectedExpr<T> =
+    SelectedExpr(this, reference)
+
+inline infix fun <reified T : Any> T.`as`(reference: Reference<T>): SelectedExpr<T> =
+    SelectedExpr(literal(this), reference)
+
 infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.EQ(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.eq(rhs: T): Expr<Boolean> = eq(literal(rhs))
 
@@ -95,3 +101,6 @@ inline fun <reified T : Any> when_(expr: T): CaseWhen<T> = when_(literal(expr))
 
 inline infix fun <T : Any, reified R : Any> ElseableCaseExpr<T, R>.else_(expr: R): Expr<R> =
     CaseExpr(isGeneralCase, onExpr, cases, literal(expr))
+
+fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
+    OperationType.COALESCE(expr, *operands)

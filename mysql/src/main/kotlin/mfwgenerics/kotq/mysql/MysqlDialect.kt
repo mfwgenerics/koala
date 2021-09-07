@@ -469,6 +469,7 @@ class MysqlDialect: SqlDialect {
                 sql.addSql(scope.nameOf(it.name))
             }
 
+            if (select.standalone) return
             sql.addSql("\nFROM ")
 
             compileSelectBody(select.body)

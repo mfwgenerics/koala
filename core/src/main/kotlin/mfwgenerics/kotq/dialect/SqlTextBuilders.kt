@@ -123,7 +123,7 @@ fun SqlTextBuilder.compileExpr(
                     addSql(expr.type.sql)
                     parenthesize {
                         prefix("", ", ").forEach(expr.args) {
-                            compileExpr(expr, false, impl)
+                            compileExpr(it, false, impl)
                         }
                     }
                 }

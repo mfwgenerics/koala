@@ -2,7 +2,6 @@ import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.*
-import mfwgenerics.kotq.expr.`as`
 import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
@@ -483,5 +482,18 @@ abstract class QueryTests: ProvideTestDatabase {
         )
 
         assertListOfListsEquals(expected, results)
+    }
+
+    @Test
+    fun `standalone coalesce`() = withCxn { cxn ->
+        val n0 = name<Int>()
+        val n1 = name<String>()
+
+        val result = select(12 `as` n0, coalesce(literal(null), literal("String")) `as` n1)
+            .performWith(cxn)
+            .single()
+
+        assert(result[n0] == 12)
+        assert(result[n1] == "String")
     }
 }
