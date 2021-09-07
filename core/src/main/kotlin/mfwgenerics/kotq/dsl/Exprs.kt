@@ -4,6 +4,7 @@ import mfwgenerics.kotq.data.DataType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.fluent.SelectedJust
+import mfwgenerics.kotq.sql.RawSqlBuilder
 
 infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
@@ -107,3 +108,6 @@ inline infix fun <T : Any, reified R : Any> ElseableCaseExpr<T, R>.else_(expr: R
 
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     OperationType.COALESCE(expr, *operands)
+
+fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
+    RawExpr(build)

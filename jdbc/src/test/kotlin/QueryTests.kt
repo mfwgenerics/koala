@@ -457,13 +457,14 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `case expressions`() = withCxn { cxn ->
+    fun `case expressions and raw expr`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
         val n0 = name<String>()
         val n1 = name<String>()
         val n2 = name<String>()
         val n3 = name<String>()
+        val n4 = name<Int>()
 
         val results = PurchaseTable
             .select(
@@ -479,17 +480,23 @@ abstract class QueryTests: ProvideTestDatabase {
                 ) else_ "'lse" `as` n2,
                 case(
                     when_(PurchaseTable.product neq "Pear") then "not a pear"
-                ) else_ PurchaseTable.product `as` n3
+                ) else_ PurchaseTable.product `as` n3,
+                rawExpr<Int> {
+                    sql("CASE")
+                    sql("\nWHEN "); expr(PurchaseTable.product eq "Apple"); sql(" THEN 12")
+                    sql("\nWHEN "); expr(PurchaseTable.product eq "Pen"); sql(" THEN 13")
+                    sql("\nEND")
+                } `as` n4
             )
             .performWith(cxn)
-            .map { listOf(it[n0], it[n1], it[n2], it[n3]) }
+            .map { listOf(it[n0], it[n1], it[n2], it[n3], it[n4]) }
             .toList()
 
         val expected = listOf(
-            listOf("aPPLE", "Apple?", "'lse", "not a pear"),
-            listOf(null, null, "'lse", "Pear"),
-            listOf(null, null, "'ammer", "not a pear"),
-            listOf(null, "Pen?", "'lse", "not a pear")
+            listOf("aPPLE", "Apple?", "'lse", "not a pear", 12),
+            listOf(null, null, "'lse", "Pear", null),
+            listOf(null, null, "'ammer", "not a pear", null),
+            listOf(null, "Pen?", "'lse", "not a pear", 13)
         )
 
         assertListOfListsEquals(expected, results)

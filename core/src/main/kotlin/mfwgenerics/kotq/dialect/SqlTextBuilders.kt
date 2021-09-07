@@ -3,6 +3,7 @@ package mfwgenerics.kotq.dialect
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.built.BuiltJoin
 import mfwgenerics.kotq.query.built.BuiltRelation
+import mfwgenerics.kotq.sql.RawSqlBuilder
 import mfwgenerics.kotq.sql.SqlTextBuilder
 import mfwgenerics.kotq.window.*
 
@@ -151,6 +152,14 @@ fun SqlTextBuilder.compileExpr(
             }
 
             addSql("\nEND")
+        }
+        is RawExpr<*> -> {
+            val build = expr.build
+
+            object : RawSqlBuilder {
+                override fun sql(value: String) { addSql(value) }
+                override fun expr(expr: QuasiExpr) { compileExpr(expr, true, impl) }
+            }.build()
         }
         else -> error("missed case $expr")
     }
