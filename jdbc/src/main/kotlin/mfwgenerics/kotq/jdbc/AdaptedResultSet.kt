@@ -32,4 +32,6 @@ class AdaptedResultSet(
 
         return result
     }
+
+    override fun close() { resultSet.close() }
 }

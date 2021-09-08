@@ -54,6 +54,9 @@ object TIME: PrimitiveDataType<LocalTime>(LocalTime::class)
 
 object INSTANT: PrimitiveDataType<Instant>(Instant::class)
 
+object TEXT: PrimitiveDataType<String>(String::class)
+object BOOLEAN: PrimitiveDataType<Boolean>(Boolean::class)
+
 class VARCHAR(
     val maxLength: Int
 ): UnmappedDataType<String>(String::class) {

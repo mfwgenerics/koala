@@ -16,7 +16,12 @@ class RowIteratorToIterator(
     private fun fetch() {
         val hadNext = rows.next()
 
-        currentRow = if (hadNext) rows.consume() else null
+        currentRow = if (hadNext) {
+            rows.consume()
+        } else {
+            rows.close()
+            null
+        }
     }
 
     override fun hasNext(): Boolean {

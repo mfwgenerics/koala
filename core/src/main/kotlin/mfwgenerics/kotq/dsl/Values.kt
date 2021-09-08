@@ -33,6 +33,8 @@ inline fun <T> values(
                 row = PreLabeledRow(labels)
                 return result
             }
+
+            override fun close() { }
         }
     }
 }
@@ -67,6 +69,8 @@ fun values(
 
             override fun <T : Any> get(reference: Reference<T>): T? =
                 row[reference]
+
+            override fun close() { }
         }
     }
 }

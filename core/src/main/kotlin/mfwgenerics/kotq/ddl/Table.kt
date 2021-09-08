@@ -105,13 +105,13 @@ open class Table(
     fun index(keys: KeyList) = index(nameIndex(keys, "idx"), keys)
 
     companion object {
-        fun <T : Any> UnmappedDataType<T>.autoIncrement() = BaseColumnType(this).autoIncrement()
+        fun <T : Any> DataType<*, T>.autoIncrement() = BaseColumnType(this).autoIncrement()
 
-        fun <T : Any> UnmappedDataType<T>.nullable() = BaseColumnType(this).nullable()
+        fun <T : Any> DataType<*, T>.nullable() = BaseColumnType(this).nullable()
 
-        fun <T : Any> UnmappedDataType<T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
-        fun <T : Any> UnmappedDataType<T>.default(value: T?) = BaseColumnType(this).default(value)
+        fun <T : Any> DataType<*, T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
+        fun <T : Any> DataType<*, T>.default(value: T?) = BaseColumnType(this).default(value)
 
-        fun <T : Any> UnmappedDataType<T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
+        fun <T : Any> DataType<*, T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
     }
 }
