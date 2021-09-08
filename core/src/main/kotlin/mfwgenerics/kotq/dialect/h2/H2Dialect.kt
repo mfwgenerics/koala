@@ -33,7 +33,7 @@ class H2Dialect: SqlDialect {
             is DECIMAL -> TODO()
             DOUBLE -> TODO()
             FLOAT -> TODO()
-            INSTANT -> TODO()
+            INSTANT -> sql.addSql("TIMESTAMP WITH TIME ZONE")
             SMALLINT -> sql.addSql("SMALLINT")
             INTEGER -> sql.addSql("INTEGER")
             TINYINT -> TODO()

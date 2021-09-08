@@ -1,6 +1,7 @@
 package mfwgenerics.kotq.jdbc
 
 import mfwgenerics.kotq.KotqConnection
+import mfwgenerics.kotq.data.JdbcMappedType
 import mfwgenerics.kotq.data.TypeMappings
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
@@ -39,8 +40,13 @@ class JdbcConnection(
             jdbc.prepareStatement(sql.sql)
         }
 
-        sql.parameters.forEachIndexed { ix, it ->
-            result.setObject(ix + 1, typeMappings.unconvert(it).value)
+        sql.parameters.forEachIndexed { ix, literal ->
+            @Suppress("unchecked_cast")
+            val mapping = typeMappings.mappingFor(literal.type) as JdbcMappedType<Any>
+
+            literal.value
+                ?.let { mapping.writeJdbc(result, ix + 1, it) }
+                ?: result.setObject(ix + 1, null)
         }
 
         return result

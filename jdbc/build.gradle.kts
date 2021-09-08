@@ -5,7 +5,7 @@ plugins {
 dependencies {
     api(project(":core"))
 
-    testImplementation("com.h2database:h2:1.4.199")
+    implementation("com.h2database:h2:1.4.199")
 }
 
 configurations.register(

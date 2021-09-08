@@ -16,17 +16,7 @@ class AdaptedResultSet(
     override fun <T : Any> get(reference: Reference<T>): T? {
         val ix = 1 + (labels.positionOf(reference) ?: return null)
 
-        return typeMappings.convert(reference.type) { converted ->
-            val result = when (converted) {
-                Int::class -> resultSet.getInt(ix)
-                Long::class -> resultSet.getLong(ix)
-                Float::class -> resultSet.getFloat(ix)
-                Double::class -> resultSet.getDouble(ix)
-                else -> resultSet.getObject(ix)
-            }
-
-            result?.takeUnless { resultSet.wasNull() }
-        }
+        return typeMappings.mappingFor(reference.type).readJdbc(resultSet, ix)
     }
 
     override fun next(): Boolean =

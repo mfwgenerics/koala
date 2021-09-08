@@ -1,38 +1,46 @@
 package mfwgenerics.kotq.data
 
-import mfwgenerics.kotq.expr.Literal
+import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 class TypeMappings {
-    private val mappings = ConcurrentHashMap<KClass<*>, MappedDataType<*, *>>()
+    private val mappings = ConcurrentHashMap<KClass<*>, JdbcMappedType<*>>()
+
+    fun <T : Any> register(type: KClass<T>, mapping: JdbcMappedType<T>) {
+        mappings[type] = mapping
+    }
+
+    init {
+        register(Int::class, object : JdbcMappedType<Int> {
+            override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Int) {
+                stmt.setInt(index, value)
+            }
+
+            override fun readJdbc(rs: ResultSet, index: Int): Int? {
+                return rs.getInt(index).takeUnless { rs.wasNull() }
+            }
+        })
+
+        register(String::class, object : JdbcMappedType<String> {
+            override fun writeJdbc(stmt: PreparedStatement, index: Int, value: String) {
+                stmt.setString(index, value)
+            }
+
+            override fun readJdbc(rs: ResultSet, index: Int): String? {
+                return rs.getString(index)
+            }
+        })
+    }
 
     fun <F : Any, T : Any> register(mapped: MappedDataType<F, T>) {
-        val type = mapped.type
+        val baseTypeMapping = mappingFor(mapped.dataType.type)
 
-        val existing = mappings.putIfAbsent(type, mapped) ?: return
-
-        check (existing.dataType.type == mapped.dataType.type) { "Type mapping for $type already exists but with conflicting base type." +
-            " Expected base type: ${mapped.dataType.type}" +
-            " Found base type: ${existing.dataType.type}"
-        }
+        mappings.putIfAbsent(mapped.type, baseTypeMapping.derive(mapped))
     }
 
     @Suppress("unchecked_cast")
-    fun <T : Any> unconvert(literal: Literal<T>): Literal<*> {
-        val mapping = (mappings[literal.type] ?: return literal) as MappedDataType<*, T>
-
-        return Literal(
-            mapping.dataType.type as KClass<Any>,
-            literal.value?.let { mapping.unconvert(it) }
-        )
-    }
-
-    @Suppress("unchecked_cast")
-    fun <T : Any> convert(type: KClass<T>, read: (KClass<*>) -> Any?): T? {
-        val mapping = mappings[type] as? MappedDataType<Any, T>
-            ?: return read(type) as T?
-
-        return read(type)?.let { mapping.convert(it) }
-    }
+    fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
+        checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
 }
