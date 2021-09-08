@@ -7,5 +7,6 @@ dependencies {
 
     implementation("org.postgresql:postgresql:42.2.23")
 
-    testImplementation(project(":jdbc", "testArchive"))
+    testImplementation(project(":testing"))
+    testImplementation(project(":testing", "testArchive"))
 }

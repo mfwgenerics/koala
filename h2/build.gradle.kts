@@ -3,14 +3,10 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":jdbc"))
+    api(project(":jdbc"))
 
-    implementation("mysql:mysql-connector-java:8.0.26")
+    implementation("com.h2database:h2:1.4.199")
 
     testImplementation(project(":testing"))
     testImplementation(project(":testing", "testArchive"))
-}
-
-tasks.test {
-    maxParallelForks = 16
 }
