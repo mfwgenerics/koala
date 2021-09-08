@@ -1,9 +1,9 @@
 package mfwgenerics.kotq.expr
 
-import mfwgenerics.kotq.data.DataType
+import mfwgenerics.kotq.data.UnmappedDataType
 
 class CastExpr<T : Any>(
     val of: Expr<*>,
-    val type: DataType<T>
+    val type: UnmappedDataType<T>
 ): Expr<T> {
 }

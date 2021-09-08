@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.h2
 
 import mfwgenerics.kotq.data.JdbcMappedType
-import mfwgenerics.kotq.data.TypeMappings
+import mfwgenerics.kotq.data.JdbcTypeMappings
 
 import org.h2.api.TimestampWithTimeZone
 import org.h2.util.DateTimeUtils
@@ -9,8 +9,8 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant
 
-fun H2TypeMappings(): TypeMappings {
-    val result = TypeMappings()
+fun H2TypeMappings(): JdbcTypeMappings {
+    val result = JdbcTypeMappings()
 
     result.register(Instant::class, object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {

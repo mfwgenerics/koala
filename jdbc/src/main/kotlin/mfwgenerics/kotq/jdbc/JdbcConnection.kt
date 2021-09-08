@@ -2,7 +2,7 @@ package mfwgenerics.kotq.jdbc
 
 import mfwgenerics.kotq.KotqConnection
 import mfwgenerics.kotq.data.JdbcMappedType
-import mfwgenerics.kotq.data.TypeMappings
+import mfwgenerics.kotq.data.JdbcTypeMappings
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.createTables
@@ -21,7 +21,7 @@ import java.sql.Statement
 class JdbcConnection(
     val jdbc: Connection,
     private val dialect: SqlDialect,
-    private val typeMappings: TypeMappings = TypeMappings()
+    private val typeMappings: JdbcTypeMappings = JdbcTypeMappings()
 ): KotqConnection {
     fun createTable(vararg tables: Table) {
         ddl(createTables(*tables))

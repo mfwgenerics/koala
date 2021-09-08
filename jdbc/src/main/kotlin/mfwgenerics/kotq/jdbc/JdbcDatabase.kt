@@ -3,7 +3,7 @@ package mfwgenerics.kotq.jdbc
 import mfwgenerics.kotq.Database
 import mfwgenerics.kotq.DeclareStrategy
 import mfwgenerics.kotq.Isolation
-import mfwgenerics.kotq.data.TypeMappings
+import mfwgenerics.kotq.data.JdbcTypeMappings
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dialect.SqlDialect
 import java.sql.Connection
@@ -11,7 +11,7 @@ import java.sql.Connection
 class JdbcDatabase(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
-    val typeMappings: TypeMappings = TypeMappings(),
+    val typeMappings: JdbcTypeMappings = JdbcTypeMappings(),
     val declareBy: DeclareStrategy = DeclareStrategy.RegisterOnly
 ): Database<JdbcConnection>() {
     override fun declare(vararg tables: Table) {

@@ -5,7 +5,7 @@ import java.sql.ResultSet
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
-class TypeMappings {
+class JdbcTypeMappings {
     private val mappings = ConcurrentHashMap<KClass<*>, JdbcMappedType<*>>()
 
     fun <T : Any> register(type: KClass<T>, mapping: JdbcMappedType<T>) {
@@ -34,10 +34,14 @@ class TypeMappings {
         })
     }
 
-    fun <F : Any, T : Any> register(mapped: MappedDataType<F, T>) {
-        val baseTypeMapping = mappingFor(mapped.dataType.type)
+    fun <F : Any, T : Any> register(from: KClass<F>, mapped: TypeMapping<F, T>) {
+        val baseTypeMapping = mappingFor(from)
 
         mappings.putIfAbsent(mapped.type, baseTypeMapping.derive(mapped))
+    }
+
+    fun <F : Any, T : Any> register(mappedDataType: DataType<F, T>) {
+        mappedDataType.mapping?.let { register(mappedDataType.dataType.type, it) }
     }
 
     @Suppress("unchecked_cast")

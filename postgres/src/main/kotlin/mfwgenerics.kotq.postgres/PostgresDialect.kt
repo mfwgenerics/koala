@@ -27,7 +27,7 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    private fun compileDataType(sql: SqlTextBuilder, type: DataType<*>) {
+    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
         when (type) {
             DATE -> TODO()
             DATETIME -> TODO()
@@ -55,7 +55,7 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    private fun compileSerialType(sql: SqlTextBuilder, type: DataType<*>) {
+    private fun compileSerialType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
         when (type) {
             SMALLINT -> sql.addSql("SMALLSERIAL")
             INTEGER -> sql.addSql("SERIAL")
@@ -213,7 +213,7 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileCastDataType(type: DataType<*>) {
+        fun compileCastDataType(type: UnmappedDataType<*>) {
             when (type) {
                 DATE -> TODO()
                 DATETIME -> TODO()
@@ -550,7 +550,7 @@ class PostgresDialect: SqlDialect {
             compileAggregatable(aggregatable)
         }
 
-        override fun <T : Any> dataTypeForCast(to: DataType<T>) {
+        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
             compileCastDataType(to)
         }
 

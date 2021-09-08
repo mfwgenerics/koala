@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.data.TypeMappings
+import mfwgenerics.kotq.data.JdbcTypeMappings
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
 import mfwgenerics.kotq.values.PreLabeledRow
@@ -9,7 +9,7 @@ import mfwgenerics.kotq.values.ValuesRow
 import java.sql.ResultSet
 
 class AdaptedResultSet(
-    private val typeMappings: TypeMappings,
+    private val typeMappings: JdbcTypeMappings,
     override val labels: LabelList,
     val resultSet: ResultSet
 ): RowIterator {

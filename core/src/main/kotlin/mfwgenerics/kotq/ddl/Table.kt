@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.ddl
 
+import mfwgenerics.kotq.data.UnmappedDataType
 import mfwgenerics.kotq.data.DataType
-import mfwgenerics.kotq.data.MappedDataType
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
@@ -40,7 +40,7 @@ open class Table(
         return column
     }
 
-    fun <T : Any> column(name: String, def: MappedDataType<*, T>): TableColumn<T> =
+    fun <T : Any> column(name: String, def: DataType<*, T>): TableColumn<T> =
         column(name, BaseColumnType(def))
 
     var primaryKey: BuiltNamedIndex? = null
@@ -105,13 +105,13 @@ open class Table(
     fun index(keys: KeyList) = index(nameIndex(keys, "idx"), keys)
 
     companion object {
-        fun <T : Any> DataType<T>.autoIncrement() = BaseColumnType(this).autoIncrement()
+        fun <T : Any> UnmappedDataType<T>.autoIncrement() = BaseColumnType(this).autoIncrement()
 
-        fun <T : Any> DataType<T>.nullable() = BaseColumnType(this).nullable()
+        fun <T : Any> UnmappedDataType<T>.nullable() = BaseColumnType(this).nullable()
 
-        fun <T : Any> DataType<T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
-        fun <T : Any> DataType<T>.default(value: T?) = BaseColumnType(this).default(value)
+        fun <T : Any> UnmappedDataType<T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
+        fun <T : Any> UnmappedDataType<T>.default(value: T?) = BaseColumnType(this).default(value)
 
-        fun <T : Any> DataType<T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
+        fun <T : Any> UnmappedDataType<T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
     }
 }

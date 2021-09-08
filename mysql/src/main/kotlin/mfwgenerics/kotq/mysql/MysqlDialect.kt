@@ -28,7 +28,7 @@ class MysqlDialect: SqlDialect {
         }
     }
 
-    private fun compileDataType(sql: SqlTextBuilder, type: DataType<*>) {
+    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
         when (type) {
             DATE -> TODO()
             DATETIME -> TODO()
@@ -217,7 +217,7 @@ class MysqlDialect: SqlDialect {
             compileAggregatable(aggregatable)
         }
 
-        override fun <T : Any> dataTypeForCast(to: DataType<T>) {
+        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
             compileCastDataType(to)
         }
 
@@ -285,7 +285,7 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        fun compileCastDataType(type: DataType<*>) {
+        fun compileCastDataType(type: UnmappedDataType<*>) {
             when (type) {
                 DATE -> TODO()
                 DATETIME -> TODO()

@@ -26,7 +26,7 @@ class H2Dialect: SqlDialect {
         }
     }
 
-    private fun compileDataType(sql: SqlTextBuilder, type: DataType<*>) {
+    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
         when (type) {
             DATE -> TODO()
             DATETIME -> TODO()
@@ -192,7 +192,7 @@ class H2Dialect: SqlDialect {
             compileWindow(window)
         }
 
-        fun compileCastDataType(type: DataType<*>) {
+        fun compileCastDataType(type: UnmappedDataType<*>) {
             when (type) {
                 DATE -> TODO()
                 DATETIME -> TODO()
@@ -215,7 +215,7 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        override fun <T : Any> dataTypeForCast(to: DataType<T>) =
+        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
             compileCastDataType(to)
 
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {

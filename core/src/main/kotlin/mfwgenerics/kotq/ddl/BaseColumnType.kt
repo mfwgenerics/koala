@@ -1,7 +1,7 @@
 package mfwgenerics.kotq.ddl
 
-import mfwgenerics.kotq.data.MappedDataType
+import mfwgenerics.kotq.data.DataType
 
 data class BaseColumnType<T : Any>(
-    override val mappedType: MappedDataType<*, T>
+    override val mappedType: DataType<*, T>
 ): ColumnType<T>

@@ -1,6 +1,6 @@
 package mfwgenerics.kotq.dsl
 
-import mfwgenerics.kotq.data.DataType
+import mfwgenerics.kotq.data.UnmappedDataType
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.fluent.SelectedJust
@@ -56,7 +56,7 @@ inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T>): Expr
 inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T>): Expr<Boolean> =
     notInExprs(values.map { Literal(T::class, it) })
 
-fun <T : Any> cast(from: Expr<*>, to: DataType<T>): Expr<T> =
+fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
     CastExpr(from, to)
 
 inline fun <reified T : Any> value(value: T?): Literal<T> =
