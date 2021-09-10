@@ -2,6 +2,7 @@ package mfwgenerics.kotq.dialect
 
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.query.built.BuiltJoin
+import mfwgenerics.kotq.query.built.BuiltQueryBody
 import mfwgenerics.kotq.query.built.BuiltRelation
 import mfwgenerics.kotq.sql.RawSqlBuilder
 import mfwgenerics.kotq.sql.SqlTextBuilder
@@ -163,4 +164,54 @@ fun SqlTextBuilder.compileExpr(
         }
         else -> error("missed case $expr")
     }
+}
+
+fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr<*>) -> Unit) {
+    prefix("ORDER BY ", ", ").forEach(ordinals) {
+        val orderKey = it.toOrderKey()
+
+        compileExpr(orderKey.expr)
+
+        addSql(" ${orderKey.order.sql}")
+    }
+}
+
+fun SqlTextBuilder.compileQueryBody(
+    body: BuiltQueryBody,
+    compileExpr: (Expr<*>) -> Unit,
+    compileRelation: (BuiltRelation) -> Unit,
+    compileWindows: (windows: List<LabeledWindow>) -> Unit,
+    compileJoins: (List<BuiltJoin>) -> Unit = { joins ->
+        joins.asReversed().forEach { join ->
+            addSql("\n")
+            addSql(join.type.sql)
+            addSql(" ")
+            compileRelation(join.to)
+            addSql(" ON ")
+            compileExpr(join.on)
+        }
+    },
+    compileWhere: (Expr<*>) -> Unit = { where ->
+        addSql("\nWHERE ")
+        compileExpr(where)
+    },
+    compileGroupBy: (List<Expr<*>>) -> Unit = {
+        prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
+            compileExpr(it)
+        }
+    },
+    compileHaving: (Expr<*>) -> Unit = {
+        addSql("\nHAVING ")
+        compileExpr(it)
+    }
+) {
+    compileRelation(body.relation)
+
+    if (body.joins.isNotEmpty()) compileJoins(body.joins)
+    body.where?.let(compileWhere)
+
+    if (body.groupBy.isNotEmpty()) compileGroupBy(body.groupBy)
+    body.having?.let(compileHaving)
+
+    if (body.windows.isNotEmpty()) compileWindows(body.windows)
 }

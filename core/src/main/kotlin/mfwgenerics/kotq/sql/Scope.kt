@@ -31,7 +31,8 @@ class Scope(
         ctes[cte] = labels
     }
 
-    fun cteColumns(cte: Cte): LabelList = ctes.getValue(cte)
+    fun cteColumns(cte: Cte): LabelList = checkNotNull(ctes[cte]?:enclosing?.cteColumns(cte))
+        { "missing cte $cte in scope $this" }
 
     fun external(name: Reference<*>, symbol: String? = null) {
         check (external.putIfAbsent(name, symbol?:names[name]) == null)

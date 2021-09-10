@@ -524,4 +524,29 @@ abstract class QueryTests: ProvideTestDatabase {
         assert(result[n1] == "String")
         assert(result[n3] == 15)
     }
+
+    @Test
+    fun `deletion with cte`() = withCxn { cxn ->
+        createAndPopulate(cxn)
+
+        val cte = cte()
+
+        PurchaseTable
+            .with(cte `as` CustomerTable
+                .where(CustomerTable.lastName eq "Smith")
+                .selectAll()
+            )
+            .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
+            .delete()
+            .performWith(cxn)
+
+        val name = name<Int>()
+
+        val purchases = PurchaseTable
+            .select(count(value(1)) `as` name)
+            .performWith(cxn)
+            .single()[name]
+
+        assert(purchases == 2)
+    }
 }

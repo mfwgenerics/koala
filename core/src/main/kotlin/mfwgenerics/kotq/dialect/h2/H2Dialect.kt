@@ -5,9 +5,7 @@ import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
-import mfwgenerics.kotq.dialect.ExpressionCompiler
-import mfwgenerics.kotq.dialect.SqlDialect
-import mfwgenerics.kotq.dialect.compileExpr
+import mfwgenerics.kotq.dialect.*
 import mfwgenerics.kotq.dsl.value
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
@@ -113,15 +111,8 @@ class H2Dialect: SqlDialect {
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
             compileReference(value)
 
-        fun compileOrderBy(ordinals: List<Ordinal<*>>) {
-            sql.prefix("ORDER BY ", ", ").forEach(ordinals) {
-                val orderKey = it.toOrderKey()
-
-                compileExpr(orderKey.expr, false)
-
-                sql.addSql(" ${orderKey.order.sql}")
-            }
-        }
+        fun compileOrderBy(ordinals: List<Ordinal<*>>) =
+            sql.compileOrderBy(ordinals) { compileExpr(it, false) }
 
         fun compileAggregatable(aggregatable: BuiltAggregatable) {
             if (aggregatable.distinct == Distinctness.DISTINCT) sql.addSql("DISTINCT ")
@@ -295,45 +286,6 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileQueryWhere(query: BuiltQueryBody) {
-            compileRelation(query.relation)
-
-            query.joins.asReversed().forEach { join ->
-                sql.addSql("\n")
-                sql.addSql(join.type.sql)
-                sql.addSql(" ")
-                compileRelation(join.to)
-                sql.addSql(" ON ")
-                compileExpr(join.on, false)
-            }
-
-            query.where?.let {
-                sql.addSql("\nWHERE ")
-                compileExpr(it, false)
-            }
-        }
-
-        fun compileSelectBody(body: BuiltQueryBody) {
-            compileQueryWhere(body)
-
-            sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
-                compileExpr(it, false)
-            }
-
-            body.having?.let {
-                sql.addSql("\nHAVING ")
-                compileExpr(it, false)
-            }
-
-            sql.prefix("\nWINDOW ", "\n, ").forEach(body.windows) {
-                sql.addSql(scope.nameOf(it.label))
-                sql.addSql(" AS ")
-                sql.addSql("(")
-                compileWindow(it.window.buildWindow())
-                sql.addSql(")")
-            }
-        }
-
         fun compileSetOperation(
             outerSelect: List<SelectedExpr<*>>,
             operation: BuiltSetOperation
@@ -379,6 +331,16 @@ class H2Dialect: SqlDialect {
                 }
         }
 
+        fun compileWindows(windows: List<LabeledWindow>) {
+            sql.prefix("\nWINDOW ", "\n, ").forEach(windows) {
+                sql.addSql(scope.nameOf(it.label))
+                sql.addSql(" AS ")
+                sql.addSql("(")
+                compileWindow(it.window.buildWindow())
+                sql.addSql(")")
+            }
+        }
+
         fun compileSelect(outerSelect: List<SelectedExpr<*>>, select: BuiltSelectQuery) {
             val withs = select.body.withs
 
@@ -400,7 +362,12 @@ class H2Dialect: SqlDialect {
             if (select.standalone) return
             sql.addSql("\nFROM ")
 
-            compileSelectBody(select.body)
+            sql.compileQueryBody(
+                select.body,
+                compileExpr = { compileExpr(it, false) },
+                compileRelation = { compileRelation(it) },
+                compileWindows = { windows -> compileWindows(windows) }
+            )
 
             select.body.setOperations.forEach {
                 compileSetOperation(select.selected, it)
@@ -518,6 +485,45 @@ class H2Dialect: SqlDialect {
                 compileExpr(it, false)
             }
         }
+
+        fun compileDelete(select: BuiltDelete) {
+            val withs = select.query.withs
+
+            compileWiths(select.query.withType, withs)
+
+            if (withs.isNotEmpty()) sql.addSql("\n")
+
+            sql.addSql("\nDELETE FROM ")
+
+            sql.compileQueryBody(
+                select.query,
+                compileExpr = { compileExpr(it, false) },
+                compileRelation = { compileRelation(it) },
+                compileWindows = { windows -> compileWindows(windows) },
+                compileJoins = { error("can't delete a join") },
+                compileGroupBy = { error("can't group by in a delete") },
+                compileHaving = { error("can't having in a delete") }
+            )
+
+            check (select.query.setOperations.isEmpty())
+
+            if (select.query.orderBy.isNotEmpty()) sql.addSql("\n")
+            compileOrderBy(select.query.orderBy)
+
+            select.query.limit?.let {
+                sql.addSql("\nLIMIT ")
+                sql.addLiteral(value(it))
+            }
+
+            if (select.query.offset != 0) {
+                check (select.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+
+                sql.addSql(" OFFSET ")
+                sql.addLiteral(value(select.query.offset))
+            }
+
+            check(select.query.locking == null)
+        }
     }
 
     override fun compile(statement: BuiltStatement): SqlText {
@@ -535,6 +541,7 @@ class H2Dialect: SqlDialect {
             is BuiltValuesQuery -> compilation.compileValues(statement)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)
+            is BuiltDelete -> compilation.compileDelete(statement)
         }
 
         return compilation.sql.toSql()

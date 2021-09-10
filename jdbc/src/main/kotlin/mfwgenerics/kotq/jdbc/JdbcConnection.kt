@@ -137,12 +137,25 @@ class JdbcConnection(
         }
     }
 
+    private fun execute(deleted: Deleted) {
+        val built = deleted.buildDelete()
+
+        val sql = dialect.compile(built)
+
+        try {
+            prepare(sql).execute()
+        } catch (ex: Exception) {
+            throw GeneratedSqlException(sql, ex)
+        }
+    }
+
     /* can't correctly type this without something like GADTs */
     @Suppress("unchecked_cast", "implicit_cast_to_any")
     override fun <T> perform(performable: Performable<T>): T = when (performable) {
         is Inserted -> execute(performable)
         is Queryable -> query(performable)
         is Updated -> execute(performable)
+        is Deleted -> execute(performable)
     } as T
 
     override fun commit() {

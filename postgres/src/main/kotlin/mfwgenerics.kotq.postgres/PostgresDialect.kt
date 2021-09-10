@@ -9,6 +9,7 @@ import mfwgenerics.kotq.ddl.diff.SchemaDiff
 import mfwgenerics.kotq.dialect.ExpressionCompiler
 import mfwgenerics.kotq.dialect.SqlDialect
 import mfwgenerics.kotq.dialect.compileExpr
+import mfwgenerics.kotq.dialect.compileQueryBody
 import mfwgenerics.kotq.dsl.value
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
@@ -557,6 +558,52 @@ class PostgresDialect: SqlDialect {
         override fun window(window: BuiltWindow) {
             compileWindow(window)
         }
+
+        fun compileWindows(windows: List<LabeledWindow>) {
+            sql.prefix("\nWINDOW ", "\n, ").forEach(windows) {
+                sql.addSql(scope.nameOf(it.label))
+                sql.addSql(" AS ")
+                sql.addSql("(")
+                compileWindow(it.window.buildWindow())
+                sql.addSql(")")
+            }
+        }
+
+        fun compileDelete(delete: BuiltDelete) {
+            val withs = delete.query.withs
+
+            compileWiths(delete.query.withType, withs)
+
+            if (withs.isNotEmpty()) sql.addSql("\n")
+
+            sql.addSql("\nDELETE FROM ")
+
+            sql.compileQueryBody(
+                delete.query,
+                compileExpr = { compileExpr(it, false) },
+                compileRelation = { compileRelation(it) },
+                compileWindows = { windows -> compileWindows(windows) }
+            )
+
+            check (delete.query.setOperations.isEmpty())
+
+            if (delete.query.orderBy.isNotEmpty()) sql.addSql("\n")
+            compileOrderBy(delete.query.orderBy)
+
+            delete.query.limit?.let {
+                sql.addSql("\nLIMIT ")
+                sql.addLiteral(value(it))
+            }
+
+            if (delete.query.offset != 0) {
+                check (delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+
+                sql.addSql(" OFFSET ")
+                sql.addLiteral(value(delete.query.offset))
+            }
+
+            check(delete.query.locking == null)
+        }
     }
 
     override fun compile(statement: BuiltStatement): SqlText {
@@ -574,6 +621,7 @@ class PostgresDialect: SqlDialect {
             is BuiltValuesQuery -> compilation.compileValues(statement, false)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)
+            is BuiltDelete -> compilation.compileDelete(statement)
         }
 
         return compilation.sql.toSql()
