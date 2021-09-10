@@ -38,10 +38,10 @@ abstract class QueryTests: ProvideTestDatabase {
                 sum(castNumber)
                     .over(all()
                         .orderBy(castNumber)
-                    ) `as` summed
+                    ) as_ summed
             )
             .subquery()
-            .`as`(alias)
+            .as_(alias)
             .where(alias[summed] greater 9)
             .select(alias[number], alias[summed])
             .performWith(cxn)
@@ -213,7 +213,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .innerJoin(PurchaseTable, CustomerTable.id eq PurchaseTable.customer)
             .groupBy(CustomerTable.id)
             .orderBy(total.desc())
-            .select(CustomerTable.firstName, sum(PurchaseTable.price) `as` total)
+            .select(CustomerTable.firstName, sum(PurchaseTable.price) as_ total)
             .performWith(cxn)
             .map { row -> row.labels.values.map { row[it] } }
             .toList()
@@ -253,10 +253,10 @@ abstract class QueryTests: ProvideTestDatabase {
             .groupBy(PurchaseTable.shop)
             .select(
                 PurchaseTable.shop,
-                max(PurchaseTable.price) `as` PurchaseTable.price
+                max(PurchaseTable.price) as_ PurchaseTable.price
             )
             .subquery()
-            .`as`(mp)
+            .as_(mp)
             .innerJoin(PurchaseTable, (mp[PurchaseTable.shop] eq PurchaseTable.shop).and(
                 mp[PurchaseTable.price] eq PurchaseTable.price
             ))
@@ -314,8 +314,8 @@ abstract class QueryTests: ProvideTestDatabase {
                     PurchaseTable.shop,
                     PurchaseTable.customer,
 
-                    value("NanoPear") `as` PurchaseTable.product,
-                    cast(PurchaseTable.price / 100, INTEGER) `as` PurchaseTable.price,
+                    value("NanoPear") as_ PurchaseTable.product,
+                    cast(PurchaseTable.price / 100, INTEGER) as_ PurchaseTable.price,
 
                     PurchaseTable.discount
                 )
@@ -358,21 +358,21 @@ abstract class QueryTests: ProvideTestDatabase {
         val cte = cte()
 
         val rows = CustomerTable
-            .with(cte `as` PurchaseTable
+            .with(cte as_ PurchaseTable
                 .select(
                     PurchaseTable,
-                    -PurchaseTable.price `as` PurchaseTable.price
+                    -PurchaseTable.price as_ PurchaseTable.price
                 )
             )
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
-            .leftJoin(cte.`as`(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
+            .leftJoin(cte.as_(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
                 .and(PurchaseTable.price less -600))
             .orderBy(
                 CustomerTable.id,
                 PurchaseTable.id,
                 alias[PurchaseTable.id]
             )
-            .select(cte, CustomerTable.firstName, cte.`as`(alias))
+            .select(cte, CustomerTable.firstName, cte.as_(alias))
             .performWith(cxn)
             .map { row ->
                 row.labels.values.map { row[it] }
@@ -400,7 +400,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val count = name<Int>()
 
         val purchaseCount = PurchaseTable
-            .select(count(value(1)) `as` count)
+            .select(count(value(1)) as_ count)
             .performWith(cxn)
             .single()[count]!!
 
@@ -470,23 +470,23 @@ abstract class QueryTests: ProvideTestDatabase {
             .select(
                 case(PurchaseTable.product,
                     when_("Apple") then "aPPLE"
-                ) `as` n0,
+                ) as_ n0,
                 case(
                     when_(PurchaseTable.product eq "Apple") then "Apple?",
                     when_(PurchaseTable.product eq "Pen") then "Pen?"
-                ) `as` n1,
+                ) as_ n1,
                 case(PurchaseTable.product,
                     when_("Hammer") then "'ammer"
-                ) else_ "'lse" `as` n2,
+                ) else_ "'lse" as_ n2,
                 case(
                     when_(PurchaseTable.product neq "Pear") then "not a pear"
-                ) else_ PurchaseTable.product `as` n3,
+                ) else_ PurchaseTable.product as_ n3,
                 rawExpr<Int> {
                     sql("CASE")
                     sql("\nWHEN "); expr(PurchaseTable.product eq "Apple"); sql(" THEN 12")
                     sql("\nWHEN "); expr(PurchaseTable.product eq "Pen"); sql(" THEN 13")
                     sql("\nEND")
-                } `as` n4
+                } as_ n4
             )
             .performWith(cxn)
             .map { listOf(it[n0], it[n1], it[n2], it[n3], it[n4]) }
@@ -510,12 +510,12 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val valuesQuery = values((1..5).asSequence(), n0)
             { value(n0, it) }
-            .select(sum(cast(n0, INTEGER)) `as` n3)
+            .select(sum(cast(n0, INTEGER)) as_ n3)
 
         val result = select(
-                12 `as` n0,
-                coalesce(value(null), value("String")) `as` n1,
-                value(valuesQuery) `as` n3
+                12 as_ n0,
+                coalesce(value(null), value("String")) as_ n1,
+                valuesQuery as_ n3
             )
             .performWith(cxn)
             .single()
@@ -532,8 +532,8 @@ abstract class QueryTests: ProvideTestDatabase {
         val cte = cte()
 
         PurchaseTable
-            .with(cte `as` CustomerTable
-                .where(CustomerTable.lastName eq "Smith")
+            .with(cte as_ CustomerTable
+                .where(select(CustomerTable.lastName eq "Smith"))
                 .selectAll()
             )
             .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
@@ -543,7 +543,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val name = name<Int>()
 
         val purchases = PurchaseTable
-            .select(count(value(1)) `as` name)
+            .select(count(value(1)) as_ name)
             .performWith(cxn)
             .single()[name]
 

@@ -1,5 +1,5 @@
 package mfwgenerics.kotq.query.fluent
 
-import mfwgenerics.kotq.query.Subqueryable
+import mfwgenerics.kotq.expr.SubqueryExpr
 
-interface SelectedJust<T : Any>: Subqueryable
+interface SelectedJust<T : Any>: SubqueryExpr<T>

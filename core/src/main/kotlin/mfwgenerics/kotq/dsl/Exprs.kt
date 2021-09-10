@@ -6,10 +6,10 @@ import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.fluent.SelectedJust
 import mfwgenerics.kotq.sql.RawSqlBuilder
 
-infix fun <T : Any> Expr<T>.`as`(reference: Reference<T>): SelectedExpr<T> =
+infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
 
-inline infix fun <reified T : Any> T.`as`(reference: Reference<T>): SelectedExpr<T> =
+inline infix fun <reified T : Any> T.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(value(this), reference)
 
 infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.EQ(this, rhs)
@@ -38,13 +38,13 @@ fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationType.NOT(expr)
 fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationType.IS_NULL(this)
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(this)
 
-fun exists(query: Subqueryable): Expr<Boolean> = OperationType.EXISTS(SubqueryExpr<Nothing>(query.buildQuery()))
-fun notExists(query: Subqueryable): Expr<Boolean> = OperationType.NOT_EXISTS(SubqueryExpr<Nothing>(query.buildQuery()))
+fun exists(query: Subqueryable): Expr<Boolean> = OperationType.EXISTS(SubqueryExpr.Wrap<Nothing>(query))
+fun notExists(query: Subqueryable): Expr<Boolean> = OperationType.NOT_EXISTS(SubqueryExpr.Wrap<Nothing>(query))
 
 infix fun <T : Any> Expr<T>.inQuery(query: SelectedJust<T>): Expr<Boolean> =
-    OperationType.IN(this, SubqueryExpr<Nothing>(query.buildQuery()))
+    OperationType.IN(this, query)
 infix fun <T : Any> Expr<T>.notInQuery(query: SelectedJust<T>): Expr<Boolean> =
-    OperationType.NOT_IN(this, SubqueryExpr<Nothing>(query.buildQuery()))
+    OperationType.NOT_IN(this, query)
 
 infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> =
     OperationType.IN(this, ExprListExpr(values))
@@ -61,9 +61,6 @@ fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
 
 inline fun <reified T : Any> value(value: T?): Literal<T> =
     Literal(T::class, value)
-
-inline fun <reified T : Any> value(query: SelectedJust<T>): Expr<T> =
-    SubqueryExpr(query.buildQuery())
 
 fun <T : Any> all(subquery: SelectedJust<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ALL, subquery.buildQuery())

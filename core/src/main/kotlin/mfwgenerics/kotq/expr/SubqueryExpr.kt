@@ -1,7 +1,13 @@
 package mfwgenerics.kotq.expr
 
+import mfwgenerics.kotq.query.Subqueryable
 import mfwgenerics.kotq.query.built.BuiltSubquery
 
-class SubqueryExpr<T : Any>(
-    val subquery: BuiltSubquery
-): Expr<T>
+interface SubqueryExpr<T : Any>: Expr<T>, Subqueryable {
+    class Wrap<T : Any>(
+        private val subqueryable: Subqueryable
+    ): SubqueryExpr<T> {
+        override fun buildQuery(): BuiltSubquery =
+            subqueryable.buildQuery()
+    }
+}

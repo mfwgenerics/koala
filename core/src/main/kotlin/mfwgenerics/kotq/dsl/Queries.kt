@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.dsl
 
+import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.expr.SelectArgument
 import mfwgenerics.kotq.expr.SelectedExpr
@@ -11,6 +12,9 @@ fun select(vararg references: SelectArgument): Subqueryable =
 
 fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
     StandaloneSelect(listOf(labeled), false)
+
+inline fun <reified T : Any> select(reference: Expr<T>): SelectedJust<T> =
+    StandaloneSelect(listOf(reference as_ name<T>()), false)
 
 fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
     StandaloneSelect(listOf(reference), false)

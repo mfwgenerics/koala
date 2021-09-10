@@ -26,5 +26,5 @@ inline fun <reified T : Any> following(offset: T): FrameRangeMarker<Expr<T>> =
 fun window(identifier: String? = null): WindowLabel =
     WindowLabel(IdentifierName(identifier))
 
-infix fun WindowLabel.`as`(window: Window): LabeledWindow =
+infix fun WindowLabel.as_(window: Window): LabeledWindow =
     LabeledWindow(window, this)

@@ -9,7 +9,7 @@ import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.RowSequence
 
 sealed interface Relation: AliasedRelation {
-    fun `as`(alias: Alias): AliasedRelation = Aliased(this, alias)
+    fun as_(alias: Alias): AliasedRelation = Aliased(this, alias)
 
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(this, null)

@@ -8,5 +8,5 @@ import mfwgenerics.kotq.query.Subqueryable
 fun cte(identifier: String? = null): Cte =
     Cte(IdentifierName(identifier))
 
-infix fun Cte.`as`(queryable: Subqueryable): CtedQueryable =
+infix fun Cte.as_(queryable: Subqueryable): CtedQueryable =
     CtedQueryable(this, queryable)
