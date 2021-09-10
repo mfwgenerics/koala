@@ -7,7 +7,7 @@ class RowIteratorToIterator(
     private val rows: RowIterator
 ): Iterator<ValuesRow> {
     private object Initial: ValuesRow {
-        override val labels: LabelList get() = error("not implemented")
+        override val columns: Collection<Reference<*>> get() = error("not implemented")
         override fun <T : Any> get(reference: Reference<T>): T? { error("not implemented") }
     }
 

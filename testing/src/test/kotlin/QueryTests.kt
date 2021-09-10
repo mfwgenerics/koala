@@ -12,7 +12,7 @@ abstract class QueryTests: ProvideTestDatabase {
     fun `perform values directly`() = withCxn { cxn ->
         val number = name<Int>()
 
-        val result = values((1..20).asSequence(), number)
+        val result = values((1..20).asSequence(), listOf(number))
             { value(number, it) }
             .performWith(cxn)
             .sumOf { it[number]!! }
@@ -30,7 +30,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val alias = alias("A")
 
-        val results = values((1..20).asSequence(), number)
+        val results = values((1..20).asSequence(), listOf(number))
             { value(number, it) }
             .orderBy(castNumber.desc())
             .select(
@@ -202,7 +202,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(CustomerTable.firstName)
             .select(CustomerTable.firstName, PurchaseTable.product, PurchaseTable.price)
             .performWith(cxn)
-            .map { row -> row.labels.values.map { row[it] } }
+            .map { row -> row.columns.map { row[it] } }
             .toList()
 
         assertListOfListsEquals(expectedPurchaseItems, actualPurchaseItems)
@@ -215,7 +215,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(total.desc())
             .select(CustomerTable.firstName, sum(PurchaseTable.price) as_ total)
             .performWith(cxn)
-            .map { row -> row.labels.values.map { row[it] } }
+            .map { row -> row.columns.map { row[it] } }
             .toList()
 
         val expectedTotals = listOf(
@@ -375,7 +375,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .select(cte, CustomerTable.firstName, cte.as_(alias))
             .performWith(cxn)
             .map { row ->
-                row.labels.values.map { row[it] }
+                row.columns.map { row[it] }
             }
             .toList()
 
@@ -508,7 +508,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val n1 = name<String>("n1")
         val n3 = name<Int>("n3")
 
-        val valuesQuery = values((1..5).asSequence(), n0)
+        val valuesQuery = values((1..5).asSequence(), listOf(n0))
             { value(n0, it) }
             .select(sum(cast(n0, INTEGER)) as_ n3)
 

@@ -10,9 +10,11 @@ import java.sql.ResultSet
 
 class AdaptedResultSet(
     private val typeMappings: JdbcTypeMappings,
-    override val labels: LabelList,
+    val labels: LabelList,
     val resultSet: ResultSet
 ): RowIterator {
+    override val columns: Collection<Reference<*>> get() = labels.values
+
     override fun <T : Any> get(reference: Reference<T>): T? {
         val ix = 1 + (labels.positionOf(reference) ?: return null)
 

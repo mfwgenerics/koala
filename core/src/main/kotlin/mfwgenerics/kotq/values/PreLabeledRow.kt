@@ -4,8 +4,9 @@ import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.query.LabelList
 
 class PreLabeledRow(
-    override val labels: LabelList,
+    val labels: LabelList,
 ): ValuesRow, RowWriter {
+    override val columns: Collection<Reference<*>> get() = labels.values
     private val values = arrayOfNulls<Any>(labels.values.size)
 
     fun clear() {

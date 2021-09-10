@@ -3,16 +3,18 @@ package mfwgenerics.kotq.query
 import mfwgenerics.kotq.expr.Reference
 
 class LabelList(
-    val values: List<Reference<*>>
+    val values: List<Reference<*>>,
+    private val positions: Map<Reference<*>, Int>
 ) {
-    private val positions = hashMapOf<Reference<*>, Int>()
-
-    init {
-        values.forEachIndexed { ix, it ->
-            check (positions.putIfAbsent(it, ix) == null)
+    constructor(values: List<Reference<*>>): this(
+        values,
+        hashMapOf<Reference<*>, Int>().also { positions ->
+            values.forEachIndexed { ix, it ->
+                check (positions.putIfAbsent(it, ix) == null)
                 { "duplicate label $it" }
+            }
         }
-    }
+    )
 
     fun positionOf(reference: Reference<*>): Int? =
         positions[reference]

@@ -50,7 +50,7 @@ open class Table(
     val internalIndexes = arrayListOf<BuiltNamedIndex>()
     val indexes: List<BuiltNamedIndex> get() = internalIndexes
 
-    fun nameKeys(keys: KeyList): String = keys.keys.asSequence()
+    private fun nameKeys(keys: KeyList): String = keys.keys.asSequence()
         .map {
             when (it) {
                 is RelvarColumn -> it.symbol
@@ -59,7 +59,7 @@ open class Table(
         }
         .joinToString("_")
 
-    fun nameIndex(keys: KeyList, suffix: String): String =
+    private fun nameIndex(keys: KeyList, suffix: String): String =
         "${relvarName}_${nameKeys(keys)}_$suffix"
 
     fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
@@ -101,9 +101,26 @@ open class Table(
         return result
     }
 
-    fun primaryKey(keys: KeyList) = primaryKey(nameIndex(keys, "pkey"), keys)
-    fun uniqueKey(keys: KeyList) = uniqueKey(nameIndex(keys, "key"), keys)
-    fun index(keys: KeyList) = index(nameIndex(keys, "idx"), keys)
+    fun primaryKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+        primaryKey(name, KeyList(keys.asList()))
+    fun uniqueKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+        uniqueKey(name, KeyList(keys.asList()))
+    fun index(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+        index(name, KeyList(keys.asList()))
+
+    fun primaryKey(keys: KeyList): BuiltNamedIndex =
+        primaryKey(nameIndex(keys, "pkey"), keys)
+    fun uniqueKey(keys: KeyList): BuiltNamedIndex =
+        uniqueKey(nameIndex(keys, "key"), keys)
+    fun index(keys: KeyList): BuiltNamedIndex =
+        index(nameIndex(keys, "idx"), keys)
+
+    fun primaryKey(vararg keys: Expr<*>): BuiltNamedIndex =
+        primaryKey(KeyList(keys.asList()))
+    fun uniqueKey(vararg keys: Expr<*>): BuiltNamedIndex =
+        uniqueKey(KeyList(keys.asList()))
+    fun index(vararg keys: Expr<*>): BuiltNamedIndex =
+        index(KeyList(keys.asList()))
 
     companion object {
         fun <T : Any> DataType<*, T>.autoIncrement() = BaseColumnType(this).autoIncrement()

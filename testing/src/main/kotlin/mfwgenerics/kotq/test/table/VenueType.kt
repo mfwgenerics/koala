@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.test.models
+package mfwgenerics.kotq.test.table
 
 enum class VenueType {
     BAR,

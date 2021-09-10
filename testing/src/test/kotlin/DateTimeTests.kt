@@ -25,11 +25,13 @@ abstract class DateTimeTests: ProvideTestDatabase {
         cxn.createTable(EventTable)
 
         val instants = (1000..1010L).map {
-            Instant.EPOCH.plusSeconds(it*24*60*60*7 + it).also { println(it) }
+            Instant.EPOCH.plusSeconds(it*24*60*60*7 + it)
         }
 
         EventTable
-            .insert(values(instants.asSequence(), EventTable.at) {
+            .insert(values(
+                instants.asSequence()
+            ) {
                 value(EventTable.at, it)
             })
             .performWith(cxn)
