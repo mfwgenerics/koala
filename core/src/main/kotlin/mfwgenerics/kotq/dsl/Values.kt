@@ -51,7 +51,7 @@ inline fun <T> values(
     val writer = object : RowWriter {
         private var values = arrayListOf<Any?>()
 
-        override fun <T : Any> value(reference: Reference<T>, value: T?) {
+        override fun <T : Any> set(reference: Reference<T>, value: T?) {
             val ix = columnPositions.putIfAbsent(reference, columnPositions.size)
 
             if (ix != null) {

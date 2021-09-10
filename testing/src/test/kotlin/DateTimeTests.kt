@@ -1,11 +1,9 @@
 import mfwgenerics.kotq.data.INSTANT
 import mfwgenerics.kotq.data.INTEGER
-import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.keys
 import mfwgenerics.kotq.dsl.values
 import mfwgenerics.kotq.jdbc.performWith
-import java.time.Duration
 import java.time.Instant
 import kotlin.test.Test
 
@@ -32,7 +30,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
             .insert(values(
                 instants.asSequence()
             ) {
-                value(EventTable.at, it)
+                set(EventTable.at, it)
             })
             .performWith(cxn)
 

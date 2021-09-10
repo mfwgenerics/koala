@@ -29,7 +29,7 @@ class AdaptedResultSet(
 
         labels.values.forEach {
             @Suppress("unchecked_cast")
-            result.value(it as Reference<Any>, get(it))
+            result.set(it as Reference<Any>, get(it))
         }
 
         return result

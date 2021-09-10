@@ -20,7 +20,7 @@ class PreLabeledRow(
         return values[ix] as T?
     }
 
-    override fun <T : Any> value(reference: Reference<T>, value: T?) {
+    override fun <T : Any> set(reference: Reference<T>, value: T?) {
         val ix = checkNotNull(labels.positionOf(reference)) {
             "$reference not representable in $labels"
         }

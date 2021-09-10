@@ -13,7 +13,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val number = name<Int>()
 
         val result = values((1..20).asSequence(), listOf(number))
-            { value(number, it) }
+            { set(number, it) }
             .performWith(cxn)
             .sumOf { it[number]!! }
 
@@ -31,7 +31,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val alias = alias("A")
 
         val results = values((1..20).asSequence(), listOf(number))
-            { value(number, it) }
+            { set(number, it) }
             .orderBy(castNumber.desc())
             .select(
                 number,
@@ -509,7 +509,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val n3 = name<Int>("n3")
 
         val valuesQuery = values((1..5).asSequence(), listOf(n0))
-            { value(n0, it) }
+            { set(n0, it) }
             .select(sum(cast(n0, INTEGER)) as_ n3)
 
         val result = select(

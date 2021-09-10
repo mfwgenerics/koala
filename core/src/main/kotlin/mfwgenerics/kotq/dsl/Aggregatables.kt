@@ -12,5 +12,7 @@ fun <T : Any> max(aggregatable: Aggregatable<T>): FilterableExpr<T> =
 fun <T : Any> sum(aggregatable: Aggregatable<T>): FilterableExpr<T> =
     GroupedOperationExpr(GroupedOperationType.SUM, listOf(aggregatable.buildAggregatable()))
 
-fun <T : Any> count(aggregatable: Aggregatable<T>): FilterableExpr<T> =
+fun count(aggregatable: Aggregatable<*>): FilterableExpr<Int> =
     GroupedOperationExpr(GroupedOperationType.COUNT, listOf(aggregatable.buildAggregatable()))
+
+fun count(): FilterableExpr<Int> = count(value(1))

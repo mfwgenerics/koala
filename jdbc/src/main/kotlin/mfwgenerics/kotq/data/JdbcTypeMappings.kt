@@ -40,6 +40,16 @@ class JdbcTypeMappings {
         register<Int, UInt>({ it.toUInt() }, { it.toInt() })
         register<Long, ULong>({ it.toULong() }, { it.toLong() })
 
+        register<Float>(
+            { stmt, index, value -> stmt.setFloat(index, value) },
+            { rs, index -> rs.getFloat(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Double>(
+            { stmt, index, value -> stmt.setDouble(index, value) },
+            { rs, index -> rs.getDouble(index).takeUnless { rs.wasNull() } }
+        )
+
         register<String>(
             { stmt, index, value -> stmt.setString(index, value) },
             { rs, index -> rs.getString(index) }

@@ -25,7 +25,7 @@ class LiteralAssignment<T : Any>(
     )
 
     fun placeIntoRow(row: RowWriter) {
-        row.value(reference, value)
+        row.set(reference, value)
     }
 }
 
