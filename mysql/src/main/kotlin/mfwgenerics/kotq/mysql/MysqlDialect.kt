@@ -99,7 +99,7 @@ class MysqlDialect: SqlDialect {
     }
 
     private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE ")
+        sql.addSql("CREATE TABLE IF NOT EXISTS ")
 
         sql.addSql(table.relvarName)
         sql.parenthesize {

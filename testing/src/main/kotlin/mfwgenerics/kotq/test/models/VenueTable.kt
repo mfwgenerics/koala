@@ -5,7 +5,7 @@ import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.currentInstant
 import mfwgenerics.kotq.dsl.keys
 
-object Venue: Table("Restaurant") {
+object VenueTable: Table("Venue") {
     val id = column("id", INTEGER.autoIncrement().primaryKey())
     val created = column("create", INSTANT.default(currentInstant()))
 

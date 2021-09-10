@@ -36,7 +36,7 @@ enum class OperationType(
     COALESCE("COALESCE", OperationFixity.APPLY),
 
     CURRENT_TIMESTAMP("CURRENT_TIMESTAMP", OperationFixity.APPLY),
-    AT_TIME_ZONE("AT_TIME_ZONE", OperationFixity.INFIX);
+    AT_TIME_ZONE("AT TIME ZONE", OperationFixity.INFIX);
 
     operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
         OperationExpr(this, args.toList())

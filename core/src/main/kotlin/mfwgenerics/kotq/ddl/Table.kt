@@ -2,6 +2,7 @@ package mfwgenerics.kotq.ddl
 
 import mfwgenerics.kotq.data.UnmappedDataType
 import mfwgenerics.kotq.data.DataType
+import mfwgenerics.kotq.ddl.Table.Companion.reference
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
@@ -113,5 +114,8 @@ open class Table(
         fun <T : Any> DataType<*, T>.default(value: T?) = BaseColumnType(this).default(value)
 
         fun <T : Any> DataType<*, T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
+
+        fun <T : Any> DataType<*, T>.primaryKey() = BaseColumnType(this).primaryKey()
+        fun <T : Any> DataType<*, T>.uniqueKey() = BaseColumnType(this).uniqueKey()
     }
 }

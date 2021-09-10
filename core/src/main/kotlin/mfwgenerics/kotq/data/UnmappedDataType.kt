@@ -2,10 +2,7 @@ package mfwgenerics.kotq.data
 
 import mfwgenerics.kotq.sql.StandardSql
 import java.math.BigDecimal
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.*
 import kotlin.reflect.KClass
 
 sealed class UnmappedDataType<T : Any>(
@@ -51,6 +48,8 @@ object BIGINT: PrimitiveDataType<Long>(Long::class) {
 object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
 object DATETIME: PrimitiveDataType<LocalDateTime>(LocalDateTime::class)
 object TIME: PrimitiveDataType<LocalTime>(LocalTime::class)
+
+object DATETIMETZ: PrimitiveDataType<ZonedDateTime>(ZonedDateTime::class)
 
 object INSTANT: PrimitiveDataType<Instant>(Instant::class)
 

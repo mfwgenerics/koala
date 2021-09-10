@@ -1,4 +1,4 @@
-package mfwgenerics.kotq.dialect.h2
+package mfwgenerics.kotq.h2
 
 import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
@@ -17,82 +17,16 @@ import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class H2Dialect: SqlDialect {
-    private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
-        when (expr) {
-            is Literal -> sql.addLiteral(expr)
-            else -> error("not implemented")
-        }
-    }
-
-    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-        when (type) {
-            DATE -> TODO()
-            DATETIME -> TODO()
-            is DECIMAL -> TODO()
-            DOUBLE -> TODO()
-            FLOAT -> TODO()
-            INSTANT -> sql.addSql("TIMESTAMP WITH TIME ZONE")
-            SMALLINT -> sql.addSql("SMALLINT")
-            INTEGER -> sql.addSql("INTEGER")
-            TINYINT -> TODO()
-            is RAW -> TODO()
-            TIME -> TODO()
-            is VARBINARY -> TODO()
-            is VARCHAR -> {
-                sql.addSql("VARCHAR")
-                sql.parenthesize {
-                    sql.addSql("${type.maxLength}")
-                }
-            }
-            BIGINT -> TODO()
-            TINYINT.UNSIGNED -> TODO()
-            SMALLINT.UNSIGNED -> TODO()
-            INTEGER.UNSIGNED -> TODO()
-            BIGINT.UNSIGNED -> TODO()
-        }
-    }
-
-    private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE ")
-
-        sql.addSql(table.relvarName)
-        sql.parenthesize {
-            sql.prefix("", ", ").forEach(table.columns) {
-                sql.addSql("\n")
-                val def = it.builtDef
-
-                sql.addSql(it.symbol)
-                sql.addSql(" ")
-                compileDataType(sql, def.columnType.dataType)
-
-                if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
-                if (def.notNull) sql.addSql(" NOT NULL")
-
-                def.default?.let { default ->
-                    @Suppress("unchecked_cast")
-                    val finalExpr = when (default) {
-                        is ColumnDefaultExpr -> default.expr
-                        is ColumnDefaultValue -> Literal(
-                            def.columnType.type as KClass<Any>,
-                            default.value
-                        )
-                    }
-
-                    sql.addSql(" DEFAULT ")
-                    compileDefaultExpr(sql, finalExpr)
-                }
-            }
-            sql.addSql("\n")
-        }
-    }
-
     override fun ddl(diff: SchemaDiff): List<SqlText> {
         val results = mutableListOf<SqlText>()
 
         diff.tables.created.forEach { (_, table) ->
             val sql = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
 
-            compileCreateTable(sql, table)
+            Compilation(
+                Scope(NameRegistry()),
+                sql
+            ).compileCreateTable(sql, table)
 
             results.add(sql.toSql())
         }
@@ -104,8 +38,76 @@ class H2Dialect: SqlDialect {
         val scope: Scope,
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
     ): ExpressionCompiler {
+        private fun compileDefaultExpr(expr: Expr<*>) {
+            compileExpr(expr)
+        }
+
+        private fun compileDataType(type: UnmappedDataType<*>) {
+            computeWithColumnDefaults(type) {
+                when (it) {
+                    DATE -> TODO()
+                    DATETIME -> TODO()
+                    is DECIMAL -> TODO()
+                    DOUBLE -> sql.addSql("DOUBLE")
+                    FLOAT -> sql.addSql("REAL")
+                    INSTANT -> sql.addSql("TIMESTAMP WITH TIME ZONE")
+                    SMALLINT -> sql.addSql("SMALLINT")
+                    INTEGER -> sql.addSql("INTEGER")
+                    TINYINT -> sql.addSql("TINYINT")
+                    is RAW -> TODO()
+                    TIME -> TODO()
+                    is VARBINARY -> TODO()
+                    is VARCHAR -> {
+                        sql.addSql("VARCHAR")
+                        sql.parenthesize {
+                            sql.addSql("${it.maxLength}")
+                        }
+                    }
+                    BIGINT -> TODO()
+                    BOOLEAN -> sql.addSql("BOOL")
+                    DATETIMETZ -> TODO()
+                    TEXT -> sql.addSql("TEXT")
+                    else -> null
+                }
+            }
+        }
+
+        fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
+            sql.addSql("CREATE TABLE IF NOT EXISTS ")
+
+            sql.addIdentifier(table.relvarName)
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(table.columns) {
+                    sql.addSql("\n")
+                    val def = it.builtDef
+
+                    sql.addIdentifier(it.symbol)
+                    sql.addSql(" ")
+                    compileDataType(def.columnType.dataType)
+
+                    if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+                    if (def.notNull) sql.addSql(" NOT NULL")
+
+                    def.default?.let { default ->
+                        @Suppress("unchecked_cast")
+                        val finalExpr = when (default) {
+                            is ColumnDefaultExpr -> default.expr
+                            is ColumnDefaultValue -> Literal(
+                                def.columnType.type as KClass<Any>,
+                                default.value
+                            )
+                        }
+
+                        sql.addSql(" DEFAULT ")
+                        compileDefaultExpr(finalExpr)
+                    }
+                }
+                sql.addSql("\n")
+            }
+        }
+
         fun compileReference(name: Reference<*>) {
-            sql.addSql(scope[name])
+            sql.addResolved(scope.resolve(name))
         }
 
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
@@ -241,7 +243,7 @@ class H2Dialect: SqlDialect {
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addSql(baseRelation.relvarName)
+                    sql.addIdentifier(baseRelation.relvarName)
                     null
                 }
                 is Subquery -> {
@@ -280,7 +282,7 @@ class H2Dialect: SqlDialect {
             explicitLabels?.let { labels ->
                 sql.parenthesize {
                     sql.prefix("", ", ").forEach(labels.values) {
-                        sql.addSql(scope.nameOf(it))
+                        sql.addIdentifier(scope.nameOf(it))
                     }
                 }
             }
@@ -355,7 +357,7 @@ class H2Dialect: SqlDialect {
                     selectPrefix.next {
                         compileExpr(it.expr, false)
                         sql.addSql(" ")
-                        sql.addSql(scope.nameOf(it.name))
+                        sql.addIdentifier(scope.nameOf(it.name))
                     }
                 }
 
@@ -434,7 +436,7 @@ class H2Dialect: SqlDialect {
             val tableColumnMap = relvar.columns.associateBy { it }
             val columns = insert.query.columns
 
-            sql.addSql(relvar.relvarName)
+            sql.addIdentifier(relvar.relvarName)
             sql.addSql(" ")
 
             sql.parenthesize {
@@ -443,7 +445,7 @@ class H2Dialect: SqlDialect {
                         "can't insert $it into ${relvar.relvarName}"
                     }
 
-                    sql.addSql(column.symbol)
+                    sql.addIdentifier(column.symbol)
                 }
             }
 

@@ -66,7 +66,7 @@ class PostgresDialect: SqlDialect {
     }
 
     private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE ")
+        sql.addSql("CREATE TABLE IF NOT EXISTS ")
 
         sql.addIdentifier(table.relvarName)
         sql.parenthesize {

@@ -5,33 +5,49 @@ import java.sql.ResultSet
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
+@Suppress("RemoveExplicitTypeArguments")
 class JdbcTypeMappings {
     private val mappings = ConcurrentHashMap<KClass<*>, JdbcMappedType<*>>()
 
-    fun <T : Any> register(type: KClass<T>, mapping: JdbcMappedType<T>) {
-        mappings[type] = mapping
+    init {
+        register<Boolean>(
+            { stmt, index, value -> stmt.setBoolean(index, value) },
+            { rs, index -> rs.getBoolean(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Byte>(
+            { stmt, index, value -> stmt.setByte(index, value) },
+            { rs, index -> rs.getByte(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Short>(
+            { stmt, index, value -> stmt.setShort(index, value) },
+            { rs, index -> rs.getShort(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Int>(
+            { stmt, index, value -> stmt.setInt(index, value) },
+            { rs, index -> rs.getInt(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Long>(
+            { stmt, index, value -> stmt.setLong(index, value) },
+            { rs, index -> rs.getLong(index).takeUnless { rs.wasNull() } }
+        )
+
+        register<Byte, UByte>({ it.toUByte() }, { it.toByte() })
+        register<Short, UShort>({ it.toUShort() }, { it.toShort() })
+        register<Int, UInt>({ it.toUInt() }, { it.toInt() })
+        register<Long, ULong>({ it.toULong() }, { it.toLong() })
+
+        register<String>(
+            { stmt, index, value -> stmt.setString(index, value) },
+            { rs, index -> rs.getString(index) }
+        )
     }
 
-    init {
-        register(Int::class, object : JdbcMappedType<Int> {
-            override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Int) {
-                stmt.setInt(index, value)
-            }
-
-            override fun readJdbc(rs: ResultSet, index: Int): Int? {
-                return rs.getInt(index).takeUnless { rs.wasNull() }
-            }
-        })
-
-        register(String::class, object : JdbcMappedType<String> {
-            override fun writeJdbc(stmt: PreparedStatement, index: Int, value: String) {
-                stmt.setString(index, value)
-            }
-
-            override fun readJdbc(rs: ResultSet, index: Int): String? {
-                return rs.getString(index)
-            }
-        })
+    fun <T : Any> register(type: KClass<T>, mapping: JdbcMappedType<T>) {
+        mappings[type] = mapping
     }
 
     fun <F : Any, T : Any> register(from: KClass<F>, mapped: TypeMapping<F, T>) {
@@ -39,6 +55,26 @@ class JdbcTypeMappings {
 
         mappings.putIfAbsent(mapped.type, baseTypeMapping.derive(mapped))
     }
+
+    inline fun <reified T : Any> register(
+        crossinline writeJdbc: (stmt: PreparedStatement, index: Int, value: T) -> Unit,
+        crossinline readJdbc: (rs: ResultSet, index: Int) -> T?
+    ) = register(T::class, object : JdbcMappedType<T> {
+        override fun writeJdbc(stmt: PreparedStatement, index: Int, value: T) =
+            writeJdbc(stmt, index, value)
+
+        override fun readJdbc(rs: ResultSet, index: Int): T? = readJdbc(rs, index)
+    })
+
+    inline fun <reified F : Any, reified T : Any> register(
+        crossinline to: (F) -> T,
+        crossinline from: (T) -> F
+    ) = register<F, T>(F::class, object : TypeMapping<F, T> {
+        override val type: KClass<T> = T::class
+
+        override fun convert(value: F): T = to(value)
+        override fun unconvert(value: T): F = from(value)
+    })
 
     fun <F : Any, T : Any> register(mappedDataType: DataType<F, T>) {
         mappedDataType.mapping?.let { register(mappedDataType.dataType.type, it) }

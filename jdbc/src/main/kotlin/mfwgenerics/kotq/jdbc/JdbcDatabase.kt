@@ -5,23 +5,40 @@ import mfwgenerics.kotq.DeclareStrategy
 import mfwgenerics.kotq.Isolation
 import mfwgenerics.kotq.data.JdbcTypeMappings
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.diff.SchemaDiff
+import mfwgenerics.kotq.ddl.createTables as createTablesDdl
 import mfwgenerics.kotq.dialect.SqlDialect
 import java.sql.Connection
 
 class JdbcDatabase(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
-    val typeMappings: JdbcTypeMappings = JdbcTypeMappings(),
-    val declareBy: DeclareStrategy = DeclareStrategy.RegisterOnly
+    val typeMappings: JdbcTypeMappings = JdbcTypeMappings()
 ): Database<JdbcConnection>() {
-    override fun declare(vararg tables: Table) {
+    override fun declareTablesUsing(declareBy: DeclareStrategy, tables: List<Table>) {
         tables.forEach { table ->
             table.columns.forEach {
                 typeMappings.register(it.builtDef.columnType)
             }
         }
 
-        // TOOD use declareBy
+        val diff = SchemaDiff()
+
+        when (declareBy) {
+            DeclareStrategy.RegisterOnly -> return
+            DeclareStrategy.CreateIfNotExists -> {
+                tables.forEach {
+                    diff.tables.created[it.relvarName] = it
+                }
+            }
+            DeclareStrategy.Diff -> {
+                tables.forEach {
+                    diff.tables.created[it.relvarName] = it
+                }
+            }
+        }
+
+        transact { it.ddl(diff) }
     }
 
     override fun connect(isolation: Isolation): JdbcConnection {
