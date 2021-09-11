@@ -15,7 +15,7 @@ class AdaptedResultSet(
 ): RowIterator {
     override val columns: Collection<Reference<*>> get() = labels.values
 
-    override fun <T : Any> get(reference: Reference<T>): T? {
+    override fun <T : Any> getOrNull(reference: Reference<T>): T? {
         val ix = 1 + (labels.positionOf(reference) ?: return null)
 
         return typeMappings.mappingFor(reference.type).readJdbc(resultSet, ix)
@@ -29,7 +29,7 @@ class AdaptedResultSet(
 
         labels.values.forEach {
             @Suppress("unchecked_cast")
-            result.set(it as Reference<Any>, get(it))
+            result.set(it as Reference<Any>, getOrNull(it))
         }
 
         return result

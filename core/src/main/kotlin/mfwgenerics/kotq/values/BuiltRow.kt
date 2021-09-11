@@ -8,7 +8,7 @@ class BuiltRow(
 ): ValuesRow {
     override val columns: Collection<Reference<*>> get() = columnPositions.keys
 
-    override operator fun <T : Any> get(reference: Reference<T>): T? {
+    override fun <T : Any> getOrNull(reference: Reference<T>): T? {
         val ix = columnPositions[reference] ?: return null
         if (ix >= values.size) return null
 

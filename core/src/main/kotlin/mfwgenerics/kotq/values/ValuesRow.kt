@@ -6,5 +6,10 @@ import mfwgenerics.kotq.query.LabelList
 interface ValuesRow {
     val columns: Collection<Reference<*>>
 
-    operator fun <T : Any> get(reference: Reference<T>): T?
+    fun <T : Any> getOrNull(reference: Reference<T>): T?
+
+    operator fun <T : Any, R : T?> get(reference: Reference<T>): R {
+        @Suppress("unchecked_cast")
+        return getOrNull(reference) as R
+    }
 }

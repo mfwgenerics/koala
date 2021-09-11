@@ -413,7 +413,7 @@ class H2Dialect: SqlDialect {
                         @Suppress("unchecked_cast")
                         sql.addLiteral(Literal(
                             it.type as KClass<Any>,
-                            iter[it]
+                            iter.getOrNull(it)
                         ))
                     }
                     sql.addSql(")")

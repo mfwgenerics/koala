@@ -26,7 +26,7 @@ class VenueService(
             })
             .returning(VenueTable.id)
             .performWith(cxn)
-            .map { it[VenueTable.id]!! }
+            .map { it.getOrNull(VenueTable.id)!! }
             .toList()
     }
 
@@ -50,14 +50,14 @@ class VenueService(
                 .performWith(cxn)
                 .map { row ->
                     Venue(
-                        id = row[VenueTable.id]!!,
-                        created = row[VenueTable.created]!!,
-                        name = row[VenueTable.name]!!,
-                        description = row[VenueTable.description]!!,
-                        closed = row[VenueTable.closedPermanently]!!,
+                        id = row[VenueTable.id],
+                        created = row[VenueTable.created],
+                        name = row[VenueTable.name],
+                        description = row[VenueTable.description],
+                        closed = row[VenueTable.closedPermanently],
                         rating = row[VenueTable.rating],
-                        type = row[VenueTable.type]!!,
-                        visits = row[visits]!!,
+                        type = row[VenueTable.type],
+                        visits = row[visits],
                     )
                 }
                 .toList()

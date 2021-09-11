@@ -13,7 +13,7 @@ class PreLabeledRow(
         repeat(values.size) { values[it] = null }
     }
 
-    override operator fun <T : Any> get(reference: Reference<T>): T? {
+    override fun <T : Any> getOrNull(reference: Reference<T>): T? {
         val ix = labels.positionOf(reference) ?: return null
 
         @Suppress("unchecked_cast")

@@ -15,7 +15,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val result = values((1..20).asSequence(), listOf(number))
             { set(number, it) }
             .performWith(cxn)
-            .sumOf { it[number]!! }
+            .sumOf { it.getOrNull(number)!! }
 
         assert(result == 210)
     }
@@ -46,7 +46,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .select(alias[number], alias[summed])
             .performWith(cxn)
             .map { row ->
-                "${row[alias[number]]}, ${row[alias[summed]]}"
+                "${row.getOrNull(alias[number])}, ${row.getOrNull(alias[summed])}"
             }
             .joinToString("\n")
 
@@ -129,7 +129,7 @@ abstract class QueryTests: ProvideTestDatabase {
             ))
             .returning(ShopTable.id)
             .performWith(cxn)
-            .map { it[ShopTable.id]!! }
+            .map { it.getOrNull(ShopTable.id)!! }
             .toList()
 
         val hardwareId = shopIds[0]
@@ -149,7 +149,7 @@ abstract class QueryTests: ProvideTestDatabase {
             ))
             .returning(CustomerTable.id)
             .performWith(cxn)
-            .map { it[CustomerTable.id]!! }
+            .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
 
         val janeId = customerIds[0]
@@ -202,7 +202,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(CustomerTable.firstName)
             .select(CustomerTable.firstName, PurchaseTable.product, PurchaseTable.price)
             .performWith(cxn)
-            .map { row -> row.columns.map { row[it] } }
+            .map { row -> row.columns.map { row.getOrNull(it) } }
             .toList()
 
         assertListOfListsEquals(expectedPurchaseItems, actualPurchaseItems)
@@ -215,7 +215,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(total.desc())
             .select(CustomerTable.firstName, sum(PurchaseTable.price) as_ total)
             .performWith(cxn)
-            .map { row -> row.columns.map { row[it] } }
+            .map { row -> row.columns.map { row.getOrNull(it) } }
             .toList()
 
         val expectedTotals = listOf(
@@ -236,7 +236,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .where(PurchaseTable.id.isNull())
             .select(CustomerTable.firstName)
             .performWith(cxn)
-            .map { it[CustomerTable.firstName] }
+            .map { it.getOrNull(CustomerTable.firstName) }
             .single()
 
         assert("Bob" == whoDidntShopAtHardware)
@@ -264,7 +264,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(ShopTable.name)
             .select(ShopTable, PurchaseTable)
             .performWith(cxn)
-            .map { listOf(it[ShopTable.name], it[PurchaseTable.product]) }
+            .map { listOf(it.getOrNull(ShopTable.name), it.getOrNull(PurchaseTable.product)) }
             .toList()
 
         assertListOfListsEquals(expectedMostExpensiveByStore, actualMostExpensiveByStore)
@@ -304,7 +304,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(CustomerTable.firstName)
             .select(CustomerTable.id)
             .performWith(cxn)
-            .map { it[CustomerTable.id]!! }
+            .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
 
         PurchaseTable
@@ -333,7 +333,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(PurchaseTable.product)
             .select(PurchaseTable.product)
             .performWith(cxn)
-            .map { it[PurchaseTable.product] }
+            .map { it.getOrNull(PurchaseTable.product) }
             .toList()
 
         val cheaperThanAny = PurchaseTable
@@ -343,7 +343,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(PurchaseTable.product)
             .select(PurchaseTable.product)
             .performWith(cxn)
-            .map { it[PurchaseTable.product] }
+            .map { it.getOrNull(PurchaseTable.product) }
             .toList()
 
         assertListEquals(cheaperThanAll, listOf("NanoPear"))
@@ -375,7 +375,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .select(cte, CustomerTable.firstName, cte.as_(alias))
             .performWith(cxn)
             .map { row ->
-                row.columns.map { row[it] }
+                row.columns.map { row.getOrNull(it) }
             }
             .toList()
 
@@ -402,7 +402,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val purchaseCount = PurchaseTable
             .select(count(value(1)) as_ count)
             .performWith(cxn)
-            .single()[count]!!
+            .single().getOrNull(count)!!
 
         val doubleCount = PurchaseTable
             .unionAll(PurchaseTable)
@@ -451,9 +451,9 @@ abstract class QueryTests: ProvideTestDatabase {
             .performWith(cxn)
             .single()
 
-        assert(result[MappingsTable.number] == NumberEnum.TWO)
-        assert(result[MappingsTable.color] == ColorEnum.BLUE)
-        assert(result[MappingsTable.fruit] == FruitEnum.BANANA)
+        assert(result.getOrNull(MappingsTable.number) == NumberEnum.TWO)
+        assert(result.getOrNull(MappingsTable.color) == ColorEnum.BLUE)
+        assert(result.getOrNull(MappingsTable.fruit) == FruitEnum.BANANA)
     }
 
     @Test
@@ -489,7 +489,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 } as_ n4
             )
             .performWith(cxn)
-            .map { listOf(it[n0], it[n1], it[n2], it[n3], it[n4]) }
+            .map { listOf(it.getOrNull(n0), it.getOrNull(n1), it.getOrNull(n2), it.getOrNull(n3), it.getOrNull(n4)) }
             .toList()
 
         val expected = listOf(
@@ -520,9 +520,9 @@ abstract class QueryTests: ProvideTestDatabase {
             .performWith(cxn)
             .single()
 
-        assert(result[n0] == 12)
-        assert(result[n1] == "String")
-        assert(result[n3] == 15)
+        assert(result.getOrNull(n0) == 12)
+        assert(result.getOrNull(n1) == "String")
+        assert(result.getOrNull(n3) == 15)
     }
 
     @Test
@@ -545,7 +545,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val purchases = PurchaseTable
             .select(count(value(1)) as_ name)
             .performWith(cxn)
-            .single()[name]
+            .single().getOrNull(name)
 
         assert(purchases == 2)
     }

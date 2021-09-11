@@ -21,8 +21,8 @@ class IteratorToRowIterator(
 
     override fun consume(): ValuesRow = row
 
-    override fun <T : Any> get(reference: Reference<T>): T? =
-        row[reference]
+    override fun <T : Any> getOrNull(reference: Reference<T>): T? =
+        row.getOrNull(reference)
 
     override fun close() { }
 }

@@ -39,7 +39,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
             .selectAll()
             .performWith(cxn)
             .forEachIndexed { ix, it ->
-                val t = it[EventTable.at]!!
+                val t = it.getOrNull(EventTable.at)!!
 
                 assert(t == instants[instants.size - ix - 1])
             }

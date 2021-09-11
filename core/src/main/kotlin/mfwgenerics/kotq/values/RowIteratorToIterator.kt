@@ -8,7 +8,7 @@ class RowIteratorToIterator(
 ): Iterator<ValuesRow> {
     private object Initial: ValuesRow {
         override val columns: Collection<Reference<*>> get() = error("not implemented")
-        override fun <T : Any> get(reference: Reference<T>): T? { error("not implemented") }
+        override fun <T : Any> getOrNull(reference: Reference<T>): T? { error("not implemented") }
     }
 
     private var currentRow: ValuesRow? = Initial
