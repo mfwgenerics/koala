@@ -5,7 +5,7 @@ import mfwgenerics.kotq.expr.Reference
 class BuiltRow(
     private val columnPositions: Map<Reference<*>, Int>,
     private val values: List<Any?>,
-): ValuesRow {
+): ValuesRow() {
     override val columns: Collection<Reference<*>> get() = columnPositions.keys
 
     override fun <T : Any> getOrNull(reference: Reference<T>): T? {

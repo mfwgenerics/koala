@@ -1,5 +1,5 @@
 * Semantic TimeZone representation
 * Decide whether to use typeof despite experimental status
-* Reorganize so table declarations don't depend so many packages
+* Reorganize so table declarations don't depend on so many packages
 * Fix H2 timezone offset Instant bug
-* Solve row ResultSet nullability problem
+* Add a null expression so users don't have to use value(null)

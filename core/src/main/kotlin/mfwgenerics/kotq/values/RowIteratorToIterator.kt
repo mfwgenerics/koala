@@ -1,12 +1,11 @@
 package mfwgenerics.kotq.values
 
 import mfwgenerics.kotq.expr.Reference
-import mfwgenerics.kotq.query.LabelList
 
 class RowIteratorToIterator(
     private val rows: RowIterator
 ): Iterator<ValuesRow> {
-    private object Initial: ValuesRow {
+    private object Initial: ValuesRow() {
         override val columns: Collection<Reference<*>> get() = error("not implemented")
         override fun <T : Any> getOrNull(reference: Reference<T>): T? { error("not implemented") }
     }
@@ -17,7 +16,7 @@ class RowIteratorToIterator(
         val hadNext = rows.next()
 
         currentRow = if (hadNext) {
-            rows.consume()
+            rows.takeRow()
         } else {
             rows.close()
             null

@@ -5,7 +5,7 @@ import mfwgenerics.kotq.query.LabelList
 
 class PreLabeledRow(
     val labels: LabelList,
-): ValuesRow, RowWriter {
+): ValuesRow(), RowWriter {
     override val columns: Collection<Reference<*>> get() = labels.values
     private val values = arrayOfNulls<Any>(labels.values.size)
 

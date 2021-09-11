@@ -14,11 +14,13 @@ inline fun <T> values(
     val columns = LabelList(references)
 
     return Values(columns) {
-        var row = PreLabeledRow(columns)
-
         val iter = source.iterator()
 
-        object : RowIterator, ValuesRow by row {
+        object : RowIterator {
+            override val columns: Collection<Reference<*>> get() = columns.values
+
+            override var row: PreLabeledRow = PreLabeledRow(columns)
+
             override fun next(): Boolean {
                 if (!iter.hasNext()) return false
 
@@ -28,7 +30,7 @@ inline fun <T> values(
                 return true
             }
 
-            override fun consume(): ValuesRow {
+            override fun takeRow(): ValuesRow {
                 val result = row
                 row = PreLabeledRow(columns)
                 return result

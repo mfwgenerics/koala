@@ -1,8 +1,18 @@
 package mfwgenerics.kotq.values
 
-interface RowIterator: ValuesRow {
+import mfwgenerics.kotq.expr.Reference
+
+interface RowIterator {
+    val columns: Collection<Reference<*>>
+
+    /* current row. reference is valid until subsequent call to next */
+    val row: ValuesRow
+
+    /* returns a permanent reference to the current row.
+       can only be called once per `next()` and invalidates `row` */
+    fun takeRow(): ValuesRow
+
     fun next(): Boolean
-    fun consume(): ValuesRow
 
     /* optional to call - resources will be cleaned up on connection/transaction close */
     fun close()

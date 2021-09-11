@@ -9,7 +9,7 @@ class IteratorToRowIterator(
 ): RowIterator {
     override val columns: Collection<Reference<*>> get() = labels.values
 
-    lateinit var row: ValuesRow
+    override lateinit var row: ValuesRow
 
     override fun next(): Boolean {
         if (!iter.hasNext()) return false
@@ -19,10 +19,7 @@ class IteratorToRowIterator(
         return true
     }
 
-    override fun consume(): ValuesRow = row
-
-    override fun <T : Any> getOrNull(reference: Reference<T>): T? =
-        row.getOrNull(reference)
+    override fun takeRow(): ValuesRow = row
 
     override fun close() { }
 }
