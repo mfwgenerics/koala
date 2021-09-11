@@ -525,7 +525,7 @@ class MysqlDialect: SqlDialect {
                         @Suppress("unchecked_cast")
                         sql.addLiteral(Literal(
                             it.type as KClass<Any>,
-                            iter.getOrNull(it)
+                            iter.row.getOrNull(it)
                         ))
                     }
                     sql.addSql(")")

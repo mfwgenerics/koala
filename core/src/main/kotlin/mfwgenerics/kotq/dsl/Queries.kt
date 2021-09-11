@@ -13,8 +13,8 @@ fun select(vararg references: SelectArgument): Subqueryable =
 fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
     StandaloneSelect(listOf(labeled), false)
 
-inline fun <reified T : Any> select(reference: Expr<T>): SelectedJust<T> =
-    StandaloneSelect(listOf(reference as_ name<T>()), false)
+inline fun <reified T : Any> select(expr: Expr<T>): SelectedJust<T> =
+    StandaloneSelect(listOf(expr as_ name<T>()), false)
 
 fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
     StandaloneSelect(listOf(reference), false)

@@ -240,6 +240,14 @@ class H2Dialect: SqlDialect {
             sql.compileExpr(expr, emitParens, this)
         }
 
+        fun compileRelabels(labels: LabelList) {
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(labels.values) {
+                    sql.addIdentifier(scope.nameOf(it))
+                }
+            }
+        }
+
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
@@ -280,11 +288,7 @@ class H2Dialect: SqlDialect {
             sql.addSql(scope[relation.computedAlias])
 
             explicitLabels?.let { labels ->
-                sql.parenthesize {
-                    sql.prefix("", ", ").forEach(labels.values) {
-                        sql.addIdentifier(scope.nameOf(it))
-                    }
-                }
+                compileRelabels(labels)
             }
         }
 
@@ -322,6 +326,12 @@ class H2Dialect: SqlDialect {
                     it.query.populateScope(innerScope)
 
                     sql.addSql(scope[it.cte])
+
+                    when (val query = it.query) {
+                        is BuiltValuesQuery -> compileRelabels(query.columns)
+                        else -> { }
+                    }
+
                     sql.addSql(" AS (")
 
                     Compilation(

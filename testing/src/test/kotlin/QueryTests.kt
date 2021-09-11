@@ -6,6 +6,7 @@ import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 abstract class QueryTests: ProvideTestDatabase {
     @Test
@@ -17,7 +18,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .performWith(cxn)
             .sumOf { it.getOrNull(number)!! }
 
-        assert(result == 210)
+        assertEquals(result, 210)
     }
 
     @Test
@@ -61,7 +62,7 @@ abstract class QueryTests: ProvideTestDatabase {
             }
             .joinToString("\n")
 
-        assert(expected == results)
+        assertEquals(expected, results)
     }
 
     object ShopTable: Table("Shop") {
@@ -99,15 +100,15 @@ abstract class QueryTests: ProvideTestDatabase {
 
     // TODO use an assertion library
     private fun assertListEquals(expected: List<Any?>, actual: List<Any?>) {
-        assert(expected.size == actual.size)
+        assertEquals(expected.size, actual.size)
 
         repeat(expected.size) {
-            assert(expected[it] == actual[it])
+            assertEquals(expected[it], actual[it])
         }
     }
 
     private fun assertListOfListsEquals(expected: List<List<Any?>>, actual: List<List<Any?>>) {
-        assert(expected.size == actual.size)
+        assertEquals(expected.size, actual.size)
 
         repeat(expected.size) {
             assertListEquals(expected[it], actual[it])
@@ -239,7 +240,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .map { it.getOrNull(CustomerTable.firstName) }
             .single()
 
-        assert("Bob" == whoDidntShopAtHardware)
+        assertEquals("Bob", whoDidntShopAtHardware)
 
         val mp = alias()
 

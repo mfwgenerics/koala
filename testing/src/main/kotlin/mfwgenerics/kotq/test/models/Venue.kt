@@ -15,5 +15,7 @@ data class Venue(
     val type: VenueType,
     val rating: Float?,
 
-    val visits: Int
+    val visits: Int,
+
+    val reviews: List<VenueReview>
 )

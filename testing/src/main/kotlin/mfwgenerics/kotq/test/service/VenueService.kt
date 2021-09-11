@@ -3,8 +3,9 @@ package mfwgenerics.kotq.test.service
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.jdbc.JdbcDatabase
 import mfwgenerics.kotq.jdbc.performWith
-import mfwgenerics.kotq.test.models.NewVenue
-import mfwgenerics.kotq.test.models.Venue
+import mfwgenerics.kotq.setTo
+import mfwgenerics.kotq.test.models.*
+import mfwgenerics.kotq.test.table.ReviewTable
 import mfwgenerics.kotq.test.table.UserTable
 import mfwgenerics.kotq.test.table.UserVenueTable
 import mfwgenerics.kotq.test.table.VenueTable
@@ -13,7 +14,7 @@ class VenueService(
     private val db: JdbcDatabase
 ) {
     init {
-        db.createTables(UserTable, VenueTable, UserVenueTable)
+        db.createTables(UserTable, VenueTable, UserVenueTable, ReviewTable)
     }
 
     fun createVenues(venues: List<NewVenue>): List<Int> = db.transact { cxn ->
@@ -35,7 +36,7 @@ class VenueService(
             val visits = name<Int>()
             val visitCte = cte()
 
-            VenueTable
+            val rows = VenueTable
                 .with(visitCte as_ UserVenueTable
                     .where(UserVenueTable.visited)
                     .groupBy(UserVenueTable.venue)
@@ -46,21 +47,73 @@ class VenueService(
                     if (ids != null) it.where(VenueTable.id inValues ids)
                     else it
                 }
+                .orderBy(VenueTable.id)
                 .select(VenueTable, coalesce(visits, value(0)) as_ visits)
                 .performWith(cxn)
-                .map { row ->
-                    Venue(
-                        id = row[VenueTable.id],
-                        created = row[VenueTable.created],
-                        name = row[VenueTable.name],
-                        description = row[VenueTable.description],
-                        closed = row[VenueTable.closedPermanently],
-                        rating = row[VenueTable.rating],
-                        type = row[VenueTable.type],
-                        visits = row[visits],
+                .toList()
+
+            val reviewsByVenue = ReviewTable
+                .where(ReviewTable.venue inValues rows.map { it[VenueTable.id] })
+                .orderBy(ReviewTable.venue, ReviewTable.created.desc(), ReviewTable.user)
+                .selectAll()
+                .performWith(cxn)
+                .groupBy({ it[ReviewTable.venue] }) { row ->
+                    VenueReview(
+                        user = row[ReviewTable.user],
+                        created = row[ReviewTable.created],
+                        edited = row[ReviewTable.edited],
+                        content = row[ReviewTable.contents]
                     )
                 }
-                .toList()
+
+            rows.map { row ->
+                Venue(
+                    id = row[VenueTable.id],
+                    created = row[VenueTable.created],
+                    name = row[VenueTable.name],
+                    description = row[VenueTable.description],
+                    closed = row[VenueTable.closedPermanently],
+                    rating = row[VenueTable.rating],
+                    type = row[VenueTable.type],
+                    visits = row[visits],
+                    reviews = reviewsByVenue[row[VenueTable.id]].orEmpty()
+                )
+            }
+            .toList()
+        }
+    }
+
+    fun mergeReviews(reviews: List<NewReview>) {
+        db.transact { cxn ->
+            ReviewTable
+                .insert(values(reviews.map {
+                    rowOf(
+                        ReviewTable.user setTo it.user,
+                        ReviewTable.venue setTo it.venue,
+                        ReviewTable.contents setTo it.content
+                    )
+                }))
+                .performWith(cxn)
+        }
+    }
+
+    fun deleteReviews(reviews: List<ReviewKey>) {
+        db.transact { cxn ->
+            val deleteValues = cte()
+            val alias = alias()
+
+            ReviewTable
+                .with(deleteValues as_ values(reviews) {
+                    set(ReviewTable.user, it.user)
+                    set(ReviewTable.venue, it.venue)
+                })
+                .where(exists(deleteValues.as_(alias)
+                    .where(alias[ReviewTable.venue] eq ReviewTable.venue)
+                    .where(alias[ReviewTable.user] eq ReviewTable.user)
+                    .select(alias[ReviewTable.venue])
+                ))
+                .delete()
+                .performWith(cxn)
         }
     }
 }

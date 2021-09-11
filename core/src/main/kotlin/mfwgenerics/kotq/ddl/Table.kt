@@ -1,8 +1,6 @@
 package mfwgenerics.kotq.ddl
 
-import mfwgenerics.kotq.data.UnmappedDataType
 import mfwgenerics.kotq.data.DataType
-import mfwgenerics.kotq.ddl.Table.Companion.reference
 import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.BuiltNamedIndex
 import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
@@ -11,7 +9,7 @@ import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.RelvarColumn
 import mfwgenerics.kotq.query.Relvar
 
-open class Table(
+abstract class Table protected constructor(
     override val relvarName: String
 ): Relvar {
     private val internalColumns = arrayListOf<TableColumn<*>>()
@@ -41,7 +39,7 @@ open class Table(
         return column
     }
 
-    fun <T : Any> column(name: String, def: DataType<*, T>): TableColumn<T> =
+    protected fun <T : Any> column(name: String, def: DataType<*, T>): TableColumn<T> =
         column(name, BaseColumnType(def))
 
     var primaryKey: BuiltNamedIndex? = null
@@ -62,7 +60,7 @@ open class Table(
     private fun nameIndex(keys: KeyList, suffix: String): String =
         "${relvarName}_${nameKeys(keys)}_$suffix"
 
-    fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
+    protected fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
         check(primaryKey == null) { "multiple primary keys $name, $keys" }
 
         takeName(name)
@@ -75,7 +73,7 @@ open class Table(
         return primaryKey!!
     }
 
-    fun uniqueKey(name: String, keys: KeyList): BuiltNamedIndex {
+    protected fun uniqueKey(name: String, keys: KeyList): BuiltNamedIndex {
         takeName(name)
 
         val result = BuiltNamedIndex(name, BuiltIndexDef(
@@ -88,7 +86,7 @@ open class Table(
         return result
     }
 
-    fun index(name: String, keys: KeyList): BuiltNamedIndex {
+    protected fun index(name: String, keys: KeyList): BuiltNamedIndex {
         takeName(name)
 
         val result = BuiltNamedIndex(name, BuiltIndexDef(
@@ -101,25 +99,25 @@ open class Table(
         return result
     }
 
-    fun primaryKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun primaryKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
         primaryKey(name, KeyList(keys.asList()))
-    fun uniqueKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun uniqueKey(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
         uniqueKey(name, KeyList(keys.asList()))
-    fun index(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun index(name: String, vararg keys: Expr<*>): BuiltNamedIndex =
         index(name, KeyList(keys.asList()))
 
-    fun primaryKey(keys: KeyList): BuiltNamedIndex =
+    protected fun primaryKey(keys: KeyList): BuiltNamedIndex =
         primaryKey(nameIndex(keys, "pkey"), keys)
-    fun uniqueKey(keys: KeyList): BuiltNamedIndex =
+    protected fun uniqueKey(keys: KeyList): BuiltNamedIndex =
         uniqueKey(nameIndex(keys, "key"), keys)
-    fun index(keys: KeyList): BuiltNamedIndex =
+    protected fun index(keys: KeyList): BuiltNamedIndex =
         index(nameIndex(keys, "idx"), keys)
 
-    fun primaryKey(vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun primaryKey(vararg keys: Expr<*>): BuiltNamedIndex =
         primaryKey(KeyList(keys.asList()))
-    fun uniqueKey(vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun uniqueKey(vararg keys: Expr<*>): BuiltNamedIndex =
         uniqueKey(KeyList(keys.asList()))
-    fun index(vararg keys: Expr<*>): BuiltNamedIndex =
+    protected fun index(vararg keys: Expr<*>): BuiltNamedIndex =
         index(KeyList(keys.asList()))
 
     companion object {

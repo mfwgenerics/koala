@@ -51,10 +51,10 @@ infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> 
 infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolean> =
     OperationType.NOT_IN(this, ExprListExpr(values))
 
-inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T>): Expr<Boolean> =
-    inExprs(values.map { Literal(T::class, it) })
-inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T>): Expr<Boolean> =
-    notInExprs(values.map { Literal(T::class, it) })
+inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T?>): Expr<Boolean> =
+    inExprs(values.map { value(it) })
+inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T?>): Expr<Boolean> =
+    notInExprs(values.map { value(it) })
 
 fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
     CastExpr(from, to)
