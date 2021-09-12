@@ -49,8 +49,6 @@ object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
 object DATETIME: PrimitiveDataType<LocalDateTime>(LocalDateTime::class)
 object TIME: PrimitiveDataType<LocalTime>(LocalTime::class)
 
-object DATETIMETZ: PrimitiveDataType<ZonedDateTime>(ZonedDateTime::class)
-
 object INSTANT: PrimitiveDataType<Instant>(Instant::class)
 
 object TEXT: PrimitiveDataType<String>(String::class)

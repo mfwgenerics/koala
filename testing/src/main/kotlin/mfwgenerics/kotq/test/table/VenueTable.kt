@@ -2,12 +2,12 @@ package mfwgenerics.kotq.test.table
 
 import mfwgenerics.kotq.data.*
 import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.dsl.currentInstant
+import mfwgenerics.kotq.dsl.currentTimestamp
 import mfwgenerics.kotq.dsl.keys
 
 object VenueTable: Table("Venue") {
     val id = column("id", INTEGER.autoIncrement().primaryKey())
-    val created = column("create", INSTANT.default(currentInstant()))
+    val created = column("create", INSTANT.default(currentTimestamp()))
 
     val name = column("name", VARCHAR(128))
     val description = column("description", TEXT)

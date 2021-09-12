@@ -65,7 +65,6 @@ class H2Dialect: SqlDialect {
                     }
                     BIGINT -> TODO()
                     BOOLEAN -> sql.addSql("BOOL")
-                    DATETIMETZ -> TODO()
                     TEXT -> sql.addSql("TEXT")
                     else -> null
                 }

@@ -4,6 +4,8 @@ import mfwgenerics.kotq.test.table.UserTable
 import mfwgenerics.kotq.test.table.UserVenueTable
 import mfwgenerics.kotq.test.table.VenueTable
 import mfwgenerics.kotq.test.table.VenueType
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

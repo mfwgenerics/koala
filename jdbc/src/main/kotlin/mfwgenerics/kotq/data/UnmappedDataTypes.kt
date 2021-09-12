@@ -13,7 +13,6 @@ fun <T : Any> computeWithColumnDefaults(type: UnmappedDataType<*>, block: (type:
             SMALLINT.UNSIGNED -> SMALLINT
             INTEGER.UNSIGNED -> INTEGER
             BIGINT.UNSIGNED -> BIGINT
-            INSTANT -> DATETIMETZ
             else -> error("no mapping for $nextType")
         }
     }
