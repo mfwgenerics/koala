@@ -10,7 +10,7 @@ interface Whereable: Groupable {
         val of: Whereable,
         val where: Expr<Boolean>
     ): Whereable {
-        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody {
+        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
             out.where = out.where?.and(where)?:where
             return of
         }

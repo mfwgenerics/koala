@@ -110,7 +110,7 @@ class VenueService(
                 .where(exists(deleteValues.as_(alias)
                     .where(alias[ReviewTable.venue] eq ReviewTable.venue)
                     .where(alias[ReviewTable.user] eq ReviewTable.user)
-                    .select(alias[ReviewTable.venue])
+                    .selectJust(alias[ReviewTable.venue])
                 ))
                 .delete()
                 .performWith(cxn)

@@ -1,26 +1,17 @@
 package mfwgenerics.kotq.dsl
 
-import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.expr.SelectArgument
 import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.query.*
-import mfwgenerics.kotq.query.fluent.SelectedJust
+import mfwgenerics.kotq.query.fluent.SelectedJustUnionOperand
+import mfwgenerics.kotq.query.fluent.SelectedUnionOperand
 
-fun select(vararg references: SelectArgument): Subqueryable =
-    StandaloneSelect<Nothing>(references.asList(), false)
+fun select(vararg references: SelectArgument): SelectedUnionOperand =
+    Tableless.select(*references)
 
-fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
-    StandaloneSelect(listOf(labeled), false)
+fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJustUnionOperand<T> =
+    Tableless.selectJust(labeled)
 
-inline fun <reified T : Any> select(expr: Expr<T>): SelectedJust<T> =
-    StandaloneSelect(listOf(expr as_ name<T>()), false)
-
-fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
-    StandaloneSelect(listOf(reference), false)
-
-fun with(vararg queries: CtedQueryable): StandaloneWith =
-    StandaloneWith(WithType.NOT_RECURSIVE, queries.asList())
-
-fun withRecursive(vararg queries: CtedQueryable): StandaloneWith =
-    StandaloneWith(WithType.RECURSIVE, queries.asList())
+fun <T : Any> selectJust(reference: Reference<T>): SelectedJustUnionOperand<T> =
+    Tableless.selectJust(reference)

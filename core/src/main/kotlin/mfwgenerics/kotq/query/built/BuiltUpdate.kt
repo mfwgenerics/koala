@@ -8,6 +8,6 @@ class BuiltUpdate(
     val assignments: List<Assignment<*>>
 ): BuiltStatement {
     override fun populateScope(scope: Scope) {
-        query.populateScope(scope, false)
+        query.populateScope(scope)
     }
 }

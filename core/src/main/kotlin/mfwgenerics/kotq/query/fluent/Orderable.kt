@@ -9,7 +9,7 @@ interface Orderable: Offsetable {
         val of: Orderable,
         val ordinals: List<Ordinal<*>>
     ): Offsetable {
-        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
+        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
             out.orderBy = ordinals
             return of
         }

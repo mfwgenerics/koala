@@ -1,5 +1,6 @@
 package mfwgenerics.kotq.query.fluent
 
+import mfwgenerics.kotq.expr.Reference
 import mfwgenerics.kotq.expr.SelectArgument
 import mfwgenerics.kotq.expr.SelectedExpr
 import mfwgenerics.kotq.query.built.BuildsIntoQueryBody
@@ -12,16 +13,15 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
         val select: BuiltSelectQuery
     ): BuiltUnionOperand {
         override fun toSelectQuery(selected: List<SelectedExpr<*>>): BuiltSelectQuery =
-            select
+            select.reorderToMatchUnion(selected)
     }
 
-    private class SelectUnionableUnionOperand(
+    private class SelectUnionableUnionOperand<T : Any>(
         val of: UnionableUnionOperand,
         val references: List<SelectArgument>
-    ): SelectedUnionOperand {
+    ): SelectedUnionOperand, SelectedJustUnionOperand<T> {
         override fun buildQuery() = BuiltSelectQuery(
-            false,
-            of.buildSelect(),
+            of.buildQueryBody(),
             references,
             false
         )
@@ -34,12 +34,18 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
         val query: BuiltQueryBody
     ): BuiltUnionOperand {
         override fun toSelectQuery(selected: List<SelectedExpr<*>>): BuiltSelectQuery =
-            BuiltSelectQuery(false, query, selected)
+            BuiltSelectQuery(query, selected)
     }
 
     override fun buildUnionOperand(): BuiltUnionOperand =
-        BuiltQueryUnionOperand(buildSelect())
+        BuiltQueryUnionOperand(buildQueryBody())
 
     override fun select(vararg references: SelectArgument): SelectedUnionOperand =
-        SelectUnionableUnionOperand(this, references.asList())
+        SelectUnionableUnionOperand<Nothing>(this, references.asList())
+
+    override fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJustUnionOperand<T> =
+        SelectUnionableUnionOperand(this, listOf(labeled))
+
+    override fun <T : Any> selectJust(reference: Reference<T>): SelectedJustUnionOperand<T> =
+        SelectUnionableUnionOperand(this, listOf(reference))
 }

@@ -14,6 +14,7 @@ class SelectionBuilder(
             is Relvar -> relation.columns
             is Subquery -> relation.of.columns.values
             is Values -> relation.columns.values
+            is EmptyRelation -> return
         }.asSequence()
 
         exports.forEach {

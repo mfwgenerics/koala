@@ -22,7 +22,7 @@ interface Withable: Withed {
             return of
         }
 
-        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody {
+        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
             out.withType = type
             out.withs = queries.map {
                 BuiltWith(

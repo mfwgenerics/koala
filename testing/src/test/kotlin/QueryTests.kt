@@ -1,9 +1,11 @@
+import mfwgenerics.kotq.data.FLOAT
 import mfwgenerics.kotq.data.INTEGER
 import mfwgenerics.kotq.data.VARCHAR
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
+import mfwgenerics.kotq.query.Tableless
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -235,7 +237,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 CustomerTable.id eq PurchaseTable.customer
             )
             .where(PurchaseTable.id.isNull())
-            .select(CustomerTable.firstName)
+            .selectJust(CustomerTable.firstName)
             .performWith(cxn)
             .map { it.getOrNull(CustomerTable.firstName) }
             .single()
@@ -280,7 +282,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
                 .where(ShopTable.name eq "Hardware")
                 .where(CustomerTable.id eq PurchaseTable.customer)
-                .select(PurchaseTable.id)
+                .selectJust(PurchaseTable.id)
             ))
             .update(
                 CustomerTable.lastName setTo CustomerTable.firstName,
@@ -303,7 +305,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val (bobId, janeId) = CustomerTable
             .where(CustomerTable.firstName inValues listOf("Bob", "Jane"))
             .orderBy(CustomerTable.firstName)
-            .select(CustomerTable.id)
+            .selectJust(CustomerTable.id)
             .performWith(cxn)
             .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
@@ -325,14 +327,14 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val janesPurchasePrices = PurchaseTable
             .where(PurchaseTable.customer eq janeId)
-            .select(PurchaseTable.price)
+            .selectJust(PurchaseTable.price)
 
         val cheaperThanAll = PurchaseTable
             .where((PurchaseTable.customer eq bobId)
                 .and(PurchaseTable.price less all(janesPurchasePrices))
             )
             .orderBy(PurchaseTable.product)
-            .select(PurchaseTable.product)
+            .selectJust(PurchaseTable.product)
             .performWith(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
@@ -342,7 +344,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .and(PurchaseTable.price less any(janesPurchasePrices))
             )
             .orderBy(PurchaseTable.product)
-            .select(PurchaseTable.product)
+            .selectJust(PurchaseTable.product)
             .performWith(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
@@ -401,7 +403,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val count = name<Int>()
 
         val purchaseCount = PurchaseTable
-            .select(count(value(1)) as_ count)
+            .selectJust(count(value(1)) as_ count)
             .performWith(cxn)
             .single().getOrNull(count)!!
 
@@ -511,10 +513,10 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val valuesQuery = values((1..5).asSequence(), listOf(n0))
             { set(n0, it) }
-            .select(sum(cast(n0, INTEGER)) as_ n3)
+            .selectJust(sum(cast(n0, INTEGER)) as_ n3)
 
         val result = select(
-                12 as_ n0,
+                value(12) as_ n0,
                 coalesce(value(null), value("String")) as_ n1,
                 valuesQuery as_ n3
             )
@@ -534,20 +536,53 @@ abstract class QueryTests: ProvideTestDatabase {
 
         PurchaseTable
             .with(cte as_ CustomerTable
-                .where(select(CustomerTable.lastName eq "Smith"))
+                .where(selectJust((CustomerTable.lastName eq "Smith") as_ name()))
                 .selectAll()
             )
-            .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
+            .where(PurchaseTable.customer inQuery cte.selectJust(CustomerTable.id))
             .delete()
             .performWith(cxn)
 
         val name = name<Int>()
 
         val purchases = PurchaseTable
-            .select(count(value(1)) as_ name)
+            .selectJust(count(value(1)) as_ name)
             .performWith(cxn)
             .single().getOrNull(name)
 
         assert(purchases == 2)
+    }
+
+    @Test
+    fun `unioned tableless selects with out of order labels`() = withCxn { cxn ->
+        val n0 = name<Int>()
+        val n1 = name<Float>()
+
+        /* cast is H2 workaround for standalone values */
+        fun n0(n: Int) = cast(value(n), INTEGER) as_ n0
+        fun n1(n: Float) = cast(value(n), FLOAT) as_ n1
+
+        val expected = listOf(
+            listOf(10, 0.5f),
+            listOf(20, 0.5f),
+            listOf(30, 2.0f),
+            listOf(40, 0.25f),
+            listOf(50, 0.25f)
+        )
+
+        val actual = Tableless
+            .union(select(n0(10), n1(0.5f)))
+            .unionAll(select(n0(20), n1(0.5f)))
+            .unionAll(select(n0(30), n1(2.0f)))
+            .union(select(n1(0.25f), n0(40)))
+            .orderBy(n0)
+            .select(n1(0.25f), n0(50))
+            .performWith(cxn)
+            .map { row -> listOf(row[n0], row[n1]) }
+            .toList()
+
+        println(actual)
+
+        assertListOfListsEquals(expected, actual)
     }
 }

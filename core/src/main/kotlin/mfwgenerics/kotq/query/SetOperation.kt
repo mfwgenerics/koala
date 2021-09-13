@@ -12,7 +12,7 @@ class SetOperation(
     val type: SetOperationType,
     val distinctness: Distinctness
 ): Unionable {
-    override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
+    override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
         out.setOperations.add(BuiltSetOperation(
             type = type,
             distinctness = distinctness,

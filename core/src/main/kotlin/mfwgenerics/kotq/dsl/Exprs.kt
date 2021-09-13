@@ -9,9 +9,6 @@ import mfwgenerics.kotq.sql.RawSqlBuilder
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
 
-inline infix fun <reified T : Any> T.as_(reference: Reference<T>): SelectedExpr<T> =
-    SelectedExpr(value(this), reference)
-
 infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.EQ(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.eq(rhs: T): Expr<Boolean> = eq(value(rhs))
 

@@ -190,7 +190,7 @@ class H2Dialect: SqlDialect {
                 DATETIME -> TODO()
                 is DECIMAL -> TODO()
                 DOUBLE -> TODO()
-                FLOAT -> TODO()
+                FLOAT -> sql.addSql("REAL")
                 INSTANT -> TODO()
                 SMALLINT -> TODO()
                 INTEGER -> sql.addSql("INTEGER")
@@ -210,7 +210,7 @@ class H2Dialect: SqlDialect {
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
             compileCastDataType(to)
 
-        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery) {
+        fun compileQuery(query: BuiltSubquery, outerSelect: List<SelectedExpr<*>>? = null) {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -221,14 +221,14 @@ class H2Dialect: SqlDialect {
             )
 
             when (query) {
-                is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
+                is BuiltSelectQuery -> compilation.compileSelect(query)
                 is BuiltValuesQuery -> compilation.compileValues(query)
             }
         }
 
         fun compileSubqueryExpr(subquery: BuiltSubquery) {
             sql.parenthesize {
-                compileQuery(emptyList(), subquery)
+                compileQuery(subquery, null)
             }
         }
 
@@ -262,7 +262,7 @@ class H2Dialect: SqlDialect {
                         Compilation(
                             innerScope,
                             sql = sql
-                        ).compileQuery(emptyList(), baseRelation.of)
+                        ).compileQuery(baseRelation.of)
                     }
 
                     if (baseRelation.of is BuiltValuesQuery) {
@@ -281,6 +281,7 @@ class H2Dialect: SqlDialect {
                     sql.addSql(scope[baseRelation])
                     null
                 }
+                is EmptyRelation -> return
             }
 
             sql.addSql(" ")
@@ -307,7 +308,7 @@ class H2Dialect: SqlDialect {
                     selectQuery.populateScope(it)
                 },
                 sql
-            ).compileSelect(outerSelect, selectQuery)
+            ).compileSelect(selectQuery)
         }
 
         fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
@@ -336,7 +337,7 @@ class H2Dialect: SqlDialect {
                     Compilation(
                         scope = innerScope,
                         sql = sql
-                    ).compileQuery(emptyList(), it.query)
+                    ).compileQuery(it.query)
 
                     sql.addSql(")")
                 }
@@ -352,26 +353,20 @@ class H2Dialect: SqlDialect {
             }
         }
 
-        fun compileSelect(outerSelect: List<SelectedExpr<*>>, select: BuiltSelectQuery) {
+        fun compileSelect(select: BuiltSelectQuery) {
             val withs = select.body.withs
 
             compileWiths(select.body.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
 
-            val selectPrefix = sql.prefix("SELECT ", "\n, ")
+            sql.selectClause(select.selected) {
+                compileExpr(it.expr, false)
+                sql.addSql(" ")
+                sql.addIdentifier(scope.nameOf(it.name))
+            }
 
-            (select.selected.takeIf { it.isNotEmpty() }?:outerSelect)
-                .forEach {
-                    selectPrefix.next {
-                        compileExpr(it.expr, false)
-                        sql.addSql(" ")
-                        sql.addIdentifier(scope.nameOf(it.name))
-                    }
-                }
-
-            if (select.standalone) return
-            sql.addSql("\nFROM ")
+            if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 
             sql.compileQueryBody(
                 select.body,
@@ -460,7 +455,7 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("\n")
 
-            compileQuery(emptyList(), insert.query)
+            compileQuery(insert.query)
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -548,7 +543,7 @@ class H2Dialect: SqlDialect {
         statement.populateScope(scope)
 
         when (statement) {
-            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
+            is BuiltSelectQuery -> compilation.compileSelect(statement)
             is BuiltValuesQuery -> compilation.compileValues(statement)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)

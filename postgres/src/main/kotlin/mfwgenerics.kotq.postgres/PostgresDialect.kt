@@ -220,7 +220,7 @@ class PostgresDialect: SqlDialect {
                 DATETIME -> TODO()
                 is DECIMAL -> TODO()
                 DOUBLE -> TODO()
-                FLOAT -> TODO()
+                FLOAT -> sql.addSql("REAL")
                 INSTANT -> TODO()
                 SMALLINT -> TODO()
                 INTEGER -> sql.addSql("INTEGER")
@@ -301,6 +301,7 @@ class PostgresDialect: SqlDialect {
                     sql.addSql(scope[baseRelation])
                     null
                 }
+                is EmptyRelation -> return
             }
 
             sql.addSql(" ")
@@ -417,8 +418,7 @@ class PostgresDialect: SqlDialect {
                     }
                 }
 
-            if (select.standalone) return
-            sql.addSql("\nFROM ")
+            if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 
             compileSelectBody(select.body)
 

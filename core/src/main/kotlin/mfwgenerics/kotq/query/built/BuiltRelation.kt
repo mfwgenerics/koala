@@ -15,6 +15,7 @@ data class BuiltRelation(
             is Subquery -> relation.of.columns.values.map { it to scope.names[it] }
             is Cte -> scope.cteColumns(relation).values.map { it to scope.names[it] }
             is Values -> relation.columns.values.map { it to scope.names[it] }
+            is EmptyRelation -> return
         }
 
         names.forEach { (name, symbol) ->

@@ -8,7 +8,7 @@ interface Limitable: Lockable {
         val of: Limitable,
         val rows: Int
     ): Lockable {
-        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody? {
+        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
             out.limit = rows
 
             return of

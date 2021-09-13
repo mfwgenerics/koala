@@ -7,6 +7,7 @@ import mfwgenerics.kotq.query.WithType
 import mfwgenerics.kotq.sql.Scope
 import mfwgenerics.kotq.values.RowSequence
 import mfwgenerics.kotq.window.LabeledWindow
+import kotlin.reflect.KClass
 
 sealed interface BuiltQuery {
     fun populateScope(scope: Scope)
@@ -51,12 +52,10 @@ class BuiltQueryBody {
 
     var locking: LockMode? = null
 
-    fun populateScope(scope: Scope, standalone: Boolean) {
+    fun populateScope(scope: Scope) {
         withs.forEach {
             scope.cte(it.cte, it.query.columns)
         }
-
-        if (standalone) return
 
         relation.populateScope(scope)
 
@@ -67,17 +66,14 @@ class BuiltQueryBody {
 }
 
 class BuiltSelectQuery(
-    val standalone: Boolean,
     val body: BuiltQueryBody,
     val selected: List<SelectedExpr<*>>
 ): BuiltSubquery, BuiltStatement {
     constructor(
-        standalone: Boolean,
         body: BuiltQueryBody,
         references: List<SelectArgument>,
         includeAll: Boolean = false
     ): this(
-        standalone,
         body,
         SelectionBuilder(body.withs.associateBy({ it.cte }) { it.query.columns })
             .also { builder ->
@@ -93,10 +89,34 @@ class BuiltSelectQuery(
             .toList()
     )
 
+    fun reorderToMatchUnion(outerSelected: List<SelectedExpr<*>>): BuiltSelectQuery {
+        val selectedByNames = selected.associateByTo(hashMapOf()) { it.name }
+
+        check (selectedByNames.size == selected.size) {
+            "duplicate labels in select"
+        }
+
+        val selected = outerSelected.map {
+            val corresponding = selectedByNames.remove(it.name)
+
+            @Suppress("unchecked_cast")
+            corresponding ?: (SelectedExpr(Literal(it.name.type as KClass<Any>, null), it.name as Reference<Any>))
+        }
+
+        check (selectedByNames.isEmpty()) {
+            "Labels ${selectedByNames.keys} appeared in union selected but not in top level select"
+        }
+
+        return BuiltSelectQuery(
+            body = body,
+            selected = selected
+        )
+    }
+
     override val columns: LabelList = LabelList(selected.map { it.name })
 
     override fun populateScope(scope: Scope) {
-        body.populateScope(scope, standalone)
+        body.populateScope(scope)
 
         selected.forEach {
             if (it.expr != it.name) scope.internal(it.name)

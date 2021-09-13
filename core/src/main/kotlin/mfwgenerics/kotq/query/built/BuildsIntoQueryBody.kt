@@ -3,8 +3,8 @@ package mfwgenerics.kotq.query.built
 import mfwgenerics.kotq.unfoldBuilder
 
 interface BuildsIntoQueryBody {
-    fun buildSelect(): BuiltQueryBody =
-        unfoldBuilder(BuiltQueryBody()) { buildIntoSelect(it) }
+    fun buildQueryBody(): BuiltQueryBody =
+        unfoldBuilder(BuiltQueryBody()) { buildIntoQueryBody(it) }
 
-    fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody?
+    fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody?
 }

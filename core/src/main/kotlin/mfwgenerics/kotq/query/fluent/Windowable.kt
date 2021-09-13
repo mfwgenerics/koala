@@ -9,7 +9,7 @@ interface Windowable: UnionableUnionOperand {
         val lhs: Windowable,
         val windows: List<LabeledWindow>
     ): UnionableUnionOperand {
-        override fun buildIntoSelect(out: BuiltQueryBody): BuildsIntoQueryBody {
+        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
             out.windows = windows
             return lhs
         }

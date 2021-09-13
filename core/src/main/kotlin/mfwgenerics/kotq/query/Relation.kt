@@ -15,6 +15,8 @@ sealed interface Relation: AliasedRelation {
         = BuiltRelation(this, null)
 }
 
+object EmptyRelation: Relation
+
 interface Relvar: Relation {
     val relvarName: String
 

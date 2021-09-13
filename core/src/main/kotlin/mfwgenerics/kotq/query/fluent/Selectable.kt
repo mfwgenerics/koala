@@ -16,8 +16,7 @@ interface Selectable: BuildsIntoQueryBody {
         val includeAll: Boolean
     ): SelectedJust<T> {
         override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
-            false,
-            of.buildSelect(),
+            of.buildQueryBody(),
             references,
             includeAll
         )
@@ -32,10 +31,10 @@ interface Selectable: BuildsIntoQueryBody {
     fun select(vararg references: SelectArgument): Subqueryable =
         selectInternal<Nothing>(references.asList(), false)
 
-    fun <T : Any> select(labeled: SelectedExpr<T>): SelectedJust<T> =
+    fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJust<T> =
         selectInternal(listOf(labeled), false)
 
-    fun <T : Any> select(reference: Reference<T>): SelectedJust<T> =
+    fun <T : Any> selectJust(reference: Reference<T>): SelectedJust<T> =
         selectInternal(listOf(reference), false)
 
     private class Update(
@@ -43,7 +42,7 @@ interface Selectable: BuildsIntoQueryBody {
         val assignments: List<Assignment<*>>
     ): Updated {
         override fun buildUpdate() = BuiltUpdate(
-            of.buildSelect(),
+            of.buildQueryBody(),
             assignments
         )
     }
@@ -54,7 +53,7 @@ interface Selectable: BuildsIntoQueryBody {
     private class Delete(
         val of: Selectable
     ): Deleted {
-        override fun buildDelete() = BuiltDelete(of.buildSelect())
+        override fun buildDelete() = BuiltDelete(of.buildQueryBody())
     }
 
     fun delete(): Deleted = Delete(this)

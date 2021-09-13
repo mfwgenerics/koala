@@ -292,7 +292,7 @@ class MysqlDialect: SqlDialect {
                 DATETIME -> TODO()
                 is DECIMAL -> TODO()
                 DOUBLE -> TODO()
-                FLOAT -> TODO()
+                FLOAT -> sql.addSql("REAL")
                 INSTANT -> TODO()
                 SMALLINT -> TODO()
                 INTEGER -> sql.addSql("SIGNED")
@@ -369,6 +369,7 @@ class MysqlDialect: SqlDialect {
                     sql.addSql(scope[baseRelation])
                     null
                 }
+                is EmptyRelation -> return
             }
 
             sql.addSql(" ")
@@ -476,8 +477,7 @@ class MysqlDialect: SqlDialect {
                 sql.addSql(scope.nameOf(it.name))
             }
 
-            if (select.standalone) return
-            sql.addSql("\nFROM ")
+            if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 
             compileSelectBody(select.body)
 
