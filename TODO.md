@@ -5,4 +5,5 @@
 * Allow cte to act as alias
 * Don't require .select for exists/notExists
 * Support recursive CTEs
-* StandardSql for UnmappedDataType
+* Standard Sql for UnmappedDataType
+* Self-join test cases

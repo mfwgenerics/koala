@@ -38,6 +38,9 @@ class Values(
 class Cte(
     val identifier: IdentifierName = IdentifierName()
 ): Relation {
+    override fun buildQueryRelation(): BuiltRelation =
+        BuiltRelation(this, null, Alias(identifier))
+
     override fun equals(other: Any?): Boolean =
         other is Alias && identifier == other.identifier
 

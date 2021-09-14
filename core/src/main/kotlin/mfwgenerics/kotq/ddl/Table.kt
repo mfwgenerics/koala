@@ -7,11 +7,18 @@ import mfwgenerics.kotq.ddl.fluent.ColumnDefinition
 import mfwgenerics.kotq.dsl.keys
 import mfwgenerics.kotq.expr.Expr
 import mfwgenerics.kotq.expr.RelvarColumn
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.query.Relvar
+import mfwgenerics.kotq.query.built.BuiltRelation
 
 abstract class Table protected constructor(
     override val relvarName: String
 ): Relvar {
+    private val alias = Alias()
+
+    override fun buildQueryRelation(): BuiltRelation =
+        BuiltRelation(this, null, alias)
+
     private val internalColumns = arrayListOf<TableColumn<*>>()
     override val columns: List<TableColumn<*>> get() = internalColumns
 

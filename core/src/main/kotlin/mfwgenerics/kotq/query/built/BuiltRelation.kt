@@ -3,11 +3,12 @@ package mfwgenerics.kotq.query.built
 import mfwgenerics.kotq.query.*
 import mfwgenerics.kotq.sql.Scope
 
-data class BuiltRelation(
+class BuiltRelation(
     val relation: Relation,
-    val alias: Alias?
+    val explicitAlias: Alias?,
+    defaultAlias: Alias? = null
 ) {
-    val computedAlias = alias?: Alias()
+    val computedAlias = explicitAlias?:defaultAlias?:Alias()
 
     fun populateScope(scope: Scope) {
         val names = when (relation) {
@@ -20,7 +21,7 @@ data class BuiltRelation(
 
         names.forEach { (name, symbol) ->
             scope.internal(
-                alias?.get(name)?:name,
+                explicitAlias?.get(name)?:name,
                 symbol,
                 computedAlias
             )

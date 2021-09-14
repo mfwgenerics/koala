@@ -9,6 +9,10 @@ import mfwgenerics.kotq.sql.RawSqlBuilder
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
 
+/* limiting T to Comparable to prevent shadowing of other as_ */
+inline infix fun <reified T : Comparable<*>> T.as_(reference: Reference<T>): SelectedExpr<T> =
+    SelectedExpr(value(this), reference)
+
 infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.EQ(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.eq(rhs: T): Expr<Boolean> = eq(value(rhs))
 
@@ -78,7 +82,7 @@ inline operator fun <reified T : Number> Expr<T>.times(rhs: T): Expr<T> =
 operator fun <T : Number> Expr<T>.plus(rhs: Expr<T>): Expr<T> =
     OperationType.PLUS(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.plus(rhs: T): Expr<T> =
-    this * value(rhs)
+    this + value(rhs)
 
 operator fun <T : Number> Expr<T>.minus(rhs: Expr<T>): Expr<T> =
     OperationType.MINUS(this, rhs)

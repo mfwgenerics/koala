@@ -12,7 +12,7 @@ class NameRegistry {
     private fun generate(prefix: String): String = "$prefix${generated++}"
 
     operator fun get(cte: Cte): String =
-        registered.getOrPut(cte) { cte
+        registered.getOrPut(cte.identifier) { cte
             .identifier.asString
             ?: generate("T")
         }
@@ -30,7 +30,7 @@ class NameRegistry {
         }
 
     operator fun get(alias: Alias): String =
-        registered.getOrPut(alias) { alias
+        registered.getOrPut(alias.identifier) { alias
             .identifier.asString
             ?: generate("T")
         }

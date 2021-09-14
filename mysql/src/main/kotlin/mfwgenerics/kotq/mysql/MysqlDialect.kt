@@ -367,6 +367,9 @@ class MysqlDialect: SqlDialect {
                 }
                 is Cte -> {
                     sql.addSql(scope[baseRelation])
+
+                    if (relation.computedAlias.identifier == baseRelation.identifier) return
+
                     null
                 }
                 is EmptyRelation -> return

@@ -34,10 +34,14 @@ class JdbcConnection(
     }
 
     private fun prepare(sql: SqlText, generatedKeys: Boolean = false): PreparedStatement {
-        val result = if (generatedKeys) {
-            jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
-        } else {
-            jdbc.prepareStatement(sql.sql)
+        val result = try {
+            if (generatedKeys) {
+                jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
+            } else {
+                jdbc.prepareStatement(sql.sql)
+            }
+        } catch (ex: Exception) {
+            throw GeneratedSqlException(sql, ex)
         }
 
         sql.parameters.forEachIndexed { ix, literal ->

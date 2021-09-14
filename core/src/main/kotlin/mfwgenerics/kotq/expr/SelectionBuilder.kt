@@ -18,7 +18,7 @@ class SelectionBuilder(
         }.asSequence()
 
         exports.forEach {
-            val ref = built.alias?.get(it)?:it
+            val ref = built.explicitAlias?.get(it)?:it
 
             entries.putIfAbsent(ref, ref)
         }

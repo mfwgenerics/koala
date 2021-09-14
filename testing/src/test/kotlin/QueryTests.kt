@@ -5,6 +5,7 @@ import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.dsl.*
 import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
+import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.query.Tableless
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
@@ -584,5 +585,32 @@ abstract class QueryTests: ProvideTestDatabase {
         println(actual)
 
         assertListOfListsEquals(expected, actual)
+    }
+
+    @Test
+    open fun `factorial recursive CTE`() = withCxn { cxn ->
+        val fact = cte()
+
+        val index = name<Long>()
+        val value = name<Long>()
+
+        val alias = Alias()
+
+        val expected = listOf<Long>(1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880)
+
+        val actual = fact.as_(alias)
+            .withRecursive(fact as_ Tableless
+                .unionAll(fact
+                    .where(index less 9)
+                    .select(index + 1 as_ index, ((index + 1)*value) as_ value)
+                )
+                .select(0L as_ index, 1L as_ value)
+            )
+            .select(alias[index], alias[value])
+            .performWith(cxn)
+            .map { it[alias[value]] }
+            .toList()
+
+        assertListEquals(expected, actual)
     }
 }
