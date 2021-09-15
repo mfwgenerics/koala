@@ -12,7 +12,6 @@ sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
     override fun buildIntoSelection(selection: SelectionBuilder) {
         selection.expression(this, this)
     }
-
 }
 
 class AliasedReference<T : Any>(

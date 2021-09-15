@@ -8,8 +8,8 @@ import mfwgenerics.kotq.query.built.BuiltValuesQuery
 import mfwgenerics.kotq.values.RowIterator
 import mfwgenerics.kotq.values.RowSequence
 
-sealed interface Relation: AliasedRelation {
-    fun as_(alias: Alias): AliasedRelation = Aliased(this, alias)
+sealed interface Relation: AliasableRelation {
+    override fun as_(alias: Alias): Aliased = Aliased(this, alias)
 
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(this, null)

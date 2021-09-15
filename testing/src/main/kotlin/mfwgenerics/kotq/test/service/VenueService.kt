@@ -99,18 +99,17 @@ class VenueService(
 
     fun deleteReviews(reviews: List<ReviewKey>) {
         db.transact { cxn ->
-            val deleteValues = cte()
-            val alias = alias()
+            val deleted = alias() as_ values(reviews) {
+                set(ReviewTable.user, it.user)
+                set(ReviewTable.venue, it.venue)
+            }
 
             ReviewTable
-                .with(deleteValues as_ values(reviews) {
-                    set(ReviewTable.user, it.user)
-                    set(ReviewTable.venue, it.venue)
-                })
-                .where(exists(deleteValues.as_(alias)
-                    .where(alias[ReviewTable.venue] eq ReviewTable.venue)
-                    .where(alias[ReviewTable.user] eq ReviewTable.user)
-                    .selectJust(alias[ReviewTable.venue])
+                .with(deleted)
+                .where(exists(deleted
+                    .where(deleted[ReviewTable.venue] eq ReviewTable.venue)
+                    .where(deleted[ReviewTable.user] eq ReviewTable.user)
+                    .selectJust(deleted[ReviewTable.venue])
                 ))
                 .delete()
                 .performWith(cxn)
