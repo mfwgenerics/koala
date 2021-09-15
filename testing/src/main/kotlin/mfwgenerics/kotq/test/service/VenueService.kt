@@ -115,4 +115,21 @@ class VenueService(
                 .performWith(cxn)
         }
     }
+
+    fun updateVisits(
+        updates: List<VenueVisitorUpdate>
+    ) {
+        db.transact { cxn ->
+            UserVenueTable
+                .insert(values(updates) {
+                    set(UserVenueTable.venue, it.venue)
+                    set(UserVenueTable.user, it.user)
+                    set(UserVenueTable.visited, it.state)
+                })
+                .onConflictSet(
+                    UserVenueTable.visited
+                )
+                .performWith(cxn)
+        }
+    }
 }

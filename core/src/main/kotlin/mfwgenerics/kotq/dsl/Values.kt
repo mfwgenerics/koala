@@ -121,7 +121,7 @@ fun values(
 
 fun values(vararg rows: ValuesRow): Values = values(rows.asList())
 
-fun rowOf(vararg assignments: LiteralAssignment<*>): ValuesRow {
+fun rowOf(assignments: List<LiteralAssignment<*>>): ValuesRow {
     /* could be done more efficiently (?) by building labels and row values together */
     val row = PreLabeledRow(LabelList(assignments.map { it.reference }))
 
@@ -129,3 +129,9 @@ fun rowOf(vararg assignments: LiteralAssignment<*>): ValuesRow {
 
     return row
 }
+
+fun rowOf(vararg assignments: LiteralAssignment<*>): ValuesRow =
+    rowOf(assignments.asList())
+
+fun rowOfNotNull(vararg assignments: LiteralAssignment<*>?): ValuesRow =
+    rowOf(assignments.mapNotNull { it })

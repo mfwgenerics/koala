@@ -2,3 +2,8 @@
 * Reorganize so table declarations don't depend on so many packages
 * Add a null expression so users don't have to use value(null)
 * Don't require .select for exists/notExists
+* Test to ensure that Postgres ON CONFLICT DO UPDATE works with tables named EXCLUDED
+* Implement ON DUPLICATE/CONFLICT update for VALUES, SELECTS incl/ complex updates
+* Add tests for defaults
+* Support CHECK
+* Emit CREATE TABLE INDEX as separate DDL in H2

@@ -18,4 +18,12 @@ class H2QueryTests: QueryTests() {
             super.`factorial recursive CTE`()
         } catch (ex: GeneratedSqlException) { }
     }
+
+    override fun `on duplicate update with values`() {
+        /* H2 does not support ON CONFLICT/ON DUPLICATE in its native dialect */
+
+        try {
+            super.`on duplicate update with values`()
+        } catch (ex: GeneratedSqlException) { }
+    }
 }

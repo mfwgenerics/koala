@@ -30,6 +30,8 @@ class MysqlDialect: SqlDialect {
     }
 
     private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
+
+
         when (type) {
             DATE -> TODO()
             DATETIME -> TODO()

@@ -10,6 +10,7 @@ import mfwgenerics.kotq.query.Tableless
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 abstract class QueryTests: ProvideTestDatabase {
     @Test
@@ -627,7 +628,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .leftJoin(purchases2, PurchaseTable.price less purchases2[PurchaseTable.price])
             .innerJoin(ShopTable as_ shopsAlias, shopsAlias[ShopTable.id] eq PurchaseTable.shop)
             .leftJoin(ShopTable, ShopTable.id eq purchases2[PurchaseTable.shop])
-            .orderBy(PurchaseTable.price)
+            .orderBy(PurchaseTable.price, purchases2[PurchaseTable.price])
             .selectAll()
             .performWith(cxn)
             .map { row ->
@@ -644,14 +645,60 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val expected = listOf(
             listOf("Apple", 150, "Groceries", "Pear", 200, "Groceries"),
-            listOf("Apple", 150, "Groceries", "Hammer", 8000, "Hardware"),
             listOf("Apple", 150, "Groceries", "Pen", 500, "Stationary"),
-            listOf("Pear", 200, "Groceries", "Hammer", 8000, "Hardware"),
+            listOf("Apple", 150, "Groceries", "Hammer", 8000, "Hardware"),
             listOf("Pear", 200, "Groceries", "Pen", 500, "Stationary"),
+            listOf("Pear", 200, "Groceries", "Hammer", 8000, "Hardware"),
             listOf("Pen", 500, "Stationary", "Hammer", 8000, "Hardware"),
             listOf("Hammer", 8000, "Hardware", null, null, null)
         )
 
         assertListOfListsEquals(expected, actual)
+    }
+
+    object MergeTest : Table("MergeTest") {
+        val id = column("id", INTEGER.autoIncrement().primaryKey())
+
+        val x = column("x", INTEGER)
+        val y = column("y", INTEGER)
+        val z = column("z", INTEGER)
+
+        init {
+            uniqueKey(x, y)
+        }
+    }
+
+    @Test
+    open fun `on duplicate update with values`() = withCxn { cxn ->
+        cxn.createTable(MergeTest)
+
+        fun valueOf(x: Int, y: Int) = MergeTest
+            .where(MergeTest.x eq x)
+            .where(MergeTest.y eq y)
+            .select(MergeTest.z)
+            .performWith(cxn)
+            .single()[MergeTest.z]
+
+        MergeTest
+            .insert(rowOf(
+                MergeTest.x setTo 4,
+                MergeTest.y setTo 7,
+                MergeTest.z setTo 11,
+            ))
+            .onConflictSet(MergeTest.z)
+            .performWith(cxn)
+
+        assertEquals(11, valueOf(4, 7))
+
+        /*MergeTest
+            .insert(rowOf(
+                MergeTest.x setTo 4,
+                MergeTest.y setTo 7,
+                MergeTest.z setTo 28,
+            ))
+            .onConflictSet(MergeTest.z)
+            .performWith(cxn)
+
+        assertEquals(28, valueOf(4, 7))*/
     }
 }

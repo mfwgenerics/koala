@@ -18,8 +18,8 @@ sealed interface Reference<T : Any>: AsReference<T>, SelectArgument {
 
 class AliasedReference<T : Any>(
     override val type: KClass<T>,
-    val of: Alias,
-    val reference: Reference<T>
+    private val of: Alias,
+    private val reference: Reference<T>
 ): Reference<T>, SelectArgument {
     override val identifier: IdentifierName? get() = null
 

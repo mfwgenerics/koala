@@ -1,7 +1,10 @@
 package mfwgenerics.kotq.h2
 
 import mfwgenerics.kotq.data.*
+import mfwgenerics.kotq.ddl.IndexType
 import mfwgenerics.kotq.ddl.Table
+import mfwgenerics.kotq.ddl.TableColumn
+import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
@@ -39,11 +42,56 @@ class H2Dialect: SqlDialect {
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
     ): ExpressionCompiler {
         private fun compileDefaultExpr(expr: Expr<*>) {
-            compileExpr(expr)
+            when (expr) {
+                is Literal -> sql.addLiteral(expr)
+                is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
+                else -> compileExpr(expr)
+            }
         }
 
         private fun compileDataType(type: UnmappedDataType<*>) {
             sql.compileDataType(type)
+        }
+
+        private fun compileColumnDef(column: TableColumn<*>) {
+            val def = column.builtDef
+
+            sql.addIdentifier(column.symbol)
+            sql.addSql(" ")
+            compileDataType(def.columnType.dataType)
+
+            if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+            if (def.notNull) sql.addSql(" NOT NULL")
+
+            def.default?.let { default ->
+                @Suppress("unchecked_cast")
+                val finalExpr = when (default) {
+                    is ColumnDefaultExpr -> default.expr
+                    is ColumnDefaultValue -> Literal(
+                        def.columnType.type as KClass<Any>,
+                        default.value
+                    )
+                }
+
+                sql.addSql(" DEFAULT ")
+                compileDefaultExpr(finalExpr)
+            }
+        }
+
+        private fun compileIndexDef(name: String, def: BuiltIndexDef) {
+            sql.addSql(when (def.type) {
+                IndexType.PRIMARY -> "PRIMARY KEY"
+                IndexType.UNIQUE -> "UNIQUE KEY"
+                IndexType.INDEX -> "INDEX"
+            })
+
+            sql.addSql(" ")
+            sql.addIdentifier(name)
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(def.keys.keys) { key ->
+                    compileDefaultExpr(key)
+                }
+            }
         }
 
         fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
@@ -51,31 +99,35 @@ class H2Dialect: SqlDialect {
 
             sql.addIdentifier(table.relvarName)
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(table.columns) {
-                    sql.addSql("\n")
-                    val def = it.builtDef
+                val comma = sql.prefix("\n", ",\n")
 
-                    sql.addIdentifier(it.symbol)
-                    sql.addSql(" ")
-                    compileDataType(def.columnType.dataType)
+                comma.forEach(table.columns) {
+                    compileColumnDef(it)
+                }
 
-                    if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
-                    if (def.notNull) sql.addSql(" NOT NULL")
-
-                    def.default?.let { default ->
-                        @Suppress("unchecked_cast")
-                        val finalExpr = when (default) {
-                            is ColumnDefaultExpr -> default.expr
-                            is ColumnDefaultValue -> Literal(
-                                def.columnType.type as KClass<Any>,
-                                default.value
-                            )
+                table.primaryKey?.let { pk ->
+                    comma.next {
+                        sql.addSql("CONSTRAINT ")
+                        sql.addIdentifier(pk.name)
+                        sql.addSql(" PRIMARY KEY (")
+                        sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                            when (it) {
+                                is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                                else -> error("expression keys unsupported")
+                            }
                         }
-
-                        sql.addSql(" DEFAULT ")
-                        compileDefaultExpr(finalExpr)
+                        sql.addSql(")")
                     }
                 }
+
+                table.indexes.forEach { index ->
+                    if (index.def.type != IndexType.INDEX) {
+                        comma.next {
+                            compileIndexDef(index.name, index.def)
+                        }
+                    }
+                }
+
                 sql.addSql("\n")
             }
         }
