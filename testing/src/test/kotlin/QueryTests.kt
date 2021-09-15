@@ -614,4 +614,44 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertListEquals(expected, actual)
     }
+
+    @Test
+    fun `self joins`() = withCxn { cxn ->
+        createAndPopulate(cxn)
+
+        val purchases2 = PurchaseTable as_ alias()
+
+        val shopsAlias = alias()
+
+        val actual = PurchaseTable
+            .leftJoin(purchases2, PurchaseTable.price less purchases2[PurchaseTable.price])
+            .innerJoin(ShopTable as_ shopsAlias, shopsAlias[ShopTable.id] eq PurchaseTable.shop)
+            .leftJoin(ShopTable, ShopTable.id eq purchases2[PurchaseTable.shop])
+            .orderBy(PurchaseTable.price)
+            .selectAll()
+            .performWith(cxn)
+            .map { row ->
+                listOf(
+                    row[PurchaseTable.product],
+                    row[PurchaseTable.price],
+                    row[shopsAlias[ShopTable.name]],
+                    row[purchases2[PurchaseTable.product]],
+                    row[purchases2[PurchaseTable.price]],
+                    row[ShopTable.name],
+                )
+            }
+            .toList()
+
+        val expected = listOf(
+            listOf("Apple", 150, "Groceries", "Pear", 200, "Groceries"),
+            listOf("Apple", 150, "Groceries", "Hammer", 8000, "Hardware"),
+            listOf("Apple", 150, "Groceries", "Pen", 500, "Stationary"),
+            listOf("Pear", 200, "Groceries", "Hammer", 8000, "Hardware"),
+            listOf("Pear", 200, "Groceries", "Pen", 500, "Stationary"),
+            listOf("Pen", 500, "Stationary", "Hammer", 8000, "Hardware"),
+            listOf("Hammer", 8000, "Hardware", null, null, null)
+        )
+
+        assertListOfListsEquals(expected, actual)
+    }
 }
