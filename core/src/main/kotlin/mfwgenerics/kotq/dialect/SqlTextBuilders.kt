@@ -131,7 +131,7 @@ fun SqlTextBuilder.compileExpr(
                 }
             }
         }
-        is Reference<*> -> impl.reference(false, expr)
+        is AsReference<*> -> impl.reference(false, expr.asReference())
         is SubqueryExpr<*> -> {
             impl.subquery(false, expr.buildQuery())
         }

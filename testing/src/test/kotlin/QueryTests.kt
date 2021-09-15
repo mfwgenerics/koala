@@ -27,10 +27,14 @@ abstract class QueryTests: ProvideTestDatabase {
     @Test
     fun `triangular numbers from values clause subquery`() = withCxn { cxn ->
         val number = name<Int>("number")
-        val summed = name<Int>("sumUnder")
 
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
         val castNumber = cast(number, INTEGER)
+
+        val summed = sum(castNumber)
+            .over(all()
+                .orderBy(castNumber)
+            ) as_ name("sumUnder")
 
         val alias = alias("A")
 
@@ -39,10 +43,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .orderBy(castNumber.desc())
             .select(
                 number,
-                sum(castNumber)
-                    .over(all()
-                        .orderBy(castNumber)
-                    ) as_ summed
+                summed
             )
             .subquery()
             .as_(alias)

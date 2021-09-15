@@ -1,14 +1,15 @@
 package mfwgenerics.kotq.query
 
-import mfwgenerics.kotq.expr.Reference
+import mfwgenerics.kotq.expr.AliasedReference
+import mfwgenerics.kotq.expr.AsReference
 import mfwgenerics.kotq.query.built.BuiltRelation
 
 class Aliased(
     private val of: Relation,
     private val alias: Alias
-): AliasedRelation {
+): AliasedRelation, GetsAliasedReference {
     override fun buildQueryRelation(): BuiltRelation
         = BuiltRelation(of, alias)
 
-    operator fun <T : Any> get(reference: Reference<T>) = alias[reference]
+    override fun <T : Any> get(reference: AsReference<T>): AliasedReference<T> = alias[reference]
 }

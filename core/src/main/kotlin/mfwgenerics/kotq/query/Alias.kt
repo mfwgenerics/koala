@@ -2,12 +2,17 @@ package mfwgenerics.kotq.query
 
 import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.expr.AliasedReference
+import mfwgenerics.kotq.expr.AsReference
 import mfwgenerics.kotq.expr.Reference
 
 class Alias(
     val identifier: IdentifierName = IdentifierName()
-) {
-    operator fun <T : Any> get(reference: Reference<T>) = AliasedReference(reference.type, this, reference)
+): GetsAliasedReference {
+    override fun <T : Any> get(reference: AsReference<T>): AliasedReference<T> {
+        val actual = reference.asReference()
+
+        return AliasedReference(actual.type, this, actual)
+    }
 
     override fun equals(other: Any?): Boolean =
         other is Alias && identifier == other.identifier

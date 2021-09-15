@@ -4,7 +4,7 @@ import mfwgenerics.kotq.IdentifierName
 import mfwgenerics.kotq.query.Alias
 import kotlin.reflect.KClass
 
-sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
+sealed interface Reference<T : Any>: AsReference<T>, SelectArgument {
     val type: KClass<T>
 
     val identifier: IdentifierName?
@@ -12,6 +12,8 @@ sealed interface Reference<T : Any>: Expr<T>, SelectArgument {
     override fun buildIntoSelection(selection: SelectionBuilder) {
         selection.expression(this, this)
     }
+
+    override fun asReference(): Reference<T> = this
 }
 
 class AliasedReference<T : Any>(
