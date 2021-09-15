@@ -71,7 +71,11 @@ class JdbcConnection(
 
         val sql = dialect.compile(built)
 
-        prepare(sql).execute()
+        try {
+            prepare(sql).execute()
+        } catch (ex: Exception) {
+            throw GeneratedSqlException(sql, ex)
+        }
     }
 
     private fun execute(updated: Updated) {

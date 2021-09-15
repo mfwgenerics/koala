@@ -131,7 +131,16 @@ fun SqlTextBuilder.compileExpr(
                 }
             }
         }
-        is AsReference<*> -> impl.reference(false, expr.asReference())
+        is AsReference<*> -> {
+            val reference = expr.asReference()
+            val excluded = reference.excludedReference()
+
+            if (excluded != null) {
+                impl.excluded(excluded)
+            } else {
+                impl.reference(false, reference)
+            }
+        }
         is SubqueryExpr<*> -> {
             impl.subquery(false, expr.buildQuery())
         }

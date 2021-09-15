@@ -496,6 +496,11 @@ class PostgresDialect: SqlDialect {
             }
         }
 
+        override fun excluded(reference: Reference<*>) {
+            sql.addSql("EXCLUDED.")
+            compileReference(reference)
+        }
+
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
             compileReference(value)
         }

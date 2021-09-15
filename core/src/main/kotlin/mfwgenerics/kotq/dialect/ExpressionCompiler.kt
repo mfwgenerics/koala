@@ -10,6 +10,8 @@ import mfwgenerics.kotq.window.built.BuiltWindow
 interface ExpressionCompiler {
     val sql: SqlTextBuilder
 
+    fun excluded(reference: Reference<*>)
+
     fun <T : Any> reference(emitParens: Boolean, value: Reference<T>)
     fun subquery(emitParens: Boolean, subquery: BuiltSubquery)
 

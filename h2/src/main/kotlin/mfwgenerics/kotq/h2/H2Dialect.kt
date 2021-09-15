@@ -136,6 +136,10 @@ class H2Dialect: SqlDialect {
             sql.addResolved(scope.resolve(name))
         }
 
+        override fun excluded(reference: Reference<*>) {
+            error("Excluded[] is not supported by this dialect")
+        }
+
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
             compileReference(value)
 

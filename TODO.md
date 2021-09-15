@@ -7,3 +7,4 @@
 * Add tests for defaults
 * Support CHECK
 * Emit CREATE TABLE INDEX as separate DDL in H2
+* onConflictIgnore compatibility flag for MySQL dialect that uses INSERT IGNORE

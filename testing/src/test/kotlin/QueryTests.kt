@@ -584,8 +584,6 @@ abstract class QueryTests: ProvideTestDatabase {
             .map { row -> listOf(row[n0], row[n1]) }
             .toList()
 
-        println(actual)
-
         assertListOfListsEquals(expected, actual)
     }
 
@@ -661,7 +659,9 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val x = column("x", INTEGER)
         val y = column("y", INTEGER)
+
         val z = column("z", INTEGER)
+        val nz = column("nz", INTEGER)
 
         init {
             uniqueKey(x, y)
@@ -672,33 +672,66 @@ abstract class QueryTests: ProvideTestDatabase {
     open fun `on duplicate update with values`() = withCxn { cxn ->
         cxn.createTable(MergeTest)
 
-        fun valueOf(x: Int, y: Int) = MergeTest
-            .where(MergeTest.x eq x)
-            .where(MergeTest.y eq y)
-            .select(MergeTest.z)
-            .performWith(cxn)
-            .single()[MergeTest.z]
+        fun expectValueOf(x: Int, y: Int, z: Int, nz: Int) {
+            val row = MergeTest
+                .where(MergeTest.x eq x)
+                .where(MergeTest.y eq y)
+                .select(MergeTest.z, MergeTest.nz)
+                .performWith(cxn)
+                .single()
+
+            assertEquals(z, row.getValue(MergeTest.z))
+            assertEquals(nz, row.getValue(MergeTest.nz))
+        }
 
         MergeTest
             .insert(rowOf(
                 MergeTest.x setTo 4,
                 MergeTest.y setTo 7,
                 MergeTest.z setTo 11,
+                MergeTest.nz setTo -11
             ))
-            .onConflictSet(MergeTest.z)
+            .onConflictSet(MergeTest.z, MergeTest.nz)
             .performWith(cxn)
 
-        assertEquals(11, valueOf(4, 7))
+        expectValueOf(4, 7, 11, -11)
 
-        /*MergeTest
+        MergeTest
             .insert(rowOf(
                 MergeTest.x setTo 4,
                 MergeTest.y setTo 7,
                 MergeTest.z setTo 28,
+                MergeTest.nz setTo -28
+            ))
+            .onConflictSet(MergeTest.z, MergeTest.nz)
+            .performWith(cxn)
+
+        expectValueOf(4, 7, 28, -28)
+
+        MergeTest
+            .insert(rowOf(
+                MergeTest.x setTo 4,
+                MergeTest.y setTo 7,
+                MergeTest.z setTo 1,
+                MergeTest.nz setTo 0
             ))
             .onConflictSet(MergeTest.z)
             .performWith(cxn)
 
-        assertEquals(28, valueOf(4, 7))*/
+        expectValueOf(4, 7, 1, -28)
+
+        MergeTest
+            .insert(rowOf(
+                MergeTest.x setTo 4,
+                MergeTest.y setTo 7,
+                MergeTest.z setTo 5,
+                MergeTest.nz setTo 4
+            ))
+            .onConflictUpdate(
+                MergeTest.z setTo MergeTest.z - Excluded[MergeTest.nz]
+            )
+            .performWith(cxn)
+
+        expectValueOf(4, 7, -3, -28)
     }
 }

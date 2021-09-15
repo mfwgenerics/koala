@@ -17,7 +17,7 @@ class Scope(
     private sealed interface Registered
 
     private class UnderAlias(
-        val alias: Alias,
+        val alias: Alias?,
         val innerName: String
     ): Registered
 
@@ -41,7 +41,7 @@ class Scope(
     fun internal(
         name: Reference<*>,
         innerName: String,
-        alias: Alias
+        alias: Alias?
     ) {
         val value = UnderAlias(
             alias = alias,
@@ -63,27 +63,13 @@ class Scope(
 
         return when (registered) {
             is UnderAlias -> Resolved(
-                alias = names[registered.alias],
+                alias = registered.alias?.let { names[it] },
                 innerName = registered.innerName
             )
             Internal -> Resolved(
                 alias = null,
                 innerName = names[name]
             )
-        }
-    }
-
-    operator fun get(name: Reference<*>): String {
-        val registered = internal[name]
-            ?: return checkNotNull(enclosing?.get(name)) {
-                "$name not in scope ${System.identityHashCode(this)}"
-            }
-
-        return when (registered) {
-            is UnderAlias -> {
-                "${names[registered.alias]}.${registered.innerName}"
-            }
-            Internal -> names[name]
         }
     }
 

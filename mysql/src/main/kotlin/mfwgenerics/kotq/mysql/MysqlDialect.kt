@@ -20,7 +20,7 @@ import mfwgenerics.kotq.window.LabeledWindow
 import mfwgenerics.kotq.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
-class MysqlDialect: SqlDialect {
+class MysqlDialect(): SqlDialect {
     private fun compileDdlExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addLiteral(expr)
@@ -337,6 +337,13 @@ class MysqlDialect: SqlDialect {
             sql.compileExpr(expr, emitParens, this)
         }
 
+        override fun excluded(reference: Reference<*>) {
+            sql.addSql("VALUES")
+            sql.parenthesize {
+                compileReference(reference)
+            }
+        }
+
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
@@ -569,6 +576,27 @@ class MysqlDialect: SqlDialect {
             sql.addSql("\n")
 
             compileQuery(emptyList(), insert.query, true)
+
+            insert.onConflict?.let { onConflict ->
+                check (onConflict is OnConflictAction.Update)
+                    { "MySQL does not support onConflictIgnore" }
+
+                sql.addSql("\nON DUPLICATE KEY UPDATE")
+
+                val innerScope = scope.innerScope()
+
+                relvar.columns.forEach {
+                    innerScope.internal(it, it.symbol, null)
+                }
+
+                val updateCtx = Compilation(innerScope, sql)
+
+                sql.prefix(" ", "\n,").forEach(onConflict.assignments) {
+                    updateCtx.compileExpr(it.reference)
+                    sql.addSql(" = ")
+                    updateCtx.compileExpr(it.expr)
+                }
+            }
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -587,7 +615,7 @@ class MysqlDialect: SqlDialect {
             val updatePrefix = sql.prefix("", ", ")
 
             check (query.joins.isEmpty()) {
-                "H2 does not support JOIN in update"
+                "dialect does not support JOIN in update"
             }
 
             update.assignments
