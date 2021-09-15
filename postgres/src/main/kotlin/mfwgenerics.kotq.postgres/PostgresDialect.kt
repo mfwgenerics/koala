@@ -6,10 +6,7 @@ import mfwgenerics.kotq.ddl.TableColumn
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
-import mfwgenerics.kotq.dialect.ExpressionCompiler
-import mfwgenerics.kotq.dialect.SqlDialect
-import mfwgenerics.kotq.dialect.compileExpr
-import mfwgenerics.kotq.dialect.compileQueryBody
+import mfwgenerics.kotq.dialect.*
 import mfwgenerics.kotq.dsl.value
 import mfwgenerics.kotq.expr.*
 import mfwgenerics.kotq.expr.built.BuiltAggregatable
@@ -29,31 +26,7 @@ class PostgresDialect: SqlDialect {
     }
 
     private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-        when (type) {
-            DATE -> TODO()
-            DATETIME -> TODO()
-            is DECIMAL -> TODO()
-            DOUBLE -> TODO()
-            FLOAT -> TODO()
-            INSTANT -> TODO()
-            SMALLINT -> sql.addSql("SMALLINT")
-            INTEGER -> sql.addSql("INTEGER")
-            TINYINT -> TODO()
-            is RAW -> TODO()
-            TIME -> TODO()
-            is VARBINARY -> TODO()
-            is VARCHAR -> {
-                sql.addSql("VARCHAR")
-                sql.parenthesize {
-                    sql.addSql("${type.maxLength}")
-                }
-            }
-            BIGINT -> TODO()
-            TINYINT.UNSIGNED -> TODO()
-            SMALLINT.UNSIGNED -> TODO()
-            INTEGER.UNSIGNED -> TODO()
-            BIGINT.UNSIGNED -> TODO()
-        }
+        sql.compileDataType(type)
     }
 
     private fun compileSerialType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
@@ -215,26 +188,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileCastDataType(type: UnmappedDataType<*>) {
-            when (type) {
-                DATE -> TODO()
-                DATETIME -> TODO()
-                is DECIMAL -> TODO()
-                DOUBLE -> TODO()
-                FLOAT -> sql.addSql("REAL")
-                INSTANT -> TODO()
-                SMALLINT -> TODO()
-                INTEGER -> sql.addSql("INTEGER")
-                TINYINT -> TODO()
-                is RAW -> TODO()
-                TIME -> TODO()
-                TINYINT.UNSIGNED -> TODO()
-                is VARBINARY -> TODO()
-                is VARCHAR -> TODO()
-                BIGINT -> TODO()
-                SMALLINT.UNSIGNED -> TODO()
-                INTEGER.UNSIGNED -> TODO()
-                BIGINT.UNSIGNED -> TODO()
-            }
+            sql.compileDataType(type)
         }
 
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {

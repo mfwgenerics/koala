@@ -43,32 +43,7 @@ class H2Dialect: SqlDialect {
         }
 
         private fun compileDataType(type: UnmappedDataType<*>) {
-            computeWithColumnDefaults(type) {
-                when (it) {
-                    DATE -> TODO()
-                    DATETIME -> TODO()
-                    is DECIMAL -> TODO()
-                    DOUBLE -> sql.addSql("DOUBLE")
-                    FLOAT -> sql.addSql("REAL")
-                    INSTANT -> sql.addSql("TIMESTAMP WITH TIME ZONE")
-                    SMALLINT -> sql.addSql("SMALLINT")
-                    INTEGER -> sql.addSql("INTEGER")
-                    TINYINT -> sql.addSql("TINYINT")
-                    is RAW -> TODO()
-                    TIME -> TODO()
-                    is VARBINARY -> TODO()
-                    is VARCHAR -> {
-                        sql.addSql("VARCHAR")
-                        sql.parenthesize {
-                            sql.addSql("${it.maxLength}")
-                        }
-                    }
-                    BIGINT -> TODO()
-                    BOOLEAN -> sql.addSql("BOOL")
-                    TEXT -> sql.addSql("TEXT")
-                    else -> null
-                }
-            }
+            sql.compileDataType(type)
         }
 
         fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
@@ -185,26 +160,7 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileCastDataType(type: UnmappedDataType<*>) {
-            when (type) {
-                DATE -> TODO()
-                DATETIME -> TODO()
-                is DECIMAL -> TODO()
-                DOUBLE -> TODO()
-                FLOAT -> sql.addSql("REAL")
-                INSTANT -> TODO()
-                SMALLINT -> TODO()
-                INTEGER -> sql.addSql("INTEGER")
-                TINYINT -> TODO()
-                is RAW -> TODO()
-                TIME -> TODO()
-                TINYINT.UNSIGNED -> TODO()
-                is VARBINARY -> TODO()
-                is VARCHAR -> TODO()
-                BIGINT -> TODO()
-                SMALLINT.UNSIGNED -> TODO()
-                INTEGER.UNSIGNED -> TODO()
-                BIGINT.UNSIGNED -> TODO()
-            }
+            sql.compileDataType(type)
         }
 
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
