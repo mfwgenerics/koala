@@ -126,9 +126,8 @@ class VenueService(
                     set(UserVenueTable.user, it.user)
                     set(UserVenueTable.visited, it.state)
                 })
-                .onConflictSet(
-                    UserVenueTable.visited
-                )
+                .onDuplicate()
+                .set(UserVenueTable.visited)
                 .performWith(cxn)
         }
     }

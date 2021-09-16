@@ -7,6 +7,8 @@ import mfwgenerics.kotq.jdbc.JdbcConnection
 import mfwgenerics.kotq.jdbc.performWith
 import mfwgenerics.kotq.query.Alias
 import mfwgenerics.kotq.query.Tableless
+import mfwgenerics.kotq.query.fluent.OnConflictable
+import mfwgenerics.kotq.query.fluent.OnConflicted
 import mfwgenerics.kotq.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -663,14 +665,22 @@ abstract class QueryTests: ProvideTestDatabase {
         val z = column("z", INTEGER)
         val nz = column("nz", INTEGER)
 
-        init {
-            uniqueKey(x, y)
-        }
+        val conflictKey = uniqueKey(x, y)
     }
+
+    open val requiresOnConflictKey get() = false
 
     @Test
     open fun `on duplicate update with values`() = withCxn { cxn ->
         cxn.createTable(MergeTest)
+
+        fun OnConflictable.onConflict0(): OnConflicted {
+            return if (requiresOnConflictKey) {
+                onConflict(MergeTest.conflictKey)
+            } else {
+                onDuplicate()
+            }
+        }
 
         fun expectValueOf(x: Int, y: Int, z: Int, nz: Int) {
             val row = MergeTest
@@ -691,7 +701,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.z setTo 11,
                 MergeTest.nz setTo -11
             ))
-            .onConflictSet(MergeTest.z, MergeTest.nz)
+            .onConflict0().set(MergeTest.z, MergeTest.nz)
             .performWith(cxn)
 
         expectValueOf(4, 7, 11, -11)
@@ -703,7 +713,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.z setTo 28,
                 MergeTest.nz setTo -28
             ))
-            .onConflictSet(MergeTest.z, MergeTest.nz)
+            .onConflict0().set(MergeTest.z, MergeTest.nz)
             .performWith(cxn)
 
         expectValueOf(4, 7, 28, -28)
@@ -715,7 +725,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.z setTo 1,
                 MergeTest.nz setTo 0
             ))
-            .onConflictSet(MergeTest.z)
+            .onConflict0().set(MergeTest.z)
             .performWith(cxn)
 
         expectValueOf(4, 7, 1, -28)
@@ -727,7 +737,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.z setTo 5,
                 MergeTest.nz setTo 4
             ))
-            .onConflictUpdate(
+            .onConflict0().update(
                 MergeTest.z setTo MergeTest.z - Excluded[MergeTest.nz]
             )
             .performWith(cxn)

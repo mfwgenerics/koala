@@ -579,7 +579,10 @@ class MysqlDialect(): SqlDialect {
 
             insert.onConflict?.let { onConflict ->
                 check (onConflict is OnConflictAction.Update)
-                    { "MySQL does not support onConflictIgnore" }
+                    { "MySQL does not support onConflict Ignore" }
+
+                check (onConflict.keys.isEmpty())
+                    { "MySQL does not support onConflict keys" }
 
                 sql.addSql("\nON DUPLICATE KEY UPDATE")
 

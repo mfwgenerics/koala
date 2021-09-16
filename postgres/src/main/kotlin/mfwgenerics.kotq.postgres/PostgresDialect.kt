@@ -1,8 +1,10 @@
 package mfwgenerics.kotq.postgres
 
 import mfwgenerics.kotq.data.*
+import mfwgenerics.kotq.ddl.IndexType
 import mfwgenerics.kotq.ddl.Table
 import mfwgenerics.kotq.ddl.TableColumn
+import mfwgenerics.kotq.ddl.built.BuiltIndexDef
 import mfwgenerics.kotq.ddl.built.ColumnDefaultExpr
 import mfwgenerics.kotq.ddl.built.ColumnDefaultValue
 import mfwgenerics.kotq.ddl.diff.SchemaDiff
@@ -21,6 +23,7 @@ class PostgresDialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addLiteral(expr)
+            is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
             else -> error("not implemented")
         }
     }
@@ -35,6 +38,25 @@ class PostgresDialect: SqlDialect {
             INTEGER -> sql.addSql("SERIAL")
             BIGINT -> sql.addSql("BIGSERIAL")
             else -> error("no serial type corresponds to $type")
+        }
+    }
+
+    private fun compileIndexDef(sql: SqlTextBuilder, name: String, def: BuiltIndexDef) {
+        sql.addSql("CONSTRAINT ")
+
+        sql.addIdentifier(name)
+
+        sql.addSql(when (def.type) {
+            IndexType.PRIMARY -> " PRIMARY KEY"
+            IndexType.UNIQUE -> " UNIQUE"
+            IndexType.INDEX -> " INDEX"
+        })
+
+        sql.addSql(" ")
+        sql.parenthesize {
+            sql.prefix("", ", ").forEach(def.keys.keys) { key ->
+                compileDefaultExpr(sql, key)
+            }
         }
     }
 
@@ -86,6 +108,12 @@ class PostgresDialect: SqlDialect {
                         }
                     }
                     sql.addSql(")")
+                }
+            }
+
+            table.indexes.forEach { index ->
+                comma.next {
+                    compileIndexDef(sql, index.name, index.def)
                 }
             }
 
@@ -445,7 +473,8 @@ class PostgresDialect: SqlDialect {
             val columns = insert.query.columns
 
             sql.addIdentifier(relvar.relvarName)
-            sql.addSql(" ")
+            sql.addSql(" AS ")
+            sql.addSql(scope[insert.relation.computedAlias])
 
             sql.parenthesize {
                 sql.prefix("", ", ").forEach(columns.values) {
@@ -460,6 +489,40 @@ class PostgresDialect: SqlDialect {
             sql.addSql("\n")
 
             compileQuery(emptyList(), insert.query, true)
+
+            insert.onConflict?.let { onConflict ->
+                sql.addSql("\nON CONFLICT ON CONSTRAINT ")
+                sql.addIdentifier(checkNotNull(onConflict.keys.singleOrNull()) {
+                    "Postgres ON CONFLICT requires a key constraint"
+                }.name)
+
+                when (onConflict) {
+                    is OnConflictAction.Ignore -> {
+                        sql.addSql(" DO NOTHING")
+                    }
+                    is OnConflictAction.Update -> {
+                        sql.addSql(" DO UPDATE SET")
+
+                        val innerScope = scope.innerScope()
+
+                        relvar.columns.forEach {
+                            innerScope.internal(it, it.symbol, insert.relation.computedAlias)
+                        }
+
+                        val updateCtx = Compilation(innerScope, sql)
+
+                        sql.prefix(" ", "\n,").forEach(onConflict.assignments) {
+                            when (val column = it.reference) {
+                                is RelvarColumn<*> -> sql.addIdentifier(column.symbol)
+                                else -> error("expected column")
+                            }
+
+                            sql.addSql(" = ")
+                            updateCtx.compileExpr(it.expr)
+                        }
+                    }
+                }
+            }
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -498,7 +561,11 @@ class PostgresDialect: SqlDialect {
 
         override fun excluded(reference: Reference<*>) {
             sql.addSql("EXCLUDED.")
-            compileReference(reference)
+
+            when (reference) {
+                is RelvarColumn<*> -> sql.addIdentifier(reference.symbol)
+                else -> compileReference(reference)
+            }
         }
 
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {

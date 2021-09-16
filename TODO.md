@@ -8,3 +8,9 @@
 * Support CHECK
 * Emit CREATE TABLE INDEX as separate DDL in H2
 * onConflictIgnore compatibility flag for MySQL dialect that uses INSERT IGNORE
+* Update assignments works with Column LHS rather than Reference
+* Better Postgres ON CONFLICT support - allow columns and WHERE to be conflict targets
+* Insert ignore for mysql?
+* Temporary table support
+* Views support
+* Correct way for implementations to check dialect?
