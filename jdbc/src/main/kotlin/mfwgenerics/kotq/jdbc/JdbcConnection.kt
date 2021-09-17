@@ -66,25 +66,25 @@ class JdbcConnection(
         }
     }
 
-    private fun execute(insert: Inserted) {
+    private fun execute(insert: Inserted): Int {
         val built = insert.buildInsert()
 
         val sql = dialect.compile(built)
 
         try {
-            prepare(sql).execute()
+            return prepare(sql).executeUpdate()
         } catch (ex: Exception) {
             throw GeneratedSqlException(sql, ex)
         }
     }
 
-    private fun execute(updated: Updated) {
+    private fun execute(updated: Updated): Int {
         val built = updated.buildUpdate()
 
         val sql = dialect.compile(built)
 
         try {
-            prepare(sql).execute()
+            return prepare(sql).executeUpdate()
         } catch (ex: Exception) {
             throw GeneratedSqlException(sql, ex)
         }
@@ -145,26 +145,27 @@ class JdbcConnection(
         }
     }
 
-    private fun execute(deleted: Deleted) {
+    private fun execute(deleted: Deleted): Int {
         val built = deleted.buildDelete()
 
         val sql = dialect.compile(built)
 
         try {
-            prepare(sql).execute()
+            return prepare(sql).executeUpdate()
         } catch (ex: Exception) {
             throw GeneratedSqlException(sql, ex)
         }
     }
 
-    /* can't correctly type this without something like GADTs */
-    @Suppress("unchecked_cast", "implicit_cast_to_any")
-    override fun <T> perform(performable: Performable<T>): T = when (performable) {
-        is Inserted -> execute(performable)
-        is Queryable -> query(performable)
-        is Updated -> execute(performable)
-        is Deleted -> execute(performable)
-    } as T
+    override fun perform(query: PerformableQuery): RowSequence = when (query) {
+        is Queryable -> query(query)
+    }
+
+    override fun perform(statement: PerformableStatement): Int = when (statement) {
+        is Inserted -> execute(statement)
+        is Updated -> execute(statement)
+        is Deleted -> execute(statement)
+    }
 
     override fun commit() {
         jdbc.commit()

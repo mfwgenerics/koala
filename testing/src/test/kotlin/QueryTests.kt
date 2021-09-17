@@ -163,7 +163,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val janeId = customerIds[0]
         val bobId = customerIds[1]
 
-        PurchaseTable
+        val inserted = PurchaseTable
             .insert(values(
                 rowOf(
                     PurchaseTable.shop setTo groceriesId,
@@ -192,6 +192,8 @@ abstract class QueryTests: ProvideTestDatabase {
                 ),
             ))
             .performWith(cxn)
+
+        assertEquals(4, inserted)
     }
 
     @Test
@@ -282,7 +284,7 @@ abstract class QueryTests: ProvideTestDatabase {
     fun `update through not exists`() = withCxn { cxn ->
         createAndPopulate(cxn)
 
-        CustomerTable
+        val updated = CustomerTable
             .where(notExists(PurchaseTable
                 .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
                 .where(ShopTable.name eq "Hardware")
@@ -295,12 +297,30 @@ abstract class QueryTests: ProvideTestDatabase {
             )
             .performWith(cxn)
 
+        assertEquals(1, updated)
+
         CustomerTable
             .where(CustomerTable.firstName eq "Bawb")
             .where(CustomerTable.lastName eq "Bob")
             .select(CustomerTable)
             .performWith(cxn)
             .single()
+    }
+
+    @Test
+    fun `multi update`() = withCxn { cxn ->
+        createAndPopulate(cxn)
+
+        val expected = PurchaseTable
+            .selectAll()
+            .performWith(cxn)
+            .count()
+
+        val matched = PurchaseTable
+            .update(PurchaseTable.product setTo "Pear")
+            .performWith(cxn)
+
+        assertEquals(expected, matched)
     }
 
     @Test
@@ -656,7 +676,7 @@ abstract class QueryTests: ProvideTestDatabase {
         assertListOfListsEquals(expected, actual)
     }
 
-    object MergeTest : Table("MergeTest") {
+    object MergeTest : Table("EXCLUDED") {
         val id = column("id", INTEGER.autoIncrement().primaryKey())
 
         val x = column("x", INTEGER)

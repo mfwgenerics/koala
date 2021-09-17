@@ -1,6 +1,10 @@
 package mfwgenerics.kotq.jdbc
 
-import mfwgenerics.kotq.query.Performable
+import mfwgenerics.kotq.query.PerformableQuery
+import mfwgenerics.kotq.query.PerformableStatement
 
-fun <T> Performable<T>.performWith(cxn: JdbcConnection): T =
+fun PerformableQuery.performWith(cxn: JdbcConnection) =
+    cxn.perform(this)
+
+fun PerformableStatement.performWith(cxn: JdbcConnection) =
     cxn.perform(this)

@@ -512,11 +512,7 @@ class PostgresDialect: SqlDialect {
                         val updateCtx = Compilation(innerScope, sql)
 
                         sql.prefix(" ", "\n,").forEach(onConflict.assignments) {
-                            when (val column = it.reference) {
-                                is RelvarColumn<*> -> sql.addIdentifier(column.symbol)
-                                else -> error("expected column")
-                            }
-
+                            sql.addIdentifier(it.reference.symbol)
                             sql.addSql(" = ")
                             updateCtx.compileExpr(it.expr)
                         }
