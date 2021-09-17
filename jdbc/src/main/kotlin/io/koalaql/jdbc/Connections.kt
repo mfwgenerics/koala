@@ -4,7 +4,7 @@ import io.koalaql.query.PerformableQuery
 import io.koalaql.query.PerformableStatement
 
 fun PerformableQuery.performWith(cxn: JdbcConnection) =
-    cxn.perform(this)
+    cxn.query(this)
 
 fun PerformableStatement.performWith(cxn: JdbcConnection) =
-    cxn.perform(this)
+    cxn.statement(this)

@@ -8,6 +8,7 @@ import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaDiff
 import io.koalaql.ddl.createTables as createTablesDdl
 import io.koalaql.dialect.SqlDialect
+import io.koalaql.event.ConnectionEventWriter
 import java.sql.Connection
 
 class JdbcDatabase(
@@ -41,7 +42,7 @@ class JdbcDatabase(
         transact { it.ddl(diff) }
     }
 
-    override fun connect(isolation: Isolation): JdbcConnection {
+    override fun connect(isolation: Isolation, events: ConnectionEventWriter): JdbcConnection {
         val jdbc = provider.connect()
 
         if (jdbc.autoCommit) jdbc.autoCommit = false

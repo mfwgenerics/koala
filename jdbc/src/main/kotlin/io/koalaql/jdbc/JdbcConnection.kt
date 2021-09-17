@@ -157,11 +157,11 @@ class JdbcConnection(
         }
     }
 
-    override fun perform(query: PerformableQuery): RowSequence = when (query) {
+    override fun query(query: PerformableQuery): RowSequence = when (query) {
         is Queryable -> query(query)
     }
 
-    override fun perform(statement: PerformableStatement): Int = when (statement) {
+    override fun statement(statement: PerformableStatement): Int = when (statement) {
         is Inserted -> execute(statement)
         is Updated -> execute(statement)
         is Deleted -> execute(statement)

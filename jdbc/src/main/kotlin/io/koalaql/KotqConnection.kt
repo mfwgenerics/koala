@@ -5,8 +5,8 @@ import io.koalaql.query.PerformableStatement
 import io.koalaql.values.RowSequence
 
 interface KotqConnection {
-    fun perform(query: PerformableQuery): RowSequence
-    fun perform(statement: PerformableStatement): Int
+    fun query(query: PerformableQuery): RowSequence
+    fun statement(statement: PerformableStatement): Int
 
     fun commit()
     fun rollback()

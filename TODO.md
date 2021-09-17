@@ -14,3 +14,4 @@
 * Views support
 * Correct way for implementations to check dialect?
 * Prevent delete/update without where or other limiting condition
+* Complete + test connection event logging interface
