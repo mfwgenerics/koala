@@ -1,9 +1,9 @@
-import mfwgenerics.kotq.data.INSTANT
-import mfwgenerics.kotq.data.INTEGER
-import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.dsl.keys
-import mfwgenerics.kotq.dsl.values
-import mfwgenerics.kotq.jdbc.performWith
+import io.koalaql.data.INSTANT
+import io.koalaql.data.INTEGER
+import io.koalaql.ddl.Table
+import io.koalaql.dsl.keys
+import io.koalaql.dsl.values
+import io.koalaql.jdbc.performWith
 import java.time.Instant
 import kotlin.test.Test
 

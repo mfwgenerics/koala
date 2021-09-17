@@ -1,6 +1,6 @@
-import mfwgenerics.kotq.jdbc.JdbcDatabase
-import mfwgenerics.kotq.jdbc.JdbcProvider
-import mfwgenerics.kotq.postgres.PostgresDialect
+import io.koalaql.jdbc.JdbcDatabase
+import io.koalaql.jdbc.JdbcProvider
+import io.koalaql.postgres.PostgresDialect
 import java.sql.Connection
 import java.sql.DriverManager
 import kotlin.test.Test

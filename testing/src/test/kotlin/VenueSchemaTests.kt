@@ -1,9 +1,9 @@
-import mfwgenerics.kotq.test.models.*
-import mfwgenerics.kotq.test.service.VenueService
-import mfwgenerics.kotq.test.table.UserTable
-import mfwgenerics.kotq.test.table.UserVenueTable
-import mfwgenerics.kotq.test.table.VenueTable
-import mfwgenerics.kotq.test.table.VenueType
+import io.koalaql.test.models.*
+import io.koalaql.test.service.VenueService
+import io.koalaql.test.table.UserTable
+import io.koalaql.test.table.UserVenueTable
+import io.koalaql.test.table.VenueTable
+import io.koalaql.test.table.VenueType
 import java.time.Instant
 import java.time.ZoneId
 import kotlin.test.Test

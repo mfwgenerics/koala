@@ -1,6 +1,6 @@
-import mfwgenerics.kotq.jdbc.JdbcDatabase
-import mfwgenerics.kotq.jdbc.JdbcProvider
-import mfwgenerics.kotq.mysql.MysqlDialect
+import io.koalaql.jdbc.JdbcDatabase
+import io.koalaql.jdbc.JdbcProvider
+import io.koalaql.mysql.MysqlDialect
 import java.sql.Connection
 import java.sql.DriverManager
 

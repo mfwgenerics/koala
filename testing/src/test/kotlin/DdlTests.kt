@@ -1,15 +1,15 @@
-import mfwgenerics.kotq.data.INTEGER
-import mfwgenerics.kotq.data.VARCHAR
-import mfwgenerics.kotq.ddl.BaseColumnType
-import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.ddl.createTables
-import mfwgenerics.kotq.ddl.diff.ColumnDiff
-import mfwgenerics.kotq.ddl.diff.SchemaDiff
-import mfwgenerics.kotq.ddl.diff.TableDiff
-import mfwgenerics.kotq.dsl.keys
-import mfwgenerics.kotq.jdbc.JdbcConnection
-import mfwgenerics.kotq.jdbc.TableDiffer
-import mfwgenerics.kotq.test.assertMatch
+import io.koalaql.data.INTEGER
+import io.koalaql.data.VARCHAR
+import io.koalaql.ddl.BaseColumnType
+import io.koalaql.ddl.Table
+import io.koalaql.ddl.createTables
+import io.koalaql.ddl.diff.ColumnDiff
+import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.TableDiff
+import io.koalaql.dsl.keys
+import io.koalaql.jdbc.JdbcConnection
+import io.koalaql.jdbc.TableDiffer
+import io.koalaql.test.assertMatch
 import kotlin.test.Test
 
 abstract class DdlTests: ProvideTestDatabase {

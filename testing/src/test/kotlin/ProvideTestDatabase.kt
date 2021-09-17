@@ -1,6 +1,6 @@
-import mfwgenerics.kotq.ddl.Table
-import mfwgenerics.kotq.jdbc.JdbcConnection
-import mfwgenerics.kotq.jdbc.JdbcDatabase
+import io.koalaql.ddl.Table
+import io.koalaql.jdbc.JdbcConnection
+import io.koalaql.jdbc.JdbcDatabase
 import java.security.SecureRandom
 import kotlin.math.absoluteValue
 
