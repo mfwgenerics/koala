@@ -133,7 +133,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .insert(values(
                 rowOf(ShopTable.name setTo "Hardware"),
                 rowOf(ShopTable.name setTo "Groceries"),
-                rowOf(ShopTable.name setTo "Stationary")
+                rowOf(ShopTable.name setTo "Stationery")
             ))
             .returning(ShopTable.id)
             .performWith(cxn)
@@ -142,7 +142,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val hardwareId = shopIds[0]
         val groceriesId = shopIds[1]
-        val stationaryId = shopIds[2]
+        val stationeryId = shopIds[2]
 
         val customerIds = CustomerTable
             .insert(values(
@@ -185,7 +185,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     PurchaseTable.price setTo 8000
                 ),
                 rowOf(
-                    PurchaseTable.shop setTo stationaryId,
+                    PurchaseTable.shop setTo stationeryId,
                     PurchaseTable.customer setTo bobId,
                     PurchaseTable.product setTo "Pen",
                     PurchaseTable.price setTo 500
@@ -256,7 +256,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val expectedMostExpensiveByStore = listOf(
             listOf("Groceries", "Pear"),
             listOf("Hardware", "Hammer"),
-            listOf("Stationary", "Pen")
+            listOf("Stationery", "Pen")
         )
 
         val actualMostExpensiveByStore = PurchaseTable
@@ -665,11 +665,11 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val expected = listOf(
             listOf("Apple", 150, "Groceries", "Pear", 200, "Groceries"),
-            listOf("Apple", 150, "Groceries", "Pen", 500, "Stationary"),
+            listOf("Apple", 150, "Groceries", "Pen", 500, "Stationery"),
             listOf("Apple", 150, "Groceries", "Hammer", 8000, "Hardware"),
-            listOf("Pear", 200, "Groceries", "Pen", 500, "Stationary"),
+            listOf("Pear", 200, "Groceries", "Pen", 500, "Stationery"),
             listOf("Pear", 200, "Groceries", "Hammer", 8000, "Hardware"),
-            listOf("Pen", 500, "Stationary", "Hammer", 8000, "Hardware"),
+            listOf("Pen", 500, "Stationery", "Hammer", 8000, "Hardware"),
             listOf("Hammer", 8000, "Hardware", null, null, null)
         )
 
