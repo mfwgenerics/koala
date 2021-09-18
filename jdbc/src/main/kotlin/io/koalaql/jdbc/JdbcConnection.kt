@@ -8,6 +8,8 @@ import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.createTables
 import io.koalaql.ddl.diff.SchemaDiff
 import io.koalaql.dialect.SqlDialect
+import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.event.ConnectionQueryType
 import io.koalaql.query.*
 import io.koalaql.query.built.BuiltReturningInsert
 import io.koalaql.query.built.BuiltSubquery
@@ -21,7 +23,8 @@ import java.sql.Statement
 class JdbcConnection(
     val jdbc: Connection,
     private val dialect: SqlDialect,
-    private val typeMappings: JdbcTypeMappings = JdbcTypeMappings()
+    private val typeMappings: JdbcTypeMappings,
+    private val events: ConnectionEventWriter
 ): KotqConnection {
     fun createTable(vararg tables: Table) {
         ddl(createTables(*tables))
@@ -33,15 +36,11 @@ class JdbcConnection(
         }
     }
 
-    private fun prepare(sql: SqlText, generatedKeys: Boolean = false): PreparedStatement {
-        val result = try {
-            if (generatedKeys) {
-                jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
-            } else {
-                jdbc.prepareStatement(sql.sql)
-            }
-        } catch (ex: Exception) {
-            throw GeneratedSqlException(sql, ex)
+    private fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
+        val result = if (generatedKeys) {
+            jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
+        } else {
+            jdbc.prepareStatement(sql.sql)
         }
 
         sql.parameters.forEachIndexed { ix, literal ->
@@ -56,13 +55,39 @@ class JdbcConnection(
         return result
     }
 
+    private inline fun <R> prepareAndThen(
+        sql: SqlText,
+        generatedKeys: Boolean = false,
+        block: PreparedStatement.() -> R
+    ): R {
+        return try {
+            prepare(sql, generatedKeys).block()
+        } catch (ex: Exception) {
+            throw GeneratedSqlException(sql, ex)
+        }
+    }
+
+    private fun prepareAndUpdate(
+        type: ConnectionQueryType,
+        sql: SqlText
+    ): Int = prepareAndThen(sql) {
+        val event = events.perform(type, sql)
+
+        val rows = try {
+            executeUpdate()
+        } catch (ex: Exception) {
+            event.failed(ex)
+            throw ex
+        }
+
+        event.succeeded(rows)
+
+        rows
+    }
+
     fun ddl(diff: SchemaDiff) {
         dialect.ddl(diff).forEach {
-            try {
-                prepare(it).execute()
-            } catch (ex: Exception) {
-                throw GeneratedSqlException(it, ex)
-            }
+            prepareAndThen(it) { execute() }
         }
     }
 
@@ -71,11 +96,7 @@ class JdbcConnection(
 
         val sql = dialect.compile(built)
 
-        try {
-            return prepare(sql).executeUpdate()
-        } catch (ex: Exception) {
-            throw GeneratedSqlException(sql, ex)
-        }
+        return prepareAndUpdate(ConnectionQueryType.INSERT, sql)
     }
 
     private fun execute(updated: Updated): Int {
@@ -83,11 +104,7 @@ class JdbcConnection(
 
         val sql = dialect.compile(built)
 
-        try {
-            return prepare(sql).executeUpdate()
-        } catch (ex: Exception) {
-            throw GeneratedSqlException(sql, ex)
-        }
+        return prepareAndUpdate(ConnectionQueryType.UPDATE, sql)
     }
 
     private fun query(queryable: Queryable): RowSequence {
@@ -99,8 +116,6 @@ class JdbcConnection(
 
                 val sql = dialect.compile(built.insert)
 
-                val prepared = prepare(sql, true)
-
                 val keys = built.returning
                 if (keys.size != 1) err()
 
@@ -109,29 +124,45 @@ class JdbcConnection(
 
                 if (!column.builtDef.autoIncrement) err()
 
-                try {
-                    prepared.execute()
-                } catch (ex: Exception) {
-                    throw GeneratedSqlException(sql, ex)
+                val results = prepareAndThen(sql, true) {
+                    val event = events.perform(ConnectionQueryType.INSERT, sql)
+
+                    val rows = try {
+                        executeUpdate()
+                    } catch (ex: Exception) {
+                        event.failed(ex)
+                        throw ex
+                    }
+
+                    event.succeeded(rows)
+
+                    generatedKeys
                 }
 
                 return object : RowSequence {
                     override val columns: LabelList = LabelList(built.returning)
 
                     override fun rowIterator(): RowIterator {
-                        return AdaptedResultSet(typeMappings, columns, prepared.generatedKeys)
+                        return AdaptedResultSet(typeMappings, columns, results)
                     }
                 }
             }
             is BuiltSubquery -> {
                 val sql = dialect.compile(built)
 
-                val prepared = prepare(sql)
+                val results = prepareAndThen(sql) {
+                    val event = events.perform(ConnectionQueryType.QUERY, sql)
 
-                val results = try {
-                    prepared.executeQuery()
-                } catch (ex: Exception) {
-                    throw GeneratedSqlException(sql, ex)
+                    val results = try {
+                        executeQuery()
+                    } catch (ex: Exception) {
+                        event.failed(ex)
+                        throw ex
+                    }
+
+                    event.succeeded(null)
+
+                    results
                 }
 
                 return object : RowSequence {
@@ -150,11 +181,7 @@ class JdbcConnection(
 
         val sql = dialect.compile(built)
 
-        try {
-            return prepare(sql).executeUpdate()
-        } catch (ex: Exception) {
-            throw GeneratedSqlException(sql, ex)
-        }
+        return prepareAndUpdate(ConnectionQueryType.DELETE, sql)
     }
 
     override fun query(query: PerformableQuery): RowSequence = when (query) {
@@ -168,14 +195,29 @@ class JdbcConnection(
     }
 
     override fun commit() {
-        jdbc.commit()
+        try {
+            jdbc.commit()
+        } catch (ex: Exception) {
+            events.committed(ex)
+            throw ex
+        }
+
+        events.committed(null)
     }
 
     override fun rollback() {
-        jdbc.rollback()
+        try {
+            jdbc.rollback()
+        } catch (ex: Exception) {
+            events.rollbacked(ex)
+            throw ex
+        }
+
+        events.rollbacked(null)
     }
 
     override fun close() {
+        events.closed()
         jdbc.close()
     }
 }

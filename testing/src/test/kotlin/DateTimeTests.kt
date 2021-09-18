@@ -19,7 +19,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `test insert and order by instant`() = withCxn { cxn ->
+    fun `test insert and order by instant`() = withCxn { cxn, logs ->
         cxn.createTable(EventTable)
 
         val instants = (1000..1010L).map {

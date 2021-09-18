@@ -47,7 +47,7 @@ abstract class DdlTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `empty diff`() = withCxn { cxn ->
+    fun `empty diff`() = withCxn { cxn, logs ->
         cxn.ddl(createTables(
             CustomerTable
         ))
@@ -56,7 +56,7 @@ abstract class DdlTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `change varchar lengths and add unique key`() = withCxn { cxn ->
+    fun `change varchar lengths and add unique key`() = withCxn { cxn, logs ->
         cxn.ddl(createTables(
             CustomerTable
         ))

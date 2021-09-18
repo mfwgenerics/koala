@@ -61,7 +61,8 @@ class JdbcDatabase(
         return JdbcConnection(
             jdbc,
             dialect,
-            typeMappings
+            typeMappings,
+            events
         )
     }
 
