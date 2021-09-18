@@ -278,6 +278,10 @@ abstract class QueryTests: ProvideTestDatabase {
             .toList()
 
         assertListOfListsEquals(expectedMostExpensiveByStore, actualMostExpensiveByStore)
+
+        logs.forEach {
+            println(it)
+        }
     }
 
     @Test

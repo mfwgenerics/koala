@@ -29,6 +29,10 @@ class TextEventLogger(
             override fun failed(ex: Exception) {
                 log("${type.name} failed with $ex")
             }
+
+            override fun finished(rows: Int) {
+                log("${type.name} finished after $rows")
+            }
         }
     }
 

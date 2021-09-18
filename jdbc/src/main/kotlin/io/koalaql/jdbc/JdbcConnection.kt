@@ -108,9 +108,7 @@ class JdbcConnection(
     }
 
     private fun query(queryable: Queryable): RowSequence {
-        val built = queryable.buildQuery()
-
-        when (built) {
+        return when (val built = queryable.buildQuery()) {
             is BuiltReturningInsert -> {
                 fun err(): Nothing = error("RETURNING must expose a single auto-generated key")
 
@@ -124,7 +122,7 @@ class JdbcConnection(
 
                 if (!column.builtDef.autoIncrement) err()
 
-                val results = prepareAndThen(sql, true) {
+                prepareAndThen(sql, true) {
                     val event = events.perform(ConnectionQueryType.INSERT, sql)
 
                     val rows = try {
@@ -136,21 +134,18 @@ class JdbcConnection(
 
                     event.succeeded(rows)
 
-                    generatedKeys
-                }
-
-                return object : RowSequence {
-                    override val columns: LabelList = LabelList(built.returning)
-
-                    override fun rowIterator(): RowIterator {
-                        return AdaptedResultSet(typeMappings, columns, results)
-                    }
+                    ResultSetRowSequence(
+                        LabelList(built.returning),
+                        event,
+                        typeMappings,
+                        generatedKeys
+                    )
                 }
             }
             is BuiltSubquery -> {
                 val sql = dialect.compile(built)
 
-                val results = prepareAndThen(sql) {
+                prepareAndThen(sql) {
                     val event = events.perform(ConnectionQueryType.QUERY, sql)
 
                     val results = try {
@@ -162,15 +157,12 @@ class JdbcConnection(
 
                     event.succeeded(null)
 
-                    results
-                }
-
-                return object : RowSequence {
-                    override val columns: LabelList = built.columns
-
-                    override fun rowIterator(): RowIterator {
-                        return AdaptedResultSet(typeMappings, columns, results)
-                    }
+                    ResultSetRowSequence(
+                        built.columns,
+                        event,
+                        typeMappings,
+                        results
+                    )
                 }
             }
         }
