@@ -21,127 +21,15 @@ import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class MysqlDialect(): SqlDialect {
-    private fun compileDdlExpr(sql: SqlTextBuilder, expr: Expr<*>) {
-        when (expr) {
-            is Literal -> sql.addLiteral(expr)
-            is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
-            else -> error("not implemented")
-        }
-    }
-
-    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-
-
-        when (type) {
-            DATE -> TODO()
-            DATETIME -> TODO()
-            is DECIMAL -> TODO()
-            DOUBLE -> TODO()
-            FLOAT -> TODO()
-            INSTANT -> TODO()
-            SMALLINT -> sql.addSql("SMALLINT")
-            INTEGER -> sql.addSql("INTEGER")
-            TINYINT -> TODO()
-            is RAW -> TODO()
-            TIME -> TODO()
-            is VARBINARY -> TODO()
-            is VARCHAR -> {
-                sql.addSql("VARCHAR")
-                sql.parenthesize {
-                    sql.addSql("${type.maxLength}")
-                }
-            }
-            BIGINT -> TODO()
-            TINYINT.UNSIGNED -> TODO()
-            SMALLINT.UNSIGNED -> TODO()
-            INTEGER.UNSIGNED -> TODO()
-            BIGINT.UNSIGNED -> TODO()
-        }
-    }
-
-    private fun compileColumnDef(sql: SqlTextBuilder, column: TableColumn<*>) {
-        val def = column.builtDef
-
-        sql.addIdentifier(column.symbol)
-        sql.addSql(" ")
-        compileDataType(sql, def.columnType.dataType)
-
-        if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
-        if (def.notNull) sql.addSql(" NOT NULL")
-
-        def.default?.let { default ->
-            @Suppress("unchecked_cast")
-            val finalExpr = when (default) {
-                is ColumnDefaultExpr -> default.expr
-                is ColumnDefaultValue -> Literal(
-                    def.columnType.type as KClass<Any>,
-                    default.value
-                )
-            }
-
-            sql.addSql(" DEFAULT ")
-            compileDdlExpr(sql, finalExpr)
-        }
-    }
-
-    private fun compileIndexDef(sql: SqlTextBuilder, name: String, def: BuiltIndexDef) {
-        sql.addSql(when (def.type) {
-            IndexType.PRIMARY -> "PRIMARY KEY"
-            IndexType.UNIQUE -> "UNIQUE KEY"
-            IndexType.INDEX -> "INDEX"
-        })
-
-        sql.addSql(" ")
-        sql.addIdentifier(name)
-        sql.parenthesize {
-            sql.prefix("", ", ").forEach(def.keys.keys) { key ->
-                compileDdlExpr(sql, key)
-            }
-        }
-    }
-
-    private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE IF NOT EXISTS ")
-
-        sql.addSql(table.relvarName)
-        sql.parenthesize {
-            val comma = sql.prefix("\n", ",\n")
-
-            comma.forEach(table.columns) {
-                compileColumnDef(sql, it)
-            }
-
-            table.primaryKey?.let { pk ->
-                comma.next {
-                    sql.addSql("CONSTRAINT ")
-                    sql.addIdentifier(pk.name)
-                    sql.addSql(" PRIMARY KEY (")
-                    sql.prefix("", ", ").forEach(pk.def.keys.keys) {
-                        when (it) {
-                            is TableColumn<*> -> sql.addIdentifier(it.symbol)
-                            else -> error("expression keys unsupported")
-                        }
-                    }
-                    sql.addSql(")")
-                }
-            }
-
-            table.indexes.forEach { index ->
-                comma.next {
-                    compileIndexDef(sql, index.name, index.def)
-                }
-            }
-
-            sql.addSql("\n")
-        }
-    }
-
     override fun ddl(diff: SchemaDiff): List<SqlText> {
         val results = mutableListOf<(SqlTextBuilder) -> Unit>()
 
         diff.tables.created.forEach { (_, table) ->
             results.add { sql ->
-                compileCreateTable(sql, table)
+                Compilation(
+                    scope = Scope(NameRegistry()),
+                    sql = sql
+                ).compileCreateTable(sql, table)
             }
         }
 
@@ -151,7 +39,11 @@ class MysqlDialect(): SqlDialect {
                     sql.addSql("ALTER TABLE ")
                     sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" ADD COLUMN ")
-                    compileColumnDef(sql, column)
+
+                    Compilation(
+                        scope = Scope(NameRegistry()),
+                        sql = sql
+                    ).compileColumnDef(sql, column)
                 }
             }
 
@@ -160,7 +52,11 @@ class MysqlDialect(): SqlDialect {
                     sql.addSql("ALTER TABLE ")
                     sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" MODIFY COLUMN ")
-                    compileColumnDef(sql, column.newColumn)
+
+                    Compilation(
+                        scope = Scope(NameRegistry()),
+                        sql = sql
+                    ).compileColumnDef(sql, column.newColumn)
                 }
             }
 
@@ -178,7 +74,11 @@ class MysqlDialect(): SqlDialect {
                     sql.addSql("ALTER TABLE ")
                     sql.addIdentifier(table.newTable.relvarName)
                     sql.addSql(" ADD ")
-                    compileIndexDef(sql, name, index)
+
+                    Compilation(
+                        scope = Scope(NameRegistry()),
+                        sql = sql
+                    ).compileIndexDef(sql, name, index)
                 }
             }
 
@@ -208,6 +108,98 @@ class MysqlDialect(): SqlDialect {
         val scope: Scope,
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS)
     ): ExpressionCompiler {
+        private fun compileDdlExpr(expr: Expr<*>) {
+            when (expr) {
+                is Literal -> sql.addLiteral(expr)
+                is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
+                else -> compileExpr(expr)
+            }
+        }
+
+        private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
+            when (type) {
+                INSTANT -> sql.addSql("DATETIME")
+                else -> sql.compileDataType(type)
+            }
+        }
+
+        fun compileColumnDef(sql: SqlTextBuilder, column: TableColumn<*>) {
+            val def = column.builtDef
+
+            sql.addIdentifier(column.symbol)
+            sql.addSql(" ")
+            compileDataType(sql, def.columnType.dataType)
+
+            if (def.autoIncrement) sql.addSql(" AUTO_INCREMENT")
+            if (def.notNull) sql.addSql(" NOT NULL")
+
+            def.default?.let { default ->
+                @Suppress("unchecked_cast")
+                val finalExpr = when (default) {
+                    is ColumnDefaultExpr -> default.expr
+                    is ColumnDefaultValue -> Literal(
+                        def.columnType.type as KClass<Any>,
+                        default.value
+                    )
+                }
+
+                sql.addSql(" DEFAULT ")
+                compileDdlExpr(finalExpr)
+            }
+        }
+
+        fun compileIndexDef(sql: SqlTextBuilder, name: String, def: BuiltIndexDef) {
+            sql.addSql(when (def.type) {
+                IndexType.PRIMARY -> "PRIMARY KEY"
+                IndexType.UNIQUE -> "UNIQUE KEY"
+                IndexType.INDEX -> "INDEX"
+            })
+
+            sql.addSql(" ")
+            sql.addIdentifier(name)
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(def.keys.keys) { key ->
+                    compileDdlExpr(key)
+                }
+            }
+        }
+
+        fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
+            sql.addSql("CREATE TABLE IF NOT EXISTS ")
+
+            sql.addSql(table.relvarName)
+            sql.parenthesize {
+                val comma = sql.prefix("\n", ",\n")
+
+                comma.forEach(table.columns) {
+                    compileColumnDef(sql, it)
+                }
+
+                table.primaryKey?.let { pk ->
+                    comma.next {
+                        sql.addSql("CONSTRAINT ")
+                        sql.addIdentifier(pk.name)
+                        sql.addSql(" PRIMARY KEY (")
+                        sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                            when (it) {
+                                is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                                else -> error("expression keys unsupported")
+                            }
+                        }
+                        sql.addSql(")")
+                    }
+                }
+
+                table.indexes.forEach { index ->
+                    comma.next {
+                        compileIndexDef(sql, index.name, index.def)
+                    }
+                }
+
+                sql.addSql("\n")
+            }
+        }
+
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
             compileReference(value)
         }
@@ -450,6 +442,14 @@ class MysqlDialect(): SqlDialect {
             ).compileSelect(outerSelect, selectQuery)
         }
 
+        fun compileRelabels(labels: LabelList) {
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(labels.values) {
+                    sql.addIdentifier(scope.nameOf(it))
+                }
+            }
+        }
+
         fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
             sql
                 .prefix(
@@ -460,12 +460,18 @@ class MysqlDialect(): SqlDialect {
                     "\n, "
                 )
                 .forEach(withs) {
+                    sql.addSql(scope[it.cte])
+
+                    when (val query = it.query) {
+                        is BuiltValuesQuery -> compileRelabels(query.columns)
+                        else -> { }
+                    }
+
+                    sql.addSql(" AS (")
+
                     val innerScope = scope.innerScope()
 
                     it.query.populateScope(innerScope)
-
-                    sql.addSql(scope[it.cte])
-                    sql.addSql(" AS (")
 
                     Compilation(
                         scope = innerScope,

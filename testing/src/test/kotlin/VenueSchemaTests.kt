@@ -9,9 +9,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 abstract class VenueSchemaTests: ProvideTestDatabase {
+    abstract val onConflictSupport: OnConflictSupport
+
     fun withVenues(block: (VenueService) -> Unit) {
         withDb { db ->
-            block(VenueService(db, OnConflictSupport.NONE))
+            block(VenueService(db, onConflictSupport))
         }
     }
 

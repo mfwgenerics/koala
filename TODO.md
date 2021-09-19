@@ -20,3 +20,4 @@
 * RETURNING support and change existing .returning to be about auto-generated keys only
 * Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?
 * Error case for empty VALUES
+* Offset timezone tests for MySQL 

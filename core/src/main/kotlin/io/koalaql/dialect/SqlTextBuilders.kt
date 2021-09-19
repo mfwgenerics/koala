@@ -1,9 +1,8 @@
 package io.koalaql.dialect
 
 import io.koalaql.expr.*
-import io.koalaql.query.built.BuiltJoin
-import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.BuiltRelation
+import io.koalaql.query.WithType
+import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.window.*
