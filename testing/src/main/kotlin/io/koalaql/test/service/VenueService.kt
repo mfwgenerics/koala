@@ -11,7 +11,8 @@ import io.koalaql.test.table.UserVenueTable
 import io.koalaql.test.table.VenueTable
 
 class VenueService(
-    private val db: JdbcDatabase
+    private val db: JdbcDatabase,
+    private val onConflict: OnConflictSupport
 ) {
     init {
         db.createTables(UserTable, VenueTable, UserVenueTable, ReviewTable)
@@ -119,16 +120,89 @@ class VenueService(
     fun updateVisits(
         updates: List<VenueVisitorUpdate>
     ) {
-        db.transact { cxn ->
-            UserVenueTable
-                .insert(values(updates) {
-                    set(UserVenueTable.venue, it.venue)
-                    set(UserVenueTable.user, it.user)
-                    set(UserVenueTable.visited, it.state)
-                })
-                .onDuplicate()
-                .set(UserVenueTable.visited)
-                .performWith(cxn)
+        if (updates.isEmpty()) return
+
+        fun Iterable<VenueVisitorUpdate>.toValues() = values(this) {
+            set(UserVenueTable.venue, it.venue)
+            set(UserVenueTable.user, it.user)
+            set(UserVenueTable.visited, it.state)
         }
+
+        db.transact { cxn ->
+            val values = updates.toValues()
+
+            val finalValues = if (onConflict == OnConflictSupport.NONE) {
+                val valuesCte = alias() as_ values
+
+                val alreadyExist = UserVenueTable
+                    .with(valuesCte)
+                    .innerJoin(valuesCte, (UserVenueTable.user eq valuesCte[UserVenueTable.user])
+                        .and(UserVenueTable.venue eq valuesCte[UserVenueTable.venue])
+                    )
+                    .select(UserVenueTable.user, UserVenueTable.venue)
+                    .performWith(cxn)
+                    .map { Pair(it[UserVenueTable.user], it[UserVenueTable.venue]) }
+                    .toSet()
+
+                val (needsUpdate, needsInsert) = updates.partition {
+                    Pair(it.user, it.venue) in alreadyExist
+                }
+
+                if (needsUpdate.isNotEmpty()) {
+                    val updateCte = alias() as_ needsUpdate.toValues()
+
+                    val updateSubquery = updateCte
+                        .where(UserVenueTable.user eq updateCte[UserVenueTable.user])
+                        .where(UserVenueTable.venue eq updateCte[UserVenueTable.venue])
+                        .selectJust(updateCte[UserVenueTable.visited])
+
+                    UserVenueTable
+                        .with(updateCte)
+                        .where(exists(updateSubquery))
+                        .update(UserVenueTable.visited setTo updateSubquery)
+                        .performWith(cxn)
+                }
+
+                if (needsInsert.isEmpty()) return
+
+                needsInsert.toValues()
+            } else {
+                values
+            }
+
+            val insert = UserVenueTable
+                .insert(finalValues)
+
+            val withOnConflict = when (onConflict) {
+                OnConflictSupport.ON_DUPLICATE -> insert
+                    .onDuplicate()
+                    .set(UserVenueTable.visited)
+                OnConflictSupport.ON_CONFLICT -> insert
+                    .onConflict(UserVenueTable.primaryKey!!)
+                    .set(UserVenueTable.visited)
+                OnConflictSupport.NONE -> insert
+            }
+
+            withOnConflict.performWith(cxn)
+        }
+    }
+
+    fun fetchVisits(
+        users: List<String>? = null,
+        venues: List<Int>? = null,
+    ): Set<UserVenueKey> = db.transact { cxn ->
+        UserVenueTable
+            .whereOptionally(users?.let { UserVenueTable.user inValues users })
+            .whereOptionally(venues?.let { UserVenueTable.venue inValues venues })
+            .where(UserVenueTable.visited)
+            .select(UserVenueTable.user, UserVenueTable.venue)
+            .performWith(cxn)
+            .map {
+                UserVenueKey(
+                    user = it[UserVenueTable.user],
+                    venue = it[UserVenueTable.venue]
+                )
+            }
+            .toSet()
     }
 }

@@ -1,18 +1,17 @@
 import io.koalaql.test.models.*
+import io.koalaql.test.service.OnConflictSupport
 import io.koalaql.test.service.VenueService
 import io.koalaql.test.table.UserTable
 import io.koalaql.test.table.UserVenueTable
 import io.koalaql.test.table.VenueTable
 import io.koalaql.test.table.VenueType
-import java.time.Instant
-import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 abstract class VenueSchemaTests: ProvideTestDatabase {
     fun withVenues(block: (VenueService) -> Unit) {
         withDb { db ->
-            block(VenueService(db))
+            block(VenueService(db, OnConflictSupport.NONE))
         }
     }
 
@@ -120,5 +119,82 @@ abstract class VenueSchemaTests: ProvideTestDatabase {
         assertEquals(afterDelete[0].reviews.size, 0)
         assertEquals(afterDelete[1].reviews.size, 1)
         assertEquals(afterDelete[2].reviews.size, 0)
+    }
+
+    @Test
+    fun `visits`() = withVenues { venues ->
+        val ids = venues.createVenues((0..49).map {
+            NewVenue(
+                name = "Chain Restaurant $it",
+                description = "",
+                closed = false,
+                type = VenueType.RESTAURANT
+            )
+        })
+
+        repeat(50) { ix ->
+            venues.updateVisits(listOf(
+                VenueVisitorUpdate(
+                    venue = ids[ix],
+                    user = "user-$ix",
+                    state = true
+                )
+            ))
+        }
+
+        val actualSubset = venues.fetchVisits(users = listOf("user-0", "user-2", "user-3", "user-30"))
+
+        val expectedSubset = setOf(
+            UserVenueKey(1, "user-0"),
+            UserVenueKey(3, "user-2"),
+            UserVenueKey(4, "user-3"),
+            UserVenueKey(31, "user-30")
+        )
+
+        assertSetEquals(expectedSubset, actualSubset)
+
+        val bigMerge = (0..49)
+            .flatMap { ix ->
+                listOfNotNull(
+                    if (ix < 49) {
+                        VenueVisitorUpdate(
+                            venue = ids[ix + 1],
+                            user = "user-$ix",
+                            state = true
+                        )
+                    } else null,
+                    VenueVisitorUpdate(
+                        venue = ids[ix],
+                        user = "user-$ix",
+                        state = (ix % 4 == 0)
+                    )
+                )
+            }
+
+        venues.updateVisits(bigMerge)
+
+        val actualAll = venues.fetchVisits()
+
+        val expectedAll = (0..49)
+            .asSequence()
+            .flatMap { ix ->
+                listOfNotNull(
+                    if (ix < 49) {
+                        UserVenueKey(
+                            venue = ids[ix + 1],
+                            user = "user-$ix"
+                        )
+                    } else null,
+                    if (ix % 4 == 0) {
+                        UserVenueKey(
+                            venue = ids[ix],
+                            user = "user-$ix"
+                        )
+                    } else null
+                )
+            }
+            .toSet()
+
+        assertSetEquals(expectedAll, actualAll)
     }
 }

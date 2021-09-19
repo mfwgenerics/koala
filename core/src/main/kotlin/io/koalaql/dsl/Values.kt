@@ -87,6 +87,9 @@ inline fun <T> values(
         columnPositions
     )
 
+    check (labels.values.isNotEmpty())
+        { "values requires at least one value with at least one assignment" }
+
     return Values(labels) {
         IteratorToRowIterator(labels, rows.iterator())
     }
@@ -112,6 +115,8 @@ fun values(
         labelSet.addAll(it.columns)
     }
 
+    check (labelSet.isNotEmpty()) { "empty values" }
+
     val columns = LabelList(labelSet.toList())
 
     return Values(columns) {
@@ -122,6 +127,8 @@ fun values(
 fun values(vararg rows: ValuesRow): Values = values(rows.asList())
 
 fun rowOf(assignments: List<LiteralAssignment<*>>): ValuesRow {
+    checkNotNull(assignments.isNotEmpty()) { "rowOf must contain at least one value" }
+
     /* could be done more efficiently (?) by building labels and row values together */
     val row = PreLabeledRow(LabelList(assignments.map { it.reference }))
 

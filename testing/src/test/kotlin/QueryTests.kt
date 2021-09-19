@@ -105,15 +105,6 @@ abstract class QueryTests: ProvideTestDatabase {
         val discount = column("discount", INTEGER.nullable())
     }
 
-    // TODO use an assertion library
-    private fun assertListEquals(expected: List<Any?>, actual: List<Any?>) {
-        assertEquals(expected.size, actual.size)
-
-        repeat(expected.size) {
-            assertEquals(expected[it], actual[it])
-        }
-    }
-
     private fun assertListOfListsEquals(expected: List<List<Any?>>, actual: List<List<Any?>>) {
         assertEquals(expected.size, actual.size)
 

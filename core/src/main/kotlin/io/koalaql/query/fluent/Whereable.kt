@@ -1,6 +1,7 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
+import io.koalaql.dsl.value
 import io.koalaql.expr.Expr
 import io.koalaql.query.built.BuildsIntoQueryBody
 import io.koalaql.query.built.BuiltQueryBody
@@ -17,4 +18,7 @@ interface Whereable: Groupable {
     }
 
     fun where(where: Expr<Boolean>): Whereable = Where(this, where)
+
+    fun whereOptionally(where: Expr<Boolean>?): Whereable = where
+        ?.let { where(it) } ?: this
 }
