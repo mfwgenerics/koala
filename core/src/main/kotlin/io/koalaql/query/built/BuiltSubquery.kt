@@ -2,6 +2,7 @@ package io.koalaql.query.built
 
 import io.koalaql.expr.*
 import io.koalaql.query.LabelList
+import io.koalaql.query.LabelListOf
 import io.koalaql.query.LockMode
 import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
@@ -113,7 +114,7 @@ class BuiltSelectQuery(
         )
     }
 
-    override val columns: LabelList = LabelList(selected.map { it.name })
+    override val columns: LabelList = LabelListOf(selected.map { it.name })
 
     override fun populateScope(scope: Scope) {
         body.populateScope(scope)

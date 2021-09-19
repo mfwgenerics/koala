@@ -1,12 +1,13 @@
 package io.koalaql.values
 
 import io.koalaql.expr.Reference
+import io.koalaql.query.LabelList
 
 class RowIteratorToIterator(
     private val rows: RowIterator
 ): Iterator<ValuesRow> {
     private object Initial: ValuesRow() {
-        override val columns: Collection<Reference<*>> get() = error("not implemented")
+        override val columns: LabelList get() = error("not implemented")
         override fun <T : Any> getOrNull(reference: Reference<T>): T? { error("not implemented") }
     }
 

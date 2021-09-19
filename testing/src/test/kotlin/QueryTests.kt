@@ -12,7 +12,6 @@ import io.koalaql.query.fluent.OnConflicted
 import io.koalaql.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 abstract class QueryTests: ProvideTestDatabase {
     @Test

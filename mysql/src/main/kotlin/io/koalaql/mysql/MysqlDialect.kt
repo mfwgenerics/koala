@@ -381,7 +381,7 @@ class MysqlDialect(): SqlDialect {
 
             explicitLabels?.let { labels ->
                 sql.parenthesize {
-                    sql.prefix("", ", ").forEach(labels.values) {
+                    sql.prefix("", ", ").forEach(labels) {
                         sql.addSql(scope.nameOf(it))
                     }
                 }
@@ -444,7 +444,7 @@ class MysqlDialect(): SqlDialect {
 
         fun compileRelabels(labels: LabelList) {
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(labels.values) {
+                sql.prefix("", ", ").forEach(labels) {
                     sql.addIdentifier(scope.nameOf(it))
                 }
             }
@@ -539,7 +539,7 @@ class MysqlDialect(): SqlDialect {
                     if (!forInsert) sql.addSql("ROW ")
 
                     sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns.values) {
+                    sql.prefix("", ", ").forEach(columns) {
                         @Suppress("unchecked_cast")
                         sql.addLiteral(Literal(
                             it.type as KClass<Any>,
@@ -570,7 +570,7 @@ class MysqlDialect(): SqlDialect {
             sql.addSql(" ")
 
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(columns.values) {
+                sql.prefix("", ", ").forEach(columns) {
                     val column = checkNotNull(tableColumnMap[it]) {
                         "can't insert $it into ${relvar.relvarName}"
                     }

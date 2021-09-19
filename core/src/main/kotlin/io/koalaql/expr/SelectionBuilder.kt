@@ -10,10 +10,10 @@ class SelectionBuilder(
 
     fun fromRelation(built: BuiltRelation) {
         val exports = when (val relation = built.relation) {
-            is Cte -> with.getValue(relation).values
+            is Cte -> with.getValue(relation)
             is Relvar -> relation.columns
-            is Subquery -> relation.of.columns.values
-            is Values -> relation.columns.values
+            is Subquery -> relation.of.columns
+            is Values -> relation.columns
             is EmptyRelation -> return
         }.asSequence()
 

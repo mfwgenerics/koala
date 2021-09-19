@@ -6,7 +6,6 @@ import io.koalaql.Isolation
 import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaDiff
-import io.koalaql.ddl.createTables as createTablesDdl
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import java.sql.Connection

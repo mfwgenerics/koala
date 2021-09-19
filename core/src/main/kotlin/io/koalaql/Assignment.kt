@@ -2,7 +2,6 @@ package io.koalaql
 
 import io.koalaql.expr.Expr
 import io.koalaql.expr.Literal
-import io.koalaql.expr.Reference
 import io.koalaql.expr.RelvarColumn
 import io.koalaql.values.RowWriter
 

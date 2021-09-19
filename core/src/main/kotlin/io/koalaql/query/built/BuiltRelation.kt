@@ -13,9 +13,9 @@ class BuiltRelation(
     fun populateScope(scope: Scope) {
         val names = when (relation) {
             is Relvar -> relation.columns.map { it to it.symbol }
-            is Subquery -> relation.of.columns.values.map { it to scope.names[it] }
-            is Cte -> scope.cteColumns(relation).values.map { it to scope.names[it] }
-            is Values -> relation.columns.values.map { it to scope.names[it] }
+            is Subquery -> relation.of.columns.map { it to scope.names[it] }
+            is Cte -> scope.cteColumns(relation).map { it to scope.names[it] }
+            is Values -> relation.columns.map { it to scope.names[it] }
             is EmptyRelation -> return
         }
 

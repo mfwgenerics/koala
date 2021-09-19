@@ -3,7 +3,6 @@ package io.koalaql.query
 import io.koalaql.IdentifierName
 import io.koalaql.expr.AliasedReference
 import io.koalaql.expr.AsReference
-import io.koalaql.expr.Reference
 
 class Alias(
     val identifier: IdentifierName = IdentifierName()

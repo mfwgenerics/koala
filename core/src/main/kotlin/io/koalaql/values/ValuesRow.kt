@@ -4,7 +4,7 @@ import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
 
 abstract class ValuesRow {
-    abstract val columns: Collection<Reference<*>>
+    abstract val columns: LabelList
 
     abstract fun <T : Any> getOrNull(reference: Reference<T>): T?
 

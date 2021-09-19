@@ -1,7 +1,6 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
-import io.koalaql.dsl.value
 import io.koalaql.expr.Expr
 import io.koalaql.query.built.BuildsIntoQueryBody
 import io.koalaql.query.built.BuiltQueryBody

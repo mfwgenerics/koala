@@ -14,7 +14,6 @@ import io.koalaql.query.*
 import io.koalaql.query.built.BuiltReturningInsert
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.sql.SqlText
-import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -141,7 +140,7 @@ class JdbcConnection(
                     event.succeeded(rows)
 
                     ResultSetRowSequence(
-                        LabelList(built.returning),
+                        LabelListOf(built.returning),
                         event,
                         typeMappings,
                         generatedKeys

@@ -1,14 +1,10 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
-import io.koalaql.ExprAssignment
 import io.koalaql.ddl.built.BuiltNamedIndex
-import io.koalaql.dsl.Excluded
-import io.koalaql.expr.Reference
 import io.koalaql.query.OnConflictAction
 import io.koalaql.query.built.BuildsIntoInsert
 import io.koalaql.query.built.BuiltInsert
-import io.koalaql.setTo
 
 interface OnConflictable: Returningable {
     private class OnConflict(

@@ -1,15 +1,14 @@
 package io.koalaql.values
 
 import io.koalaql.expr.Reference
+import io.koalaql.query.LabelList
 
 class BuiltRow(
-    private val columnPositions: Map<Reference<*>, Int>,
-    private val values: List<Any?>,
+    override val columns: LabelList,
+    private val values: List<Any?>
 ): ValuesRow() {
-    override val columns: Collection<Reference<*>> get() = columnPositions.keys
-
     override fun <T : Any> getOrNull(reference: Reference<T>): T? {
-        val ix = columnPositions[reference] ?: return null
+        val ix = columns.positionOf(reference) ?: return null
         if (ix >= values.size) return null
 
         @Suppress("unchecked_cast")

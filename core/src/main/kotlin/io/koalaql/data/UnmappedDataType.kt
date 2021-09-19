@@ -2,7 +2,10 @@ package io.koalaql.data
 
 import io.koalaql.sql.StandardSql
 import java.math.BigDecimal
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import kotlin.reflect.KClass
 
 sealed class UnmappedDataType<T : Any>(

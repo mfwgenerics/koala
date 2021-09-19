@@ -15,7 +15,6 @@
 * Correct way for implementations to check dialect?
 * Prevent delete/update without where or other limiting condition
 * Complete + test connection event logging interface
-* Make LabelList into an interface and unify columns field across RowSequence, RowIterator and ValuesRow
 * Memory leak proofing, idempotent close, auto-close resources when connection closes
 * RETURNING support and change existing .returning to be about auto-generated keys only
 * Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?

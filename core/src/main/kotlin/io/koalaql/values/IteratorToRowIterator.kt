@@ -1,14 +1,11 @@
 package io.koalaql.values
 
-import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
 
 class IteratorToRowIterator(
-    val labels: LabelList,
+    override val columns: LabelList,
     val iter: Iterator<ValuesRow>
 ): RowIterator {
-    override val columns: Collection<Reference<*>> get() = labels.values
-
     override lateinit var row: ValuesRow
 
     override fun next(): Boolean {

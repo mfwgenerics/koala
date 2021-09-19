@@ -3,7 +3,7 @@ package io.koalaql.dsl
 import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectedExpr
-import io.koalaql.query.*
+import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.SelectedJustUnionOperand
 import io.koalaql.query.fluent.SelectedUnionOperand
 

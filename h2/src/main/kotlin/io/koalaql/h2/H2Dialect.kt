@@ -1,6 +1,6 @@
 package io.koalaql.h2
 
-import io.koalaql.data.*
+import io.koalaql.data.UnmappedDataType
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
@@ -253,7 +253,7 @@ class H2Dialect: SqlDialect {
 
         fun compileRelabels(labels: LabelList) {
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(labels.values) {
+                sql.prefix("", ", ").forEach(labels) {
                     sql.addIdentifier(scope.nameOf(it))
                 }
             }
@@ -428,7 +428,7 @@ class H2Dialect: SqlDialect {
             while (iter.next()) {
                 rowPrefix.next {
                     sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns.values) {
+                    sql.prefix("", ", ").forEach(columns) {
                         @Suppress("unchecked_cast")
                         sql.addLiteral(Literal(
                             it.type as KClass<Any>,
@@ -459,7 +459,7 @@ class H2Dialect: SqlDialect {
             sql.addSql(" ")
 
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(columns.values) {
+                sql.prefix("", ", ").forEach(columns) {
                     val column = checkNotNull(tableColumnMap[it]) {
                         "can't insert $it into ${relvar.relvarName}"
                     }

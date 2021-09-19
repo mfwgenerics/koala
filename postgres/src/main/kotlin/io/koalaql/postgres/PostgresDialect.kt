@@ -1,6 +1,9 @@
 package io.koalaql.postgres
 
-import io.koalaql.data.*
+import io.koalaql.data.BIGINT
+import io.koalaql.data.INTEGER
+import io.koalaql.data.SMALLINT
+import io.koalaql.data.UnmappedDataType
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
@@ -294,7 +297,7 @@ class PostgresDialect: SqlDialect {
 
             explicitLabels?.let { labels ->
                 sql.parenthesize {
-                    sql.prefix("", ", ").forEach(labels.values) {
+                    sql.prefix("", ", ").forEach(labels) {
                         sql.addSql(scope.nameOf(it))
                     }
                 }
@@ -445,7 +448,7 @@ class PostgresDialect: SqlDialect {
             while (iter.next()) {
                 rowPrefix.next {
                     sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns.values) {
+                    sql.prefix("", ", ").forEach(columns) {
                         @Suppress("unchecked_cast")
                         sql.addLiteral(Literal(
                             it.type as KClass<Any>,
@@ -477,7 +480,7 @@ class PostgresDialect: SqlDialect {
             sql.addSql(scope[insert.relation.computedAlias])
 
             sql.parenthesize {
-                sql.prefix("", ", ").forEach(columns.values) {
+                sql.prefix("", ", ").forEach(columns) {
                     val column = checkNotNull(tableColumnMap[it]) {
                         "can't insert $it into ${relvar.relvarName}"
                     }

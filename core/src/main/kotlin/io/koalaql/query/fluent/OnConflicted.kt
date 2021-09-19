@@ -3,7 +3,6 @@ package io.koalaql.query.fluent
 import io.koalaql.Assignment
 import io.koalaql.ExprAssignment
 import io.koalaql.dsl.Excluded
-import io.koalaql.expr.Reference
 import io.koalaql.expr.RelvarColumn
 
 interface OnConflicted {

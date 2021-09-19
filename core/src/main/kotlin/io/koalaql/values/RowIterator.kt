@@ -1,9 +1,9 @@
 package io.koalaql.values
 
-import io.koalaql.expr.Reference
+import io.koalaql.query.LabelList
 
 interface RowIterator {
-    val columns: Collection<Reference<*>>
+    val columns: LabelList
 
     /* current row. reference is valid until subsequent call to next */
     val row: ValuesRow

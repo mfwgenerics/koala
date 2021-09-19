@@ -2,14 +2,12 @@ package io.koalaql.h2
 
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
-
 import org.h2.api.TimestampWithTimeZone
 import org.h2.util.DateTimeUtils
 import org.h2.util.TimeZoneProvider
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant
-import java.util.*
 
 fun H2TypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()

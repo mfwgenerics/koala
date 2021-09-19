@@ -2,7 +2,9 @@ package io.koalaql.dsl
 
 import io.koalaql.LiteralAssignment
 import io.koalaql.expr.Reference
+import io.koalaql.query.InsertableLabelList
 import io.koalaql.query.LabelList
+import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.values.*
 
@@ -11,13 +13,13 @@ inline fun <T> values(
     references: List<Reference<*>>,
     crossinline writer: RowWriter.(T) -> Unit
 ): Values {
-    val columns = LabelList(references)
+    val columns = LabelListOf(references)
 
     return Values(columns) {
         val iter = source.iterator()
 
         object : RowIterator {
-            override val columns: Collection<Reference<*>> get() = columns.values
+            override val columns: LabelList get() = columns
 
             override var row: PreLabeledRow = PreLabeledRow(columns)
 
@@ -50,10 +52,14 @@ inline fun <T> values(
     val columns = arrayListOf<Reference<*>>()
     val columnPositions = hashMapOf<Reference<*>, Int>()
 
+    val labels = InsertableLabelList()
+
     val writer = object : RowWriter {
         private var values = arrayListOf<Any?>()
 
         override fun <T : Any> set(reference: Reference<T>, value: T?) {
+            labels.insert(reference)
+
             val ix = columnPositions.putIfAbsent(reference, columnPositions.size)
 
             if (ix != null) {
@@ -66,7 +72,7 @@ inline fun <T> values(
 
         fun next() {
             rows.add(BuiltRow(
-                columnPositions, /* it is deliberate that this continues to be mutated after BuiltRow is constructed */
+                labels, /* it is deliberate that this continues to be mutated after BuiltRow is constructed */
                 values
             ))
 
@@ -82,12 +88,7 @@ inline fun <T> values(
         writer.next()
     }
 
-    val labels = LabelList(
-        columns,
-        columnPositions
-    )
-
-    check (labels.values.isNotEmpty())
+    check (labels.isNotEmpty())
         { "values requires at least one value with at least one assignment" }
 
     return Values(labels) {
@@ -117,7 +118,7 @@ fun values(
 
     check (labelSet.isNotEmpty()) { "empty values" }
 
-    val columns = LabelList(labelSet.toList())
+    val columns = LabelListOf(labelSet.toList())
 
     return Values(columns) {
         IteratorToRowIterator(columns, rows.iterator())
@@ -130,7 +131,7 @@ fun rowOf(assignments: List<LiteralAssignment<*>>): ValuesRow {
     checkNotNull(assignments.isNotEmpty()) { "rowOf must contain at least one value" }
 
     /* could be done more efficiently (?) by building labels and row values together */
-    val row = PreLabeledRow(LabelList(assignments.map { it.reference }))
+    val row = PreLabeledRow(LabelListOf(assignments.map { it.reference }))
 
     assignments.forEach { it.placeIntoRow(row) }
 
