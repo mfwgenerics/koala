@@ -71,23 +71,29 @@ class JdbcConnection(
         type: ConnectionQueryType,
         sql: SqlText
     ): Int = prepareAndThen(sql) {
-        val event = events.perform(type, sql)
+        use {
+            val event = events.perform(type, sql)
 
-        val rows = try {
-            executeUpdate()
-        } catch (ex: Exception) {
-            event.failed(ex)
-            throw ex
+            val rows = try {
+                executeUpdate()
+            } catch (ex: Exception) {
+                event.failed(ex)
+                throw ex
+            }
+
+            event.succeeded(rows)
+
+            rows
         }
-
-        event.succeeded(rows)
-
-        rows
     }
 
     fun ddl(diff: SchemaDiff) {
         dialect.ddl(diff).forEach {
-            prepareAndThen(it) { execute() }
+            prepareAndThen(it) {
+                use {
+                    execute()
+                }
+            }
         }
     }
 
