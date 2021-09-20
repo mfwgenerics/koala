@@ -11,7 +11,7 @@ import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
 import io.koalaql.query.*
-import io.koalaql.query.built.BuiltReturningInsert
+import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.sql.SqlText
 import io.koalaql.values.RowSequence
@@ -114,15 +114,12 @@ class JdbcConnection(
 
     private fun query(queryable: Queryable): RowSequence {
         return when (val built = queryable.buildQuery()) {
-            is BuiltReturningInsert -> {
-                fun err(): Nothing = error("RETURNING must expose a single auto-generated key")
+            is BuiltGeneratesKeysInsert -> {
+                fun err(): Nothing = error("generatedKeys must expose a single auto-generated key")
 
                 val sql = dialect.compile(built.insert)
 
-                val keys = built.returning
-                if (keys.size != 1) err()
-
-                val column = keys[0]
+                val column = built.returning
                 if (column !is TableColumn) err()
 
                 if (!column.builtDef.autoIncrement) err()
@@ -140,7 +137,7 @@ class JdbcConnection(
                     event.succeeded(rows)
 
                     ResultSetRowSequence(
-                        LabelListOf(built.returning),
+                        LabelListOf(listOf(built.returning)),
                         event,
                         typeMappings,
                         generatedKeys

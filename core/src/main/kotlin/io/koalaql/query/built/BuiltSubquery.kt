@@ -14,9 +14,9 @@ sealed interface BuiltQuery {
     fun populateScope(scope: Scope)
 }
 
-class BuiltReturningInsert(
+class BuiltGeneratesKeysInsert(
     val insert: BuiltInsert,
-    val returning: List<Reference<*>> = emptyList()
+    val returning: Reference<*>
 ): BuiltQuery {
     override fun populateScope(scope: Scope) {
 

@@ -125,7 +125,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 rowOf(ShopTable.name setTo "Groceries"),
                 rowOf(ShopTable.name setTo "Stationery")
             ))
-            .returning(ShopTable.id)
+            .generatingKeys(ShopTable.id)
             .performWith(cxn)
             .map { it.getOrNull(ShopTable.id)!! }
             .toList()
@@ -145,7 +145,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     CustomerTable.lastName setTo "Smith"
                 )
             ))
-            .returning(CustomerTable.id)
+            .generatingKeys(CustomerTable.id)
             .performWith(cxn)
             .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
