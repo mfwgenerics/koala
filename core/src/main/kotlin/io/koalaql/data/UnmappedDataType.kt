@@ -1,5 +1,6 @@
 package io.koalaql.data
 
+import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.sql.StandardSql
 import java.math.BigDecimal
 import java.time.Instant
@@ -18,6 +19,37 @@ sealed class UnmappedDataType<T : Any>(
 
     abstract override fun equals(other: Any?): Boolean
     abstract override fun hashCode(): Int
+
+    fun defaultRawSql(): String = when (this) {
+        DATE -> "DATE"
+        is DATETIME -> {
+            val suffix = precision?.let { "($precision)" }?:""
+            "TIMESTAMP$suffix WITHOUT TIME ZONE"
+        }
+        is DECIMAL -> "DECIMAL(${precision},${scale})"
+        DOUBLE -> "DOUBLE"
+        FLOAT -> "REAL"
+        INSTANT -> "TIMESTAMP WITH TIME ZONE"
+        TINYINT -> "TINYINT"
+        SMALLINT -> "SMALLINT"
+        INTEGER -> "INTEGER"
+        BIGINT -> "BIGINT"
+        is RAW -> sql
+        is TIME -> {
+            val suffix = precision?.let { "($precision)" }?:""
+            "TIME$suffix WITHOUT TIME ZONE"
+        }
+        is VARBINARY -> "VARBINARY(${maxLength})"
+        is VARCHAR -> "VARCHAR(${maxLength})"
+        BOOLEAN -> "BOOL"
+        TEXT -> "TEXT"
+        TINYINT.UNSIGNED -> "TINYINT UNSIGNED"
+        SMALLINT.UNSIGNED -> "SMALLINT UNSIGNED"
+        INTEGER.UNSIGNED -> "INTEGER UNSIGNED"
+        BIGINT.UNSIGNED -> "BIGINT UNSIGNED"
+    }
+
+    override fun toString(): String = defaultRawSql()
 
     override val dataType: UnmappedDataType<T> get() = this
 }
@@ -49,13 +81,33 @@ object BIGINT: PrimitiveDataType<Long>(Long::class) {
 }
 
 object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
-object DATETIME: PrimitiveDataType<LocalDateTime>(LocalDateTime::class)
-object TIME: PrimitiveDataType<LocalTime>(LocalTime::class)
 
 object INSTANT: PrimitiveDataType<Instant>(Instant::class)
 
 object TEXT: PrimitiveDataType<String>(String::class)
 object BOOLEAN: PrimitiveDataType<Boolean>(Boolean::class)
+
+open class TIME(
+    val precision: Int? = null
+): UnmappedDataType<LocalTime>(LocalTime::class) {
+    companion object : TIME()
+
+    override fun equals(other: Any?): Boolean =
+        other is TIME && precision == other.precision
+
+    override fun hashCode(): Int = precision.hashCode()
+}
+
+open class DATETIME(
+    val precision: Int? = null
+): UnmappedDataType<LocalDateTime>(LocalDateTime::class) {
+    companion object : DATETIME()
+
+    override fun equals(other: Any?): Boolean =
+        other is DATETIME && precision == other.precision
+
+    override fun hashCode(): Int = precision.hashCode()
+}
 
 class VARCHAR(
     val maxLength: Int

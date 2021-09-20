@@ -3,11 +3,11 @@ import kotlin.test.assertEquals
 
 // TODO use an assertion library
 
-fun assertListEquals(expected: List<Any?>, actual: List<Any?>) {
-    assertEquals(expected.size, actual.size)
+fun assertListEquals(expected: List<Any?>, actual: List<Any?>, message: String? = null) {
+    assertEquals(expected.size, actual.size, message)
 
     repeat(expected.size) {
-        assertEquals(expected[it], actual[it])
+        assertEquals(expected[it], actual[it], message)
     }
 }
 

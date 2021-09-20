@@ -50,7 +50,7 @@ class H2Dialect: SqlDialect {
         }
 
         private fun compileDataType(type: UnmappedDataType<*>) {
-            sql.compileDataType(type)
+            sql.addSql(type.defaultRawSql())
         }
 
         private fun compileColumnDef(column: TableColumn<*>) {
@@ -216,7 +216,7 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileCastDataType(type: UnmappedDataType<*>) {
-            sql.compileDataType(type)
+            sql.addSql(type.defaultRawSql())
         }
 
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =

@@ -4,7 +4,7 @@ class MysqlQueryTests: QueryTests() {
     override fun connect(db: String) = MysqlTestDatabase(db)
 
     @Test
-    fun `select version`() = withCxn { cxn, logs ->
+    fun `select version`() = withCxn { cxn, _ ->
         val rs = cxn
             .jdbc
             .prepareStatement("SELECT VERSION()")

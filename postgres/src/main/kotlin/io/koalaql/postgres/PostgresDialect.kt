@@ -32,7 +32,7 @@ class PostgresDialect: SqlDialect {
     }
 
     private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-        sql.compileDataType(type)
+        sql.addSql(type.defaultRawSql())
     }
 
     private fun compileSerialType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
@@ -219,7 +219,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileCastDataType(type: UnmappedDataType<*>) {
-            sql.compileDataType(type)
+            sql.addSql(type.defaultRawSql())
         }
 
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {

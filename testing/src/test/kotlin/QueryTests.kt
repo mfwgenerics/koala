@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 
 abstract class QueryTests: ProvideTestDatabase {
     @Test
-    fun `perform values directly`() = withCxn { cxn, logs ->
+    fun `perform values directly`() = withCxn { cxn, _ ->
         val number = name<Int>()
 
         val result = values((1..20).asSequence(), listOf(number))
@@ -27,7 +27,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `triangular numbers from values clause subquery`() = withCxn { cxn, logs ->
+    fun `triangular numbers from values clause subquery`() = withCxn { cxn, _ ->
         val number = name<Int>("number")
 
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
@@ -187,7 +187,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `stringy joins`() = withCxn { cxn, logs ->
+    fun `stringy joins`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val expectedPurchaseItems = listOf(
@@ -268,14 +268,10 @@ abstract class QueryTests: ProvideTestDatabase {
             .toList()
 
         assertListOfListsEquals(expectedMostExpensiveByStore, actualMostExpensiveByStore)
-
-        logs.forEach {
-            println(it)
-        }
     }
 
     @Test
-    fun `update through not exists`() = withCxn { cxn, logs ->
+    fun `update through not exists`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val updated = CustomerTable
@@ -302,7 +298,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `multi update`() = withCxn { cxn, logs ->
+    fun `multi update`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val expected = PurchaseTable
@@ -318,7 +314,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `insert from select and subquery comparisons`() = withCxn { cxn, logs ->
+    fun `insert from select and subquery comparisons`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val (bobId, janeId) = CustomerTable
@@ -373,7 +369,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `join to cte`() = withCxn { cxn, logs ->
+    fun `join to cte`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val alias = alias()
@@ -416,7 +412,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `union all and count`() = withCxn { cxn, logs ->
+    fun `union all and count`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val count = name<Int>()
@@ -455,7 +451,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `inserting and selecting from mapped columns`() = withCxn { cxn, logs ->
+    fun `inserting and selecting from mapped columns`() = withCxn { cxn, _ ->
         cxn.createTable(MappingsTable)
 
         MappingsTable
@@ -479,7 +475,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `case expressions and raw expr`() = withCxn { cxn, logs ->
+    fun `case expressions and raw expr`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val n0 = name<String>()
@@ -525,7 +521,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `standalone coalesce and scalar query`() = withCxn { cxn, logs ->
+    fun `standalone coalesce and scalar query`() = withCxn { cxn, _ ->
         val n0 = name<Int>("n0")
         val n1 = name<String>("n1")
         val n3 = name<Int>("n3")
@@ -548,7 +544,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `deletion with cte`() = withCxn { cxn, logs ->
+    fun `deletion with cte`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val cte = cte()
@@ -573,7 +569,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `unioned tableless selects with out of order labels`() = withCxn { cxn, logs ->
+    fun `unioned tableless selects with out of order labels`() = withCxn { cxn, _ ->
         val n0 = name<Int>()
         val n1 = name<Float>()
 
@@ -604,7 +600,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    open fun `factorial recursive CTE`() = withCxn { cxn, logs ->
+    open fun `factorial recursive CTE`() = withCxn { cxn, _ ->
         val fact = cte()
 
         val index = name<Long>()
@@ -631,7 +627,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `self joins`() = withCxn { cxn, logs ->
+    fun `self joins`() = withCxn { cxn, _ ->
         createAndPopulate(cxn)
 
         val purchases2 = PurchaseTable as_ alias()
@@ -685,7 +681,7 @@ abstract class QueryTests: ProvideTestDatabase {
     open val requiresOnConflictKey get() = false
 
     @Test
-    open fun `on duplicate update with values`() = withCxn { cxn, logs ->
+    open fun `on duplicate update with values`() = withCxn { cxn, _ ->
         cxn.createTable(MergeTest)
 
         fun OnConflictable.onConflict0(): OnConflicted {

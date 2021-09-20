@@ -1,6 +1,5 @@
 Pre-release:
 * Reorganize so table declarations don't depend on so many packages
-* Don't require .select for exists/notExists
 * Implement ON DUPLICATE/CONFLICT update for VALUES, SELECTS incl/ complex updates
 * Add tests for defaults
 * Emit CREATE TABLE INDEX as separate DDL in H2
@@ -10,8 +9,16 @@ Pre-release:
 * Memory leak proofing, idempotent close, auto-close resources when connection closes
 * Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?
 * Offset timezone tests for MySQL
+* Well defined defaults for collation / charset
+* Add table definitions + null cases to DataTypeTests
+* Large text blocks test
+* VARCHAR maxLength tests
+
+?-release:
+* User specified collations and charsets
 
 Post-release
+* Don't require .select for exists/notExists
 * RETURNING support
 * onConflictIgnore compatibility flag for MySQL dialect that uses INSERT IGNORE
 * NULL literal without using value(null)
@@ -21,3 +28,5 @@ Post-release
 * Views support
 * Better scope names? tag them with "outer", "inner" or alias perhaps
 * Explain scope contents?
+* Better generic support / rely less on reified in interfaces
+* Fix the hacky testing situation (test artifact jar / empty test method workaround)

@@ -5,23 +5,19 @@ import io.koalaql.data.JdbcTypeMappings
 import org.h2.api.TimestampWithTimeZone
 import org.h2.util.DateTimeUtils
 import org.h2.util.TimeZoneProvider
+import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 fun H2TypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()
 
     result.register(Instant::class, object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {
-            val vttz = DateTimeUtils.timestampTimeZoneFromMillis(value.toEpochMilli())
-
-            TimestampWithTimeZone(
-                vttz.dateValue,
-                vttz.timeNanos,
-                vttz.timeZoneOffsetSeconds
-            )
-
             stmt.setObject(index, value)
         }
 
@@ -34,6 +30,11 @@ fun H2TypeMappings(): JdbcTypeMappings {
             )
         }
     })
+
+    result.register<LocalDateTime>(
+        { stmt, index, value -> stmt.setObject(index, value) },
+        { rs, index -> LocalDateTime.parse(rs.getString(index).replace(' ', 'T')) }
+    )
 
     return result
 }

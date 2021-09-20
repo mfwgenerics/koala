@@ -1,7 +1,11 @@
 package io.koalaql.data
 
+import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -53,6 +57,31 @@ class JdbcTypeMappings {
         register<String>(
             { stmt, index, value -> stmt.setString(index, value) },
             { rs, index -> rs.getString(index) }
+        )
+
+        register<BigDecimal>(
+            { stmt, index, value -> stmt.setBigDecimal(index, value) },
+            { rs, index -> rs.getBigDecimal(index) }
+        )
+
+        register<ByteArray>(
+            { stmt, index, value -> stmt.setBytes(index, value) },
+            { rs, index -> rs.getBytes(index) }
+        )
+
+        register<LocalDate>(
+            { stmt, index, value -> stmt.setObject(index, value) },
+            { rs, index -> LocalDate.parse(rs.getString(index)) }
+        )
+
+        register<LocalTime>(
+            { stmt, index, value -> stmt.setObject(index, value) },
+            { rs, index -> LocalTime.parse(rs.getString(index)) }
+        )
+
+        register<LocalDateTime>(
+            { stmt, index, value -> stmt.setObject(index, value) },
+            { rs, index -> LocalDateTime.parse(rs.getString(index)) }
         )
     }
 
