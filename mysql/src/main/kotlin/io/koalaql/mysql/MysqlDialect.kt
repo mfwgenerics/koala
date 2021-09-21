@@ -116,11 +116,21 @@ class MysqlDialect(): SqlDialect {
             }
         }
 
-        private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-            when (type) {
-                INSTANT -> sql.addSql("DATETIME")
-                else -> sql.addSql(type.defaultRawSql())
+        private fun UnmappedDataType<*>.rawSql(): String = when (this) {
+            INSTANT -> "DATETIME"
+            is DATETIME -> {
+                val suffix = precision?.let { "($precision)" }?:""
+                "DATETIME$suffix"
             }
+            is TIME -> {
+                val suffix = precision?.let { "($precision)" }?:""
+                "TIME$suffix"
+            }
+            else -> defaultRawSql()
+        }
+
+        private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
+            sql.addSql(type.rawSql())
         }
 
         fun compileColumnDef(sql: SqlTextBuilder, column: TableColumn<*>) {
@@ -213,7 +223,7 @@ class MysqlDialect(): SqlDialect {
         }
 
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
-            compileCastDataType(to)
+            sql.addSql(to.rawCastSql())
         }
 
         override fun window(window: BuiltWindow) {
@@ -280,27 +290,20 @@ class MysqlDialect(): SqlDialect {
             }
         }
 
-        fun compileCastDataType(type: UnmappedDataType<*>) {
-            when (type) {
-                DATE -> TODO()
-                DATETIME -> TODO()
-                is DECIMAL -> TODO()
-                DOUBLE -> TODO()
-                FLOAT -> sql.addSql("REAL")
-                INSTANT -> TODO()
-                SMALLINT -> TODO()
-                INTEGER -> sql.addSql("SIGNED")
-                TINYINT -> TODO()
-                is RAW -> TODO()
-                TIME -> TODO()
-                TINYINT.UNSIGNED -> TODO()
-                is VARBINARY -> TODO()
-                is VARCHAR -> TODO()
-                BIGINT -> TODO()
-                SMALLINT.UNSIGNED -> TODO()
-                INTEGER.UNSIGNED -> TODO()
-                BIGINT.UNSIGNED -> TODO()
-            }
+        fun UnmappedDataType<*>.rawCastSql(): String = when (this) {
+            TEXT -> "CHAR"
+            BOOLEAN,
+            TINYINT,
+            SMALLINT,
+            INTEGER,
+            BIGINT -> "SIGNED"
+            TINYINT.UNSIGNED,
+            SMALLINT.UNSIGNED,
+            INTEGER.UNSIGNED,
+            BIGINT.UNSIGNED -> "UNSIGNED"
+            is VARBINARY -> "BINARY"
+            is VARCHAR -> "CHAR"
+            else -> rawSql()
         }
 
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {

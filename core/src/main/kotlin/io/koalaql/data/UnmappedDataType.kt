@@ -28,7 +28,7 @@ sealed class UnmappedDataType<T : Any>(
         }
         is DECIMAL -> "DECIMAL(${precision},${scale})"
         DOUBLE -> "DOUBLE"
-        FLOAT -> "REAL"
+        FLOAT -> "FLOAT"
         INSTANT -> "TIMESTAMP WITH TIME ZONE"
         TINYINT -> "TINYINT"
         SMALLINT -> "SMALLINT"

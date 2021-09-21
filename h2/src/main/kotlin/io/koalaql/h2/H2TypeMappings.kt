@@ -31,10 +31,5 @@ fun H2TypeMappings(): JdbcTypeMappings {
         }
     })
 
-    result.register<LocalDateTime>(
-        { stmt, index, value -> stmt.setObject(index, value) },
-        { rs, index -> LocalDateTime.parse(rs.getString(index).replace(' ', 'T')) }
-    )
-
     return result
 }

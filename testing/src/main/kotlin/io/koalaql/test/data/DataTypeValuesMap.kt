@@ -13,6 +13,10 @@ class DataTypeValuesMap {
         mapping[type] = values
     }
 
+    fun remove(type: UnmappedDataType<*>) {
+        mapping.remove(type)
+    }
+
     @Suppress("unchecked_cast")
     fun entries(): List<DataTypeWithValues<*>> = mapping.map { (k, v) ->
         DataTypeWithValues(k as UnmappedDataType<Any>, v)

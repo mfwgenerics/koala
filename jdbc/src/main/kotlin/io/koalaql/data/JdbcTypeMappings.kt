@@ -6,12 +6,24 @@ import java.sql.ResultSet
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.chrono.IsoChronology
+import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
+import java.time.format.DateTimeFormatterBuilder
+import java.time.format.ResolverStyle
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 @Suppress("RemoveExplicitTypeArguments")
 class JdbcTypeMappings {
     private val mappings = ConcurrentHashMap<KClass<*>, JdbcMappedType<*>>()
+
+    private val localDateTime = DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .append(ISO_LOCAL_DATE)
+        .appendLiteral(' ')
+        .append(ISO_LOCAL_TIME)
+        .toFormatter()
 
     init {
         register<Boolean>(
@@ -39,10 +51,25 @@ class JdbcTypeMappings {
             { rs, index -> rs.getLong(index).takeUnless { rs.wasNull() } }
         )
 
-        register<Byte, UByte>({ it.toUByte() }, { it.toByte() })
-        register<Short, UShort>({ it.toUShort() }, { it.toShort() })
-        register<Int, UInt>({ it.toUInt() }, { it.toInt() })
-        register<Long, ULong>({ it.toULong() }, { it.toLong() })
+        register<UByte>(
+            { stmt, index, value -> stmt.setShort(index, value.toShort()) },
+            { rs, index -> rs.getShort(index).takeUnless { rs.wasNull() }?.toUByte() }
+        )
+
+        register<UShort>(
+            { stmt, index, value -> stmt.setInt(index, value.toInt()) },
+            { rs, index -> rs.getInt(index).takeUnless { rs.wasNull() }?.toUShort() }
+        )
+
+        register<UInt>(
+            { stmt, index, value -> stmt.setLong(index, value.toLong()) },
+            { rs, index -> rs.getLong(index).takeUnless { rs.wasNull() }?.toUInt() }
+        )
+
+        register<ULong>(
+            { stmt, index, value -> stmt.setBigDecimal(index, BigDecimal(value.toString())) },
+            { rs, index -> rs.getBigDecimal(index).toLong().toULong() }
+        )
 
         register<Float>(
             { stmt, index, value -> stmt.setFloat(index, value) },
@@ -81,7 +108,7 @@ class JdbcTypeMappings {
 
         register<LocalDateTime>(
             { stmt, index, value -> stmt.setObject(index, value) },
-            { rs, index -> LocalDateTime.parse(rs.getString(index)) }
+            { rs, index -> localDateTime.parse(rs.getString(index), LocalDateTime::from) }
         )
     }
 

@@ -2,7 +2,7 @@
 
 { [ $(id -u) -eq 0 ]; } || { echo "execute as root"; exit; }
 
-docker run --publish 3306:3306 --name mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:8 2> /dev/null;
+docker run --rm --publish 3306:3306 --name mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:8 2> /dev/null;
 
 SECONDS=0
 
