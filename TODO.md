@@ -33,3 +33,4 @@ Post-release
 * Better generic support / rely less on reified in interfaces
 * Fix the hacky testing situation (test artifact jar / empty test method workaround)
 * JSON support
+* Row constructor/composite value support
