@@ -69,9 +69,10 @@ fun <T : Any> all(subquery: SelectedJust<T>): ComparisonOperand<T> =
 fun <T : Any> any(subquery: SelectedJust<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ANY, subquery.buildQuery())
 
-operator fun Expr<out Number>.div(rhs: Expr<out Number>): Expr<Double> =
+operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =
     OperationType.DIVIDE(this, rhs)
-inline operator fun <reified T : Number> Expr<out Number>.div(rhs: T): Expr<Double> =
+
+inline operator fun <reified T : Number> Expr<T>.div(rhs: T): Expr<T> =
     this / value(rhs)
 
 operator fun <T : Number> Expr<T>.times(rhs: Expr<T>): Expr<T> =

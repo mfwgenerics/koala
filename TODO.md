@@ -13,6 +13,8 @@ Pre-release:
 * Add table definitions + null cases to DataTypeTests
 * Large text blocks test
 * VARCHAR maxLength tests
+* Common operators w/ tests for MySQL
+* Replace chained .where with e.g. .where().and().and()
 
 ?-release:
 * User specified collations and charsets
@@ -30,3 +32,4 @@ Post-release
 * Explain scope contents?
 * Better generic support / rely less on reified in interfaces
 * Fix the hacky testing situation (test artifact jar / empty test method workaround)
+* JSON support
