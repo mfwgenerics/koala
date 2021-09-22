@@ -1,9 +1,7 @@
-import kotlin.test.Test
+import org.junit.Test
 
-class TestPostgres: QueryTests() {
+class PostgresOperationTests: OperationTests() {
     override fun connect(db: String) = PgTestDatabase(db)
-
-    override val requiresOnConflictKey get() = true
 
     @Test
     fun empty() {

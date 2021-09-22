@@ -64,7 +64,16 @@ enum class OperationType(
 
     COALESCE("COALESCE", OperationFixity.APPLY),
 
-    CURRENT_TIMESTAMP("CURRENT_TIMESTAMP", OperationFixity.APPLY);
+    CURRENT_TIMESTAMP("CURRENT_TIMESTAMP", OperationFixity.APPLY),
+
+    /* aggregates */
+    AVG("AVG", OperationFixity.APPLY),
+    COUNT("COUNT", OperationFixity.APPLY),
+    MAX("MAX", OperationFixity.APPLY),
+    MIN("MIN", OperationFixity.APPLY),
+    STDDEV_POP("STDDEV_POP", OperationFixity.APPLY),
+    SUM("SUM", OperationFixity.APPLY),
+    VAR_POP("VAR_POP", OperationFixity.APPLY);
 
     operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
         OperationExpr(this, args.toList())

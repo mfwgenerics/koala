@@ -41,7 +41,7 @@ class VenueService(
                 .with(visitCte as_ UserVenueTable
                     .where(UserVenueTable.visited)
                     .groupBy(UserVenueTable.venue)
-                    .select(UserVenueTable.venue, count() as_ visits)
+                    .select(UserVenueTable.venue, count(value(1)) as_ visits)
                 )
                 .leftJoin(visitCte, UserVenueTable.venue eq VenueTable.id)
                 .let {

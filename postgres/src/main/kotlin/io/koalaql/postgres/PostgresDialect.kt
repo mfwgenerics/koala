@@ -1,9 +1,6 @@
 package io.koalaql.postgres
 
-import io.koalaql.data.BIGINT
-import io.koalaql.data.INTEGER
-import io.koalaql.data.SMALLINT
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.data.*
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
@@ -22,6 +19,11 @@ import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
+private fun UnmappedDataType<*>.toRawSql(): String = when (this) {
+    DOUBLE -> "DOUBLE PRECISION"
+    else -> defaultRawSql()
+}
+
 class PostgresDialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
@@ -32,7 +34,7 @@ class PostgresDialect: SqlDialect {
     }
 
     private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-        sql.addSql(type.defaultRawSql())
+        sql.addSql(type.toRawSql())
     }
 
     private fun compileSerialType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
@@ -219,7 +221,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileCastDataType(type: UnmappedDataType<*>) {
-            sql.addSql(type.defaultRawSql())
+            sql.addSql(type.toRawSql())
         }
 
         fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {
