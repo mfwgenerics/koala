@@ -9,17 +9,17 @@ Pre-release:
 * Memory leak proofing, idempotent close, auto-close resources when connection closes
 * Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?
 * Offset timezone tests for MySQL
-* Well defined defaults for collation / charset
 * Add table definitions + null cases to DataTypeTests
 * Large text blocks test
 * VARCHAR maxLength tests
 * Common operators w/ tests for MySQL
-* Replace chained .where with e.g. .where().and().and()
-
-?-release:
-* User specified collations and charsets
+* TableDiff support for different Instant/TIMEZONE WITH TIMESTAMP bindings
+* Batch processing in DDL
+* Re-create test on Table with all column types
 
 Post-release
+* User specified collations and charsets
+* Replace chained .where with e.g. .where().and().and()
 * Don't require .select for exists/notExists
 * RETURNING support
 * onConflictIgnore compatibility flag for MySQL dialect that uses INSERT IGNORE
@@ -34,3 +34,4 @@ Post-release
 * Fix the hacky testing situation (test artifact jar / empty test method workaround)
 * JSON support
 * Row constructor/composite value support
+* Extensive RAW support

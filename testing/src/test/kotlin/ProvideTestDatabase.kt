@@ -19,7 +19,7 @@ interface ProvideTestDatabase {
     }
 
     fun withCxn(vararg tables: Table, block: (JdbcConnection, List<String>) -> Unit) = withDb { db ->
-        db.createTables(*tables)
+        db.declareTables(*tables)
 
         val events = TextEventLogger("0")
 

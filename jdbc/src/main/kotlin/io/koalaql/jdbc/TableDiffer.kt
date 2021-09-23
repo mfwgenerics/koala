@@ -1,14 +1,13 @@
 package io.koalaql.jdbc
 
-import io.koalaql.data.INTEGER
-import io.koalaql.data.SMALLINT
-import io.koalaql.data.VARCHAR
+import io.koalaql.data.*
 import io.koalaql.ddl.BaseColumnType
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.diff.ChangedDefault
 import io.koalaql.ddl.diff.ColumnDiff
+import io.koalaql.ddl.diff.SchemaDiff
 import io.koalaql.ddl.diff.TableDiff
 import java.sql.DatabaseMetaData
 import java.sql.Types
@@ -17,6 +16,28 @@ class TableDiffer(
     val dbName: String,
     val metadata: DatabaseMetaData
 ) {
+    private data class ColumnTypeInfo(
+        val tag: Int,
+        val name: String,
+        val columnSize: Int,
+        val decimalDigits: Int
+    )
+
+    private fun diffColumnType(dataType: UnmappedDataType<*>, info: ColumnTypeInfo): Boolean {
+        return when (dataType) {
+            BOOLEAN -> info.tag != Types.BOOLEAN
+            DOUBLE -> info.tag != Types.DOUBLE
+            FLOAT -> info.tag != Types.FLOAT
+            INTEGER -> info.tag != Types.INTEGER
+            SMALLINT -> info.tag != Types.SMALLINT
+            TEXT -> info.tag != Types.CLOB
+            TINYINT -> info.tag != Types.TINYINT
+            is VARCHAR -> info.tag != Types.VARCHAR
+                || info.columnSize != dataType.maxLength
+            else -> false
+        }
+    }
+
     private fun diffColumns(table: Table, result: TableDiff) {
         val tableName = table.relvarName
 
@@ -29,6 +50,13 @@ class TableDiffer(
         while (columns.next()) {
             val name = columns.getString("COLUMN_NAME")
 
+            val typeInfo = ColumnTypeInfo(
+                tag = columns.getInt("DATA_TYPE"),
+                name = columns.getString("TYPE_NAME"),
+                columnSize = columns.getInt("COLUMN_SIZE"),
+                decimalDigits = columns.getInt("DECIMAL_DIGITS")
+            )
+
             val expected = expectedColumnsByName.remove(name)
 
             if (expected == null) {
@@ -36,16 +64,7 @@ class TableDiffer(
                 continue
             }
 
-            val dataType = when (val dt = columns.getInt("DATA_TYPE")) {
-                Types.INTEGER -> INTEGER
-                Types.SMALLINT -> SMALLINT
-                Types.VARCHAR -> VARCHAR(columns.getInt("COLUMN_SIZE"))
-                else -> error("unrecognized SQL datatype $dt")
-            }
-
             val def = expected.builtDef
-
-            val expectedDataType = def.columnType.dataType
 
             val isAutoincrement = when (columns.getString("IS_AUTOINCREMENT")) {
                 "YES" -> true
@@ -54,9 +73,8 @@ class TableDiffer(
 
             val diff = ColumnDiff(
                 newColumn = expected,
-                type = if (dataType != expectedDataType) {
-                    /* TODO precision comparison */
-                    BaseColumnType(expectedDataType)
+                type = if (diffColumnType(def.columnType.dataType, typeInfo)) {
+                    BaseColumnType(def.columnType.dataType)
                 } else null,
                 notNull = when (columns.getString("IS_NULLABLE")) {
                     "YES" -> if (def.notNull) def.notNull else null
@@ -213,5 +231,37 @@ class TableDiffer(
         diffKeys(table, result)
 
         return result
+    }
+
+    fun declareTables(
+        tables: List<Table>
+    ): SchemaDiff {
+        val diff = SchemaDiff()
+
+        val toCreate = tables.associateByTo(hashMapOf()) { it.relvarName }
+        val toDiff = arrayListOf<Table>()
+
+        val rs = metadata.getTables(
+            dbName,
+            null,
+            null,
+            arrayOf("TABLE")
+        )
+
+        while (rs.next()) {
+            val name = rs.getString("TABLE_NAME")
+
+            toCreate.remove(name)?.let {
+                toDiff.add(it)
+            }
+        }
+
+        toCreate.forEach { (name, table) -> diff.tables.created[name] = table }
+
+        toDiff.forEach { table ->
+            diff.tables.altered[table.relvarName] = diffTable(table)
+        }
+
+        return diff
     }
 }

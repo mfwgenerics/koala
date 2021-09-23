@@ -19,8 +19,8 @@ abstract class VenueSchemaTests: ProvideTestDatabase {
 
     @Test
     fun `create tables twice`() = withDb { db ->
-        db.createTables(VenueTable, UserTable, UserVenueTable)
-        db.createTables(VenueTable, UserTable, UserVenueTable)
+        db.declareTables(VenueTable, UserTable, UserVenueTable)
+        db.declareTables(VenueTable, UserTable, UserVenueTable)
     }
 
     private fun matchVenueFields(expected: NewVenue, actual: Venue) {

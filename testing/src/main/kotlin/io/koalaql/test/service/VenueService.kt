@@ -15,7 +15,7 @@ class VenueService(
     private val onConflict: OnConflictSupport
 ) {
     init {
-        db.createTables(UserTable, VenueTable, UserVenueTable, ReviewTable)
+        db.declareTables(UserTable, VenueTable, UserVenueTable, ReviewTable)
     }
 
     fun createVenues(venues: List<NewVenue>): List<Int> = db.transact { cxn ->

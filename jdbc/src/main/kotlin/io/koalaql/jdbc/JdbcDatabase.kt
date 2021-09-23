@@ -13,32 +13,52 @@ import java.sql.Connection
 class JdbcDatabase(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
-    val typeMappings: JdbcTypeMappings = JdbcTypeMappings()
+    val typeMappings: JdbcTypeMappings = JdbcTypeMappings(),
+    val declareBy: DeclareStrategy = DeclareStrategy.Diff
 ): Database<JdbcConnection>() {
-    override fun declareTablesUsing(declareBy: DeclareStrategy, tables: List<Table>) {
+    override fun declareTables(tables: List<Table>) {
         tables.forEach { table ->
             table.columns.forEach {
                 typeMappings.register(it.builtDef.columnType)
             }
         }
 
-        val diff = SchemaDiff()
-
         when (declareBy) {
             DeclareStrategy.RegisterOnly -> return
             DeclareStrategy.CreateIfNotExists -> {
+                val diff = SchemaDiff()
+
                 tables.forEach {
                     diff.tables.created[it.relvarName] = it
                 }
+
+                transact { it.ddl(diff) }
             }
             DeclareStrategy.Diff -> {
-                tables.forEach {
-                    diff.tables.created[it.relvarName] = it
+                provider.connect().use { jdbc ->
+                    jdbc.autoCommit = true
+
+                    val dbName = checkNotNull(jdbc.catalog?.takeIf { it.isNotBlank() })
+                        { "no database selected" }
+
+                    val differ = TableDiffer(
+                        dbName,
+                        jdbc.metaData
+                    )
+
+                    val diff = differ.declareTables(tables)
+
+                    val connection = JdbcConnection(
+                        jdbc,
+                        dialect,
+                        typeMappings,
+                        ConnectionEventWriter.Discard
+                    )
+
+                    connection.ddl(diff)
                 }
             }
         }
-
-        transact { it.ddl(diff) }
     }
 
     override fun connect(isolation: Isolation, events: ConnectionEventWriter): JdbcConnection {

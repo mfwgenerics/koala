@@ -4,14 +4,10 @@ import io.koalaql.ddl.Table
 import io.koalaql.dsl.as_
 import io.koalaql.dsl.cast
 import io.koalaql.dsl.values
-import io.koalaql.event.ConnectionEventWriter
-import io.koalaql.event.ConnectionQueryType
-import io.koalaql.event.QueryEventWriter
 import io.koalaql.expr.Name
 import io.koalaql.jdbc.JdbcConnection
 import io.koalaql.jdbc.JdbcDatabase
 import io.koalaql.jdbc.performWith
-import io.koalaql.sql.SqlText
 import io.koalaql.test.data.DataTypeValuesMap
 import io.koalaql.test.data.DataTypeWithValues
 import org.junit.Test
@@ -129,7 +125,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
             DataTable(ix, case)
         }
 
-        db.createTables(*tables.toTypedArray())
+        db.declareTables(*tables.toTypedArray())
 
         tables.forEach { it.insertData(db) }
     }
