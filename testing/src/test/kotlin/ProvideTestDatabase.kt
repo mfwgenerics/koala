@@ -1,14 +1,15 @@
+import io.koalaql.KotqConnection
 import io.koalaql.ddl.Table
-import io.koalaql.jdbc.JdbcConnection
-import io.koalaql.jdbc.JdbcDatabase
+import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.logging.TextEventLogger
+import io.koalaql.transact
 import java.security.SecureRandom
 import kotlin.math.absoluteValue
 
 interface ProvideTestDatabase {
-    fun connect(db: String): JdbcDatabase
+    fun connect(db: String): JdbcDataSource
 
-    fun withDb(block: (JdbcDatabase) -> Unit) {
+    fun withDb(block: (JdbcDataSource) -> Unit) {
         val testDb = connect("db${SecureRandom().nextLong().absoluteValue}")
 
         try {
@@ -18,7 +19,7 @@ interface ProvideTestDatabase {
         }
     }
 
-    fun withCxn(vararg tables: Table, block: (JdbcConnection, List<String>) -> Unit) = withDb { db ->
+    fun withCxn(vararg tables: Table, block: (KotqConnection, List<String>) -> Unit) = withDb { db ->
         db.declareTables(*tables)
 
         val events = TextEventLogger("0")

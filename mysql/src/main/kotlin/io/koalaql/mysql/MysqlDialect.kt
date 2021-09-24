@@ -7,7 +7,7 @@ import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
@@ -21,10 +21,10 @@ import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class MysqlDialect(): SqlDialect {
-    override fun ddl(diff: SchemaDiff): List<SqlText> {
+    override fun ddl(change: SchemaChange): List<SqlText> {
         val results = mutableListOf<(SqlTextBuilder) -> Unit>()
 
-        diff.tables.created.forEach { (_, table) ->
+        change.tables.created.forEach { (_, table) ->
             results.add { sql ->
                 Compilation(
                     scope = Scope(NameRegistry()),
@@ -33,7 +33,7 @@ class MysqlDialect(): SqlDialect {
             }
         }
 
-        diff.tables.altered.forEach { (_, table) ->
+        change.tables.altered.forEach { (_, table) ->
             table.columns.created.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
@@ -92,7 +92,7 @@ class MysqlDialect(): SqlDialect {
             }
         }
 
-        diff.tables.dropped.forEach { table ->
+        change.tables.dropped.forEach { table ->
             results.add { sql ->
                 sql.addSql("DROP TABLE ")
                 sql.addIdentifier(table)

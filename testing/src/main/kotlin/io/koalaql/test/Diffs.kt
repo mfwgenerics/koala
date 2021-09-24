@@ -6,7 +6,7 @@ import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.Diff
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.ddl.diff.TableDiff
 
 interface DiffMatcher<in C, in A> {
@@ -100,6 +100,6 @@ fun TableDiff.assertMatch(actual: TableDiff) {
     indexes.assertMatch("indexes", actual.indexes, DiffMatcher.IGNORE)
 }
 
-fun SchemaDiff.assertMatch(actual: SchemaDiff) {
+fun SchemaChange.assertMatch(actual: SchemaChange) {
     tables.assertMatch("tables", actual.tables, DiffMatcher.IGNORE)
 }

@@ -1,21 +1,25 @@
 package io.koalaql.jdbc
 
-import io.koalaql.Database
-import io.koalaql.DeclareStrategy
-import io.koalaql.Isolation
+import io.koalaql.*
 import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import java.sql.Connection
 
-class JdbcDatabase(
+class JdbcDataSource(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
     val typeMappings: JdbcTypeMappings = JdbcTypeMappings(),
     val declareBy: DeclareStrategy = DeclareStrategy.Diff
-): Database<JdbcConnection>() {
+): DataSource {
+    val existingSchema = SchemaSource(
+        dialect,
+        provider,
+        typeMappings
+    )
+
     override fun declareTables(tables: List<Table>) {
         tables.forEach { table ->
             table.columns.forEach {
@@ -26,38 +30,17 @@ class JdbcDatabase(
         when (declareBy) {
             DeclareStrategy.RegisterOnly -> return
             DeclareStrategy.CreateIfNotExists -> {
-                val diff = SchemaDiff()
+                val diff = SchemaChange()
 
                 tables.forEach {
                     diff.tables.created[it.relvarName] = it
                 }
 
-                transact { it.ddl(diff) }
+                existingSchema.applyChanges(diff)
             }
-            DeclareStrategy.Diff -> {
-                provider.connect().use { jdbc ->
-                    jdbc.autoCommit = true
-
-                    val dbName = checkNotNull(jdbc.catalog?.takeIf { it.isNotBlank() })
-                        { "no database selected" }
-
-                    val differ = TableDiffer(
-                        dbName,
-                        jdbc.metaData
-                    )
-
-                    val diff = differ.declareTables(tables)
-
-                    val connection = JdbcConnection(
-                        jdbc,
-                        dialect,
-                        typeMappings,
-                        ConnectionEventWriter.Discard
-                    )
-
-                    connection.ddl(diff)
-                }
-            }
+            DeclareStrategy.Diff -> existingSchema.applyChanges(
+                existingSchema.detectChanges(tables)
+            )
         }
     }
 
@@ -85,7 +68,7 @@ class JdbcDatabase(
         )
     }
 
-    override fun close() {
+    fun close() {
         provider.close()
     }
 }

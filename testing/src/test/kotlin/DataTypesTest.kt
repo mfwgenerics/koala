@@ -1,15 +1,16 @@
 import io.koalaql.IdentifierName
+import io.koalaql.KotqConnection
 import io.koalaql.data.*
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.as_
 import io.koalaql.dsl.cast
 import io.koalaql.dsl.values
 import io.koalaql.expr.Name
-import io.koalaql.jdbc.JdbcConnection
-import io.koalaql.jdbc.JdbcDatabase
+import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.performWith
 import io.koalaql.test.data.DataTypeValuesMap
 import io.koalaql.test.data.DataTypeWithValues
+import io.koalaql.transact
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -37,7 +38,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
         }
     }
 
-    private fun <T : Any> selectData(cxn: JdbcConnection, values: DataTypeWithValues<T>) {
+    private fun <T : Any> selectData(cxn: KotqConnection, values: DataTypeWithValues<T>) {
         val label = Name(values.type.type, IdentifierName())
         val casted = cast(cast(label, values.type), values.type)
 
@@ -98,7 +99,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     ): Table("Data$ix") {
         val column = column("test", case.type)
 
-        fun insertData(db: JdbcDatabase) {
+        fun insertData(db: JdbcDataSource) {
             db.transact { cxn -> this
                 .insert(values(case.values) {
                     this[column] = it

@@ -1,7 +1,7 @@
 package io.koalaql.test.service
 
 import io.koalaql.dsl.*
-import io.koalaql.jdbc.JdbcDatabase
+import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.performWith
 import io.koalaql.setTo
 import io.koalaql.test.models.*
@@ -9,9 +9,10 @@ import io.koalaql.test.table.ReviewTable
 import io.koalaql.test.table.UserTable
 import io.koalaql.test.table.UserVenueTable
 import io.koalaql.test.table.VenueTable
+import io.koalaql.transact
 
 class VenueService(
-    private val db: JdbcDatabase,
+    private val db: JdbcDataSource,
     private val onConflict: OnConflictSupport
 ) {
     init {

@@ -16,6 +16,7 @@ Pre-release:
 * TableDiff support for different Instant/TIMEZONE WITH TIMESTAMP bindings
 * Batch processing in DDL
 * Re-create test on Table with all column types
+* Test failed transaction / rolls back correctly on close
 
 Post-release
 * User specified collations and charsets

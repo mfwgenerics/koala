@@ -1,9 +1,9 @@
 package io.koalaql.ddl
 
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 
-fun createTables(vararg tables: Table): SchemaDiff {
-    val result = SchemaDiff()
+fun createTables(vararg tables: Table): SchemaChange {
+    val result = SchemaChange()
 
     tables.forEach {
         result.tables.created[it.relvarName] = it

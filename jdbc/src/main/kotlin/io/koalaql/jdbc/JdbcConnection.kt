@@ -6,7 +6,7 @@ import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.createTables
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
@@ -25,16 +25,6 @@ class JdbcConnection(
     private val typeMappings: JdbcTypeMappings,
     private val events: ConnectionEventWriter
 ): KotqConnection {
-    fun createTable(vararg tables: Table) {
-        ddl(createTables(*tables))
-
-        tables.forEach { table ->
-            table.columns.forEach {
-                typeMappings.register(it.builtDef.columnType)
-            }
-        }
-    }
-
     private fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
         val result = if (generatedKeys) {
             jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
@@ -86,8 +76,8 @@ class JdbcConnection(
         }
     }
 
-    fun ddl(diff: SchemaDiff) {
-        dialect.ddl(diff).forEach {
+    fun ddl(change: SchemaChange) {
+        dialect.ddl(change).forEach {
             prepareAndThen(it) {
                 use {
                     execute()

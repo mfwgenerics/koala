@@ -19,9 +19,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `test insert and order by instant`() = withCxn { cxn, _ ->
-        cxn.createTable(EventTable)
-
+    fun `test insert and order by instant`() = withCxn(EventTable) { cxn, _ ->
         val instants = (1000..1010L).map {
             Instant.EPOCH.plusSeconds(it*24*60*60*7 + it)
         }

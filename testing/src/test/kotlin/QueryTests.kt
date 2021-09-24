@@ -1,3 +1,4 @@
+import io.koalaql.KotqConnection
 import io.koalaql.data.FLOAT
 import io.koalaql.data.INTEGER
 import io.koalaql.data.VARCHAR
@@ -14,6 +15,81 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 abstract class QueryTests: ProvideTestDatabase {
+    fun createAndPopulate(cxn: KotqConnection) {
+        val shopIds = ShopTable
+            .insert(values(
+                rowOf(ShopTable.name setTo "Hardware"),
+                rowOf(ShopTable.name setTo "Groceries"),
+                rowOf(ShopTable.name setTo "Stationery")
+            ))
+            .generatingKeys(ShopTable.id)
+            .performWith(cxn)
+            .map { it.getOrNull(ShopTable.id)!! }
+            .toList()
+
+        val hardwareId = shopIds[0]
+        val groceriesId = shopIds[1]
+        val stationeryId = shopIds[2]
+
+        val customerIds = CustomerTable
+            .insert(values(
+                rowOf(
+                    CustomerTable.firstName setTo "Jane",
+                    CustomerTable.lastName setTo "Doe"
+                ),
+                rowOf(
+                    CustomerTable.firstName setTo "Bob",
+                    CustomerTable.lastName setTo "Smith"
+                )
+            ))
+            .generatingKeys(CustomerTable.id)
+            .performWith(cxn)
+            .map { it.getOrNull(CustomerTable.id)!! }
+            .toList()
+
+        val janeId = customerIds[0]
+        val bobId = customerIds[1]
+
+        val inserted = PurchaseTable
+            .insert(values(
+                rowOf(
+                    PurchaseTable.shop setTo groceriesId,
+                    PurchaseTable.customer setTo janeId,
+                    PurchaseTable.product setTo "Apple",
+                    PurchaseTable.price setTo 150,
+                    PurchaseTable.discount setTo 20
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo groceriesId,
+                    PurchaseTable.customer setTo bobId,
+                    PurchaseTable.product setTo "Pear",
+                    PurchaseTable.price setTo 200
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo hardwareId,
+                    PurchaseTable.customer setTo janeId,
+                    PurchaseTable.product setTo "Hammer",
+                    PurchaseTable.price setTo 8000
+                ),
+                rowOf(
+                    PurchaseTable.shop setTo stationeryId,
+                    PurchaseTable.customer setTo bobId,
+                    PurchaseTable.product setTo "Pen",
+                    PurchaseTable.price setTo 500
+                ),
+            ))
+            .performWith(cxn)
+
+        assertEquals(4, inserted)
+    }
+
+    fun withExampleData(block: (KotqConnection) -> Unit) = withCxn(
+        ShopTable, CustomerTable, PurchaseTable
+    ) { cxn, _ ->
+        createAndPopulate(cxn)
+        block(cxn)
+    }
+
     @Test
     fun `perform values directly`() = withCxn { cxn, _ ->
         val number = name<Int>()
@@ -112,84 +188,8 @@ abstract class QueryTests: ProvideTestDatabase {
         }
     }
 
-    fun createAndPopulate(cxn: JdbcConnection) {
-        cxn.createTable(
-            ShopTable,
-            CustomerTable,
-            PurchaseTable
-        )
-
-        val shopIds = ShopTable
-            .insert(values(
-                rowOf(ShopTable.name setTo "Hardware"),
-                rowOf(ShopTable.name setTo "Groceries"),
-                rowOf(ShopTable.name setTo "Stationery")
-            ))
-            .generatingKeys(ShopTable.id)
-            .performWith(cxn)
-            .map { it.getOrNull(ShopTable.id)!! }
-            .toList()
-
-        val hardwareId = shopIds[0]
-        val groceriesId = shopIds[1]
-        val stationeryId = shopIds[2]
-
-        val customerIds = CustomerTable
-            .insert(values(
-                rowOf(
-                    CustomerTable.firstName setTo "Jane",
-                    CustomerTable.lastName setTo "Doe"
-                ),
-                rowOf(
-                    CustomerTable.firstName setTo "Bob",
-                    CustomerTable.lastName setTo "Smith"
-                )
-            ))
-            .generatingKeys(CustomerTable.id)
-            .performWith(cxn)
-            .map { it.getOrNull(CustomerTable.id)!! }
-            .toList()
-
-        val janeId = customerIds[0]
-        val bobId = customerIds[1]
-
-        val inserted = PurchaseTable
-            .insert(values(
-                rowOf(
-                    PurchaseTable.shop setTo groceriesId,
-                    PurchaseTable.customer setTo janeId,
-                    PurchaseTable.product setTo "Apple",
-                    PurchaseTable.price setTo 150,
-                    PurchaseTable.discount setTo 20
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo groceriesId,
-                    PurchaseTable.customer setTo bobId,
-                    PurchaseTable.product setTo "Pear",
-                    PurchaseTable.price setTo 200
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo hardwareId,
-                    PurchaseTable.customer setTo janeId,
-                    PurchaseTable.product setTo "Hammer",
-                    PurchaseTable.price setTo 8000
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo stationeryId,
-                    PurchaseTable.customer setTo bobId,
-                    PurchaseTable.product setTo "Pen",
-                    PurchaseTable.price setTo 500
-                ),
-            ))
-            .performWith(cxn)
-
-        assertEquals(4, inserted)
-    }
-
     @Test
-    fun `stringy joins`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `stringy joins`() = withExampleData { cxn ->
         val expectedPurchaseItems = listOf(
             listOf("Bob", "Pear", 200),
             listOf("Bob", "Pen", 500),
@@ -271,9 +271,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `update through not exists`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `update through not exists`() = withExampleData { cxn ->
         val updated = CustomerTable
             .where(notExists(PurchaseTable
                 .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
@@ -298,9 +296,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `multi update`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `multi update`() = withExampleData { cxn ->
         val expected = PurchaseTable
             .selectAll()
             .performWith(cxn)
@@ -314,9 +310,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `insert from select and subquery comparisons`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `insert from select and subquery comparisons`() = withExampleData { cxn ->
         val (bobId, janeId) = CustomerTable
             .where(CustomerTable.firstName inValues listOf("Bob", "Jane"))
             .orderBy(CustomerTable.firstName)
@@ -369,9 +363,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `join to cte`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `join to cte`() = withExampleData { cxn ->
         val alias = alias()
         val cte = cte()
 
@@ -412,9 +404,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `union all and count`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `union all and count`() = withExampleData { cxn ->
         val count = name<Int>()
 
         val purchaseCount = PurchaseTable
@@ -451,9 +441,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `inserting and selecting from mapped columns`() = withCxn { cxn, _ ->
-        cxn.createTable(MappingsTable)
-
+    fun `inserting and selecting from mapped columns`() = withCxn(MappingsTable) { cxn, _ ->
         MappingsTable
             .insert(values(
                 rowOf(
@@ -475,9 +463,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `case expressions and raw expr`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `case expressions and raw expr`() = withExampleData { cxn ->
         val n0 = name<String>()
         val n1 = name<String>()
         val n2 = name<String>()
@@ -544,9 +530,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `deletion with cte`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `deletion with cte`() = withExampleData { cxn ->
         val cte = cte()
 
         PurchaseTable
@@ -627,9 +611,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `self joins`() = withCxn { cxn, _ ->
-        createAndPopulate(cxn)
-
+    fun `self joins`() = withExampleData { cxn ->
         val purchases2 = PurchaseTable as_ alias()
 
         val shopsAlias = alias()
@@ -681,9 +663,7 @@ abstract class QueryTests: ProvideTestDatabase {
     open val requiresOnConflictKey get() = false
 
     @Test
-    open fun `on duplicate update with values`() = withCxn { cxn, _ ->
-        cxn.createTable(MergeTest)
-
+    open fun `on duplicate update with values`() = withCxn(MergeTest) { cxn, _ ->
         fun OnConflictable.onConflict0(): OnConflicted {
             return if (requiresOnConflictKey) {
                 onConflict(MergeTest.conflictKey)

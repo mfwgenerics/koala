@@ -7,7 +7,7 @@ import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.diff.ChangedDefault
 import io.koalaql.ddl.diff.ColumnDiff
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.ddl.diff.TableDiff
 import java.sql.DatabaseMetaData
 import java.sql.Types
@@ -235,10 +235,15 @@ class TableDiffer(
 
     fun declareTables(
         tables: List<Table>
-    ): SchemaDiff {
-        val diff = SchemaDiff()
+    ): SchemaChange {
+        val diff = SchemaChange()
 
         val toCreate = tables.associateByTo(hashMapOf()) { it.relvarName }
+
+        check (tables.size == toCreate.size) {
+            "Duplicate table names ${tables.map { it.relvarName }.groupBy { it }.filterValues { it.size > 1 }.keys}"
+        }
+
         val toDiff = arrayListOf<Table>()
 
         val rs = metadata.getTables(

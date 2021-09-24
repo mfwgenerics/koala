@@ -7,7 +7,7 @@ import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
-import io.koalaql.ddl.diff.SchemaDiff
+import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
@@ -126,10 +126,10 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    override fun ddl(diff: SchemaDiff): List<SqlText> {
+    override fun ddl(change: SchemaChange): List<SqlText> {
         val results = mutableListOf<SqlText>()
 
-        diff.tables.created.forEach { (_, table) ->
+        change.tables.created.forEach { (_, table) ->
             val sql = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
 
             compileCreateTable(sql, table)

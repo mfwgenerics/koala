@@ -1,4 +1,5 @@
 import io.koalaql.data.DOUBLE
+import io.koalaql.data.UnmappedDataType
 import io.koalaql.dsl.*
 import io.koalaql.jdbc.performWith
 import org.junit.Test
