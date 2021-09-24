@@ -25,7 +25,7 @@ class JdbcConnection(
     private val typeMappings: JdbcTypeMappings,
     private val events: ConnectionEventWriter
 ): KotqConnection {
-    private fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
+    fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
         val result = if (generatedKeys) {
             jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
         } else {
@@ -44,7 +44,7 @@ class JdbcConnection(
         return result
     }
 
-    private inline fun <R> prepareAndThen(
+    inline fun <R> prepareAndThen(
         sql: SqlText,
         generatedKeys: Boolean = false,
         block: PreparedStatement.() -> R
@@ -73,16 +73,6 @@ class JdbcConnection(
             event.succeeded(rows)
 
             rows
-        }
-    }
-
-    fun ddl(change: SchemaChange) {
-        dialect.ddl(change).forEach {
-            prepareAndThen(it) {
-                use {
-                    execute()
-                }
-            }
         }
     }
 

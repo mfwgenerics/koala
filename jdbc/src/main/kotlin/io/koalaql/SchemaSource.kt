@@ -12,7 +12,7 @@ import io.koalaql.jdbc.TableDiffer
 class SchemaSource(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
-    val typeMappings: JdbcTypeMappings = JdbcTypeMappings()
+    val typeMappings: JdbcTypeMappings
 ) {
     fun detectChanges(tables: List<Table>): SchemaChange = provider.connect().use { jdbc ->
         jdbc.autoCommit = true
@@ -28,15 +28,27 @@ class SchemaSource(
         differ.declareTables(tables)
     }
 
-    fun applyChanges(changes: SchemaChange) = provider.connect().use { jdbc ->
-        val connection = JdbcConnection(
-            jdbc,
-            dialect,
-            typeMappings,
-            ConnectionEventWriter.Discard
-        )
+    fun applyChanges(changes: SchemaChange) {
+        val batches = dialect.ddl(changes)
 
-        connection.ddl(changes)
+        provider.connect().use { jdbc ->
+            jdbc.autoCommit = true
+
+            val connection = JdbcConnection(
+                jdbc,
+                dialect,
+                typeMappings,
+                ConnectionEventWriter.Discard
+            )
+
+            batches.forEach {
+                connection.prepareAndThen(it) {
+                    use {
+                        execute()
+                    }
+                }
+            }
+        }
     }
 
     fun detectAndApplyChanges(tables: List<Table>): SchemaChange {

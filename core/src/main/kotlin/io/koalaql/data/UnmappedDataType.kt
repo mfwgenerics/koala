@@ -1,6 +1,5 @@
 package io.koalaql.data
 
-import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.sql.StandardSql
 import java.math.BigDecimal
 import java.time.Instant
@@ -26,10 +25,13 @@ sealed class UnmappedDataType<T : Any>(
             val suffix = precision?.let { "($precision)" }?:""
             "TIMESTAMP$suffix WITHOUT TIME ZONE"
         }
-        is DECIMAL -> "DECIMAL(${precision},${scale})"
+        is DECIMAL -> "DECIMAL(${length},${precision})"
         DOUBLE -> "DOUBLE"
         FLOAT -> "FLOAT"
-        INSTANT -> "TIMESTAMP WITH TIME ZONE"
+        is INSTANT -> {
+            val suffix = precision?.let { "($precision)" }?:""
+            "TIMESTAMP$suffix WITH TIME ZONE"
+        }
         TINYINT -> "TINYINT"
         SMALLINT -> "SMALLINT"
         INTEGER -> "INTEGER"
@@ -82,7 +84,16 @@ object BIGINT: PrimitiveDataType<Long>(Long::class) {
 
 object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
 
-object INSTANT: PrimitiveDataType<Instant>(Instant::class)
+open class INSTANT(
+    val precision: Int? = null
+): UnmappedDataType<Instant>(Instant::class) {
+    companion object : INSTANT()
+
+    override fun equals(other: Any?): Boolean =
+        other is INSTANT && precision == other.precision
+
+    override fun hashCode(): Int = precision.hashCode()
+}
 
 object TEXT: PrimitiveDataType<String>(String::class)
 object BOOLEAN: PrimitiveDataType<Boolean>(Boolean::class)
@@ -126,16 +137,16 @@ class VARBINARY(
 }
 
 class DECIMAL(
-    val precision: Int,
-    val scale: Int
+    val length: Int,
+    val precision: Int
 ): UnmappedDataType<BigDecimal>(
     BigDecimal::class
 ) {
     override fun equals(other: Any?): Boolean = other is DECIMAL
+        && length == other.length
         && precision == other.precision
-        && scale == other.scale
 
-    override fun hashCode(): Int = precision.hashCode() xor scale.hashCode()
+    override fun hashCode(): Int = length.hashCode() xor precision.hashCode()
 }
 
 class RAW<T : Any>(

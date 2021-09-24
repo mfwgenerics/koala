@@ -8,11 +8,7 @@ import io.koalaql.ddl.diff.TableDiff
 import io.koalaql.dsl.keys
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.assertMatch
-import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneOffset
+import java.util.concurrent.Executors
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -126,8 +122,7 @@ abstract class DdlTests: ProvideTestDatabase {
             VARCHAR(150),
             VARCHAR(200),
             VARCHAR(250),
-            VARBINARY(200),
-            RAW<BigDecimal>("DECIMAL(5, 4)")
+            VARBINARY(200)
         )
 
         val cases = columnTypes
@@ -159,7 +154,7 @@ abstract class DdlTests: ProvideTestDatabase {
         val createdAlteredDropped = diffs.map { diff ->
             assertEquals(0, diff.tables.dropped.size)
 
-            listOf(
+            Pair(
                 diff.tables.created.size,
                 diff.tables.altered.values.sumOf {
                     assertEquals(0, it.columns.created.size)
@@ -173,10 +168,17 @@ abstract class DdlTests: ProvideTestDatabase {
             )
         }
 
-        createdAlteredDropped.forEach {
-            println(it)
-        }
+        val expected = listOf(
+            Pair(1, 0),
+            Pair(0, 0),
+            Pair(0, cases.size),
+            Pair(0, 0),
+            Pair(0, cases.size),
+            Pair(0, 0)
+        )
 
-        TODO()
+        expected.forEachIndexed { ix, pair ->
+            assertEquals(pair, createdAlteredDropped[ix], "${diffs[ix]}")
+        }
     }
 }

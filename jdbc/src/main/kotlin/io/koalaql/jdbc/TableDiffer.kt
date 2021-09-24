@@ -25,16 +25,38 @@ class TableDiffer(
 
     private fun diffColumnType(dataType: UnmappedDataType<*>, info: ColumnTypeInfo): Boolean {
         return when (dataType) {
-            BOOLEAN -> info.tag != Types.BOOLEAN
+            BOOLEAN -> info.tag != Types.BIT
             DOUBLE -> info.tag != Types.DOUBLE
-            FLOAT -> info.tag != Types.FLOAT
-            INTEGER -> info.tag != Types.INTEGER
-            SMALLINT -> info.tag != Types.SMALLINT
-            TEXT -> info.tag != Types.CLOB
-            TINYINT -> info.tag != Types.TINYINT
+            FLOAT -> info.tag != Types.REAL
+            TEXT -> info.tag != Types.LONGVARCHAR
             is VARCHAR -> info.tag != Types.VARCHAR
                 || info.columnSize != dataType.maxLength
-            else -> false
+            is DATETIME -> info.tag != Types.TIMESTAMP
+                || (dataType.precision != null
+                && info.decimalDigits != dataType.precision)
+            is DECIMAL -> { info.tag != Types.DECIMAL
+                || info.columnSize != dataType.length
+                || info.decimalDigits != dataType.precision
+            }
+            DATE -> info.tag != Types.DATE
+            is INSTANT -> info.tag != Types.TIMESTAMP
+                || (dataType.precision != null
+                && info.decimalDigits != dataType.precision)
+            TINYINT -> info.tag != Types.TINYINT || info.name != "TINYINT"
+            SMALLINT -> info.tag != Types.SMALLINT || info.name != "SMALLINT"
+            INTEGER -> info.tag != Types.INTEGER || info.name != "INT"
+            BIGINT -> info.tag != Types.BIGINT || info.name != "BIGINT"
+            TINYINT.UNSIGNED -> info.tag != Types.TINYINT || info.name != "TINYINT UNSIGNED"
+            SMALLINT.UNSIGNED -> info.tag != Types.SMALLINT || info.name != "SMALLINT UNSIGNED"
+            INTEGER.UNSIGNED -> info.tag != Types.INTEGER || info.name != "INT UNSIGNED"
+            BIGINT.UNSIGNED -> info.tag != Types.BIGINT || info.name != "BIGINT UNSIGNED"
+            /* precision in TIME affects column size */
+            is TIME -> info.tag != Types.TIME
+                || (dataType.precision != null
+                && info.columnSize != 9 + dataType.precision!!)
+            is VARBINARY -> info.tag != Types.VARBINARY
+                || info.columnSize != dataType.maxLength
+            is RAW -> false
         }
     }
 
