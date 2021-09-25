@@ -1,3 +1,6 @@
+import io.koalaql.DeclareStrategy
+import io.koalaql.JdbcSchemaDetection
+import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import io.koalaql.postgres.PostgresDialect
@@ -10,6 +13,7 @@ fun PgTestDatabase(db: String): JdbcDataSource {
     outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
     return JdbcDataSource(
+        JdbcSchemaDetection.NotSupported,
         PostgresDialect(),
         object : JdbcProvider {
             override fun connect(): Connection =
@@ -18,6 +22,8 @@ fun PgTestDatabase(db: String): JdbcDataSource {
             override fun close() {
                 outerCxn.prepareStatement("DROP DATABASE $db").execute()
             }
-        }
+        },
+        JdbcTypeMappings(),
+        DeclareStrategy.CreateIfNotExists
     )
 }

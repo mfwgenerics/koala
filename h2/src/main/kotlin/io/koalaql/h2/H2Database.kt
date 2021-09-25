@@ -1,5 +1,7 @@
 package io.koalaql.h2
 
+import io.koalaql.DeclareStrategy
+import io.koalaql.JdbcSchemaDetection
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import java.sql.Connection
@@ -9,6 +11,7 @@ fun H2Database(db: String): JdbcDataSource {
     val keepAlive = DriverManager.getConnection("jdbc:h2:mem:$db;MV_STORE=false")
 
     return JdbcDataSource(
+        JdbcSchemaDetection.NotSupported,
         H2Dialect(),
         /* workaround MV_STORE=false or we get NPEs from h2 from a regression in 1.4.200
            we can't downgrade to 1.4.199 bc we need the date time features */
@@ -20,6 +23,7 @@ fun H2Database(db: String): JdbcDataSource {
                 keepAlive.close()
             }
         },
-        H2TypeMappings()
+        H2TypeMappings(),
+        DeclareStrategy.CreateIfNotExists
     )
 }

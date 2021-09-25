@@ -1,12 +1,9 @@
 package io.koalaql.jdbc
 
-import io.koalaql.KotqConnection
+import io.koalaql.DataConnection
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
-import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
-import io.koalaql.ddl.createTables
-import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
@@ -24,7 +21,7 @@ class JdbcConnection(
     private val dialect: SqlDialect,
     private val typeMappings: JdbcTypeMappings,
     private val events: ConnectionEventWriter
-): KotqConnection {
+): DataConnection {
     fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
         val result = if (generatedKeys) {
             jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)

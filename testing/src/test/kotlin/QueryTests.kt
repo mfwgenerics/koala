@@ -1,10 +1,9 @@
-import io.koalaql.KotqConnection
+import io.koalaql.DataConnection
 import io.koalaql.data.FLOAT
 import io.koalaql.data.INTEGER
 import io.koalaql.data.VARCHAR
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
-import io.koalaql.jdbc.JdbcConnection
 import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
@@ -15,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 abstract class QueryTests: ProvideTestDatabase {
-    fun createAndPopulate(cxn: KotqConnection) {
+    fun createAndPopulate(cxn: DataConnection) {
         val shopIds = ShopTable
             .insert(values(
                 rowOf(ShopTable.name setTo "Hardware"),
@@ -83,7 +82,7 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals(4, inserted)
     }
 
-    fun withExampleData(block: (KotqConnection) -> Unit) = withCxn(
+    fun withExampleData(block: (DataConnection) -> Unit) = withCxn(
         ShopTable, CustomerTable, PurchaseTable
     ) { cxn, _ ->
         createAndPopulate(cxn)

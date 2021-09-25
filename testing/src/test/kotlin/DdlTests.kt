@@ -31,16 +31,16 @@ abstract class DdlTests: ProvideTestDatabase {
         expected: TableDiff,
         table: Table
     ) {
-        val diff = db.existingSchema.detectChanges(listOf(table))
+        val diff = db.detectChanges(listOf(table))
             .tables.altered.values.single()
 
         expected.assertMatch(diff)
 
-        db.existingSchema.applyChanges(SchemaChange().apply {
+        db.changeSchema(SchemaChange().apply {
             tables.altered[table.relvarName] = diff
         })
 
-        val newDiff = db.existingSchema.detectChanges(listOf(table))
+        val newDiff = db.detectChanges(listOf(table))
             .tables.altered.values.single()
 
         TableDiff(table).assertMatch(newDiff)
@@ -48,7 +48,7 @@ abstract class DdlTests: ProvideTestDatabase {
 
     @Test
     fun `empty diff`() = withDb { db ->
-        db.existingSchema.applyChanges(createTables(
+        db.changeSchema(createTables(
             CustomerTable
         ))
 
@@ -57,7 +57,7 @@ abstract class DdlTests: ProvideTestDatabase {
 
     @Test
     fun `change varchar lengths and add unique key`() = withDb { db ->
-        db.existingSchema.applyChanges(createTables(
+        db.changeSchema(createTables(
             CustomerTable
         ))
 
@@ -141,14 +141,12 @@ abstract class DdlTests: ProvideTestDatabase {
             }
         }
 
-        val schema = db.existingSchema
-
         /* pivot columns into table definitions */
         val diffs = (0..2)
             .map { ix -> TestTable(ix) }
             .flatMap { listOf(it, it) }
             .map {
-                schema.detectAndApplyChanges(listOf(it))
+                db.detectAndApplyChanges(listOf(it))
             }
 
         val createdAlteredDropped = diffs.map { diff ->

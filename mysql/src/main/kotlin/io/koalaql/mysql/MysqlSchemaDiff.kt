@@ -1,4 +1,4 @@
-package io.koalaql.jdbc
+package io.koalaql.mysql
 
 import io.koalaql.data.*
 import io.koalaql.ddl.BaseColumnType
@@ -12,7 +12,7 @@ import io.koalaql.ddl.diff.TableDiff
 import java.sql.DatabaseMetaData
 import java.sql.Types
 
-class TableDiffer(
+class MysqlSchemaDiff(
     val dbName: String,
     val metadata: DatabaseMetaData
 ) {
@@ -255,7 +255,7 @@ class TableDiffer(
         return result
     }
 
-    fun declareTables(
+    fun detectChanges(
         tables: List<Table>
     ): SchemaChange {
         val diff = SchemaChange()

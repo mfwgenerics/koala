@@ -7,5 +7,5 @@ interface DataSource {
     fun declareTables(tables: List<Table>)
     fun declareTables(vararg tables: Table) = declareTables(tables.asList())
 
-    fun connect(isolation: Isolation, events: ConnectionEventWriter = ConnectionEventWriter.Discard): KotqConnection
+    fun connect(isolation: Isolation, events: ConnectionEventWriter = ConnectionEventWriter.Discard): DataConnection
 }

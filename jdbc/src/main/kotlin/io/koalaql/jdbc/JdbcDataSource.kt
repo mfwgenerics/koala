@@ -9,16 +9,43 @@ import io.koalaql.event.ConnectionEventWriter
 import java.sql.Connection
 
 class JdbcDataSource(
+    val schema: JdbcSchemaDetection,
     val dialect: SqlDialect,
     val provider: JdbcProvider,
-    val typeMappings: JdbcTypeMappings = JdbcTypeMappings(),
-    val declareBy: DeclareStrategy = DeclareStrategy.Diff
-): DataSource {
-    val existingSchema = SchemaSource(
-        dialect,
-        provider,
-        typeMappings
-    )
+    val typeMappings: JdbcTypeMappings,
+    val declareBy: DeclareStrategy
+): SchemaDataSource {
+    override fun detectChanges(tables: List<Table>): SchemaChange = provider.connect().use { jdbc ->
+        jdbc.autoCommit = true
+
+        val dbName = checkNotNull(jdbc.catalog?.takeIf { it.isNotBlank() })
+            { "no database selected" }
+
+        schema.detectChanges(dbName, jdbc.metaData, tables)
+    }
+
+    override fun changeSchema(changes: SchemaChange) {
+        val batches = dialect.ddl(changes)
+
+        provider.connect().use { jdbc ->
+            jdbc.autoCommit = true
+
+            val connection = JdbcConnection(
+                jdbc,
+                dialect,
+                typeMappings,
+                ConnectionEventWriter.Discard
+            )
+
+            batches.forEach {
+                connection.prepareAndThen(it) {
+                    use {
+                        execute()
+                    }
+                }
+            }
+        }
+    }
 
     override fun declareTables(tables: List<Table>) {
         tables.forEach { table ->
@@ -36,10 +63,10 @@ class JdbcDataSource(
                     diff.tables.created[it.relvarName] = it
                 }
 
-                existingSchema.applyChanges(diff)
+                changeSchema(diff)
             }
-            DeclareStrategy.Diff -> existingSchema.applyChanges(
-                existingSchema.detectChanges(tables)
+            DeclareStrategy.Change -> changeSchema(
+                detectChanges(tables)
             )
         }
     }

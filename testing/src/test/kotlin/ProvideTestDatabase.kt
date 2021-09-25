@@ -1,4 +1,4 @@
-import io.koalaql.KotqConnection
+import io.koalaql.DataConnection
 import io.koalaql.ddl.Table
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.logging.TextEventLogger
@@ -19,7 +19,7 @@ interface ProvideTestDatabase {
         }
     }
 
-    fun withCxn(vararg tables: Table, block: (KotqConnection, List<String>) -> Unit) = withDb { db ->
+    fun withCxn(vararg tables: Table, block: (DataConnection, List<String>) -> Unit) = withDb { db ->
         db.declareTables(*tables)
 
         val events = TextEventLogger("0")

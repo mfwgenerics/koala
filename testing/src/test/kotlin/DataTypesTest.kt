@@ -1,5 +1,5 @@
 import io.koalaql.IdentifierName
-import io.koalaql.KotqConnection
+import io.koalaql.DataConnection
 import io.koalaql.data.*
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.as_
@@ -38,7 +38,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
         }
     }
 
-    private fun <T : Any> selectData(cxn: KotqConnection, values: DataTypeWithValues<T>) {
+    private fun <T : Any> selectData(cxn: DataConnection, values: DataTypeWithValues<T>) {
         val label = Name(values.type.type, IdentifierName())
         val casted = cast(cast(label, values.type), values.type)
 

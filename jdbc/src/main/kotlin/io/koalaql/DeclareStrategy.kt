@@ -6,5 +6,5 @@ sealed interface DeclareStrategy {
     /* execute "create table if not exists" ddl */
     object CreateIfNotExists: DeclareStrategy
     /* use JDBC metadata to compute and apply a full diff. TODO parameterize */
-    object Diff: DeclareStrategy
+    object Change: DeclareStrategy
 }
