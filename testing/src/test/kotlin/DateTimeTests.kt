@@ -1,4 +1,4 @@
-import io.koalaql.data.INSTANT
+import io.koalaql.data.TIMESTAMP
 import io.koalaql.data.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.keys
@@ -11,7 +11,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
     object EventTable: Table("Event") {
         val id = column("id", INTEGER.autoIncrement())
 
-        val at = column("at", INSTANT)
+        val at = column("at", TIMESTAMP)
 
         init {
             primaryKey(keys(id))

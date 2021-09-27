@@ -28,7 +28,7 @@ sealed class UnmappedDataType<T : Any>(
         is DECIMAL -> "DECIMAL(${length},${precision})"
         DOUBLE -> "DOUBLE"
         FLOAT -> "FLOAT"
-        is INSTANT -> {
+        is TIMESTAMP -> {
             val suffix = precision?.let { "($precision)" }?:""
             "TIMESTAMP$suffix WITH TIME ZONE"
         }
@@ -84,13 +84,13 @@ object BIGINT: PrimitiveDataType<Long>(Long::class) {
 
 object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
 
-open class INSTANT(
+open class TIMESTAMP(
     val precision: Int? = null
 ): UnmappedDataType<Instant>(Instant::class) {
-    companion object : INSTANT()
+    companion object : TIMESTAMP()
 
     override fun equals(other: Any?): Boolean =
-        other is INSTANT && precision == other.precision
+        other is TIMESTAMP && precision == other.precision
 
     override fun hashCode(): Int = precision.hashCode()
 }

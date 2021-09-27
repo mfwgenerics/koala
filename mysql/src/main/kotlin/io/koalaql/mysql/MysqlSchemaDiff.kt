@@ -39,7 +39,7 @@ class MysqlSchemaDiff(
                 || info.decimalDigits != dataType.precision
             }
             DATE -> info.tag != Types.DATE
-            is INSTANT -> info.tag != Types.TIMESTAMP
+            is TIMESTAMP -> info.tag != Types.TIMESTAMP
                 || (dataType.precision != null
                 && info.decimalDigits != dataType.precision)
             TINYINT -> info.tag != Types.TINYINT || info.name != "TINYINT"

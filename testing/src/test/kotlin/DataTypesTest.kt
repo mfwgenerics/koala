@@ -68,7 +68,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
         this[DATETIME] = listOf(LocalDateTime.parse("1481-11-21T09:12:43"), LocalDateTime.parse("2481-11-21T09:12:43"))
         this[DOUBLE] = listOf(0.0, Double.MIN_VALUE, 2.0, Double.MAX_VALUE)
         this[FLOAT] = listOf(-482824.0f, 0.0f, Float.MIN_VALUE, 1.4322f, 2.0f, 4853.0f, Float.MAX_VALUE)
-        this[INSTANT] = listOf(LocalDateTime.parse("1481-11-21T09:12:43"), LocalDateTime.parse("2481-11-21T09:12:43"))
+        this[TIMESTAMP] = listOf(LocalDateTime.parse("1481-11-21T09:12:43"), LocalDateTime.parse("2481-11-21T09:12:43"))
             .map { it.toInstant(ZoneOffset.UTC) }
         this[INTEGER] = listOf(Int.MIN_VALUE, -600000, 1, 4, 10, 3020, Int.MAX_VALUE)
         this[SMALLINT] = listOf(Short.MIN_VALUE, 8888, Short.MAX_VALUE)

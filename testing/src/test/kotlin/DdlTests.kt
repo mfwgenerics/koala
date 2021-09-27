@@ -8,7 +8,6 @@ import io.koalaql.ddl.diff.TableDiff
 import io.koalaql.dsl.keys
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.assertMatch
-import java.util.concurrent.Executors
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -108,7 +107,7 @@ abstract class DdlTests: ProvideTestDatabase {
             DATETIME,
             DOUBLE,
             FLOAT,
-            INSTANT,
+            TIMESTAMP,
             INTEGER,
             SMALLINT,
             TEXT,
