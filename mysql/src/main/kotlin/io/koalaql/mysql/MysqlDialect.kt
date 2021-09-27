@@ -112,7 +112,7 @@ class MysqlDialect(): SqlDialect {
             when (expr) {
                 is Literal -> sql.addLiteral(expr)
                 is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
-                else -> compileExpr(expr)
+                else -> compileExpr(expr, true)
             }
         }
 
@@ -329,7 +329,16 @@ class MysqlDialect(): SqlDialect {
         }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            sql.compileExpr(expr, emitParens, this)
+            when {
+                expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+                    check (expr.args.isEmpty())
+
+                    sql.parenthesize(emitParens) {
+                        sql.addSql("UTC_TIMESTAMP")
+                    }
+                }
+                else -> sql.compileExpr(expr, emitParens, this)
+            }
         }
 
         override fun excluded(reference: Reference<*>) {

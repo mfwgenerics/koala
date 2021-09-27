@@ -1,5 +1,6 @@
 package io.koalaql.values
 
+import io.koalaql.expr.AsReference
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
 
@@ -8,11 +9,14 @@ abstract class ValuesRow {
 
     abstract fun <T : Any> getOrNull(reference: Reference<T>): T?
 
-    fun <T : Any> getValue(reference: Reference<T>): T =
+    fun <T : Any> getOrNull(reference: AsReference<T>): T? =
+        getOrNull(reference.asReference())
+
+    fun <T : Any> getValue(reference: AsReference<T>): T =
         checkNotNull(getOrNull(reference)) { "expected non-null $reference" }
 
     /* reified R so nullability cast can be checked */
-    inline operator fun <T : Any, reified R : T?> get(reference: Reference<T>): R {
+    inline operator fun <T : Any, reified R : T?> get(reference: AsReference<T>): R {
         return getOrNull(reference) as R
     }
 

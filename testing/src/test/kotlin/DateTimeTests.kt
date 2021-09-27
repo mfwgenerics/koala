@@ -1,10 +1,11 @@
 import io.koalaql.data.TIMESTAMP
 import io.koalaql.data.INTEGER
 import io.koalaql.ddl.Table
-import io.koalaql.dsl.keys
-import io.koalaql.dsl.values
+import io.koalaql.dsl.*
 import io.koalaql.jdbc.performWith
+import java.time.Duration
 import java.time.Instant
+import kotlin.math.absoluteValue
 import kotlin.test.Test
 
 abstract class DateTimeTests: ProvideTestDatabase {
@@ -19,9 +20,9 @@ abstract class DateTimeTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `test insert and order by instant`() = withCxn(EventTable) { cxn, _ ->
-        val instants = (1000..1010L).map {
-            Instant.EPOCH.plusSeconds(it*24*60*60*7 + it)
+    fun `test insert and order by big instants`() = withCxn(EventTable) { cxn, _ ->
+        val instants = (1..20L).map {
+            Instant.EPOCH.plusSeconds(it*619315217)
         }
 
         EventTable
@@ -41,5 +42,15 @@ abstract class DateTimeTests: ProvideTestDatabase {
 
                 assert(t == instants[instants.size - ix - 1])
             }
+    }
+
+    @Test
+    fun `current timestamp is roughly the current time`() = withDb { db ->
+        val timeExpr = currentTimestamp() as_ name()
+
+        val currentTimeByDb = select(timeExpr)
+            .performWith(db).single().getValue(timeExpr)
+
+        assert(Duration.between(currentTimeByDb, Instant.now()).toMinutes().absoluteValue < 5)
     }
 }
