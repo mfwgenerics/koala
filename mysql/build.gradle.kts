@@ -1,5 +1,5 @@
 plugins {
-    id("conventions")
+    id("publish")
 }
 
 dependencies {
@@ -9,8 +9,4 @@ dependencies {
 
     testImplementation(project(":testing"))
     testImplementation(project(":testing", "testArchive"))
-}
-
-tasks.test {
-    maxParallelForks = 16
 }
