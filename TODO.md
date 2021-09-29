@@ -3,22 +3,20 @@ Pre-release:
 * Implement ON DUPLICATE/CONFLICT update for VALUES, SELECTS incl/ complex updates
 * Add tests for defaults
 * Emit CREATE TABLE INDEX as separate DDL in H2
-* Better Postgres ON CONFLICT support - allow columns and WHERE to be conflict targets
 * Prevent delete/update without where or other limiting condition
 * Complete + test connection event logging interface
 * Memory leak proofing, idempotent close, auto-close resources when connection closes
-* Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?
-* Offset timezone tests for MySQL
 * Add table definitions + null cases to DataTypeTests
 * Large text blocks test
 * VARCHAR maxLength tests
 * Common operators w/ tests for MySQL
-* TableDiff support for different Instant/TIMEZONE WITH TIMESTAMP bindings
 * Batch processing in DDL
-* Re-create test on Table with all column types
 * Test failed transaction / rolls back correctly on close
 
 Post-release
+* SELECT DISTINCT
+* Postgres ON CONFLICT support - allow columns and WHERE to be conflict targets
+* Merge Cte and Alias - allow inner join to Alias OR Cte/CteAlias vs Alias distinction?
 * User specified collations and charsets
 * Replace chained .where with e.g. .where().and().and()
 * Don't require .select for exists/notExists

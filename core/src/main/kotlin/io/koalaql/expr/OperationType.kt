@@ -73,7 +73,20 @@ enum class OperationType(
     MIN("MIN", OperationFixity.APPLY),
     STDDEV_POP("STDDEV_POP", OperationFixity.APPLY),
     SUM("SUM", OperationFixity.APPLY),
-    VAR_POP("VAR_POP", OperationFixity.APPLY);
+    VAR_POP("VAR_POP", OperationFixity.APPLY),
+
+    /* windows */
+    ROW_NUMBER("ROW_NUMBER", OperationFixity.APPLY),
+    RANK("RANK", OperationFixity.APPLY),
+    DENSE_RANK("DENSE_RANK", OperationFixity.APPLY),
+    PERCENT_RANK("PERCENT_RANK", OperationFixity.APPLY),
+    CUME_DIST("CUME_DIST", OperationFixity.APPLY),
+    NTILE("NTILE", OperationFixity.APPLY),
+    LAG("LAG", OperationFixity.APPLY),
+    LEAD("LEAD", OperationFixity.APPLY),
+    FIRST_VALUE("FIRST_VALUE", OperationFixity.APPLY),
+    LAST_VALUE("LAST_VALUE", OperationFixity.APPLY),
+    NTH_VALUE("NTH_VALUE", OperationFixity.APPLY);
 
     operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
         OperationExpr(this, args.toList())

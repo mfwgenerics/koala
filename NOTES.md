@@ -2,9 +2,9 @@ Project consists of two parts - schema and query:
 
 Schema definition and diff framework:
 
-* Aims to faithfully represent schema
-* Does not provide DDL directly
-* Instead, DDL is figured out from diffs 
+* Aims to faithfully represent schema rather than DDL
+* Does not provide any DDL directly
+* Instead, DDL is produced from changesets
 
 SQL query/statement dsl:
 
