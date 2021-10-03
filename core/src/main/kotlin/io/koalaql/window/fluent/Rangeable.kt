@@ -3,10 +3,9 @@ package io.koalaql.window.fluent
 import io.koalaql.expr.Expr
 import io.koalaql.window.FrameClauseType
 import io.koalaql.window.built.BuildsIntoWindow
-import io.koalaql.window.built.BuildsIntoWindowPartitions
 import io.koalaql.window.built.BuiltWindow
 
-interface Rangeable: Rowable, BuildsIntoWindowPartitions {
+interface Rangeable: Rowable, BuildsIntoWindow {
     private class RangeClauseWindow<T>(
         val lhs: BuildsIntoWindow
     ): Betweenable<T> {

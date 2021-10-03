@@ -16,7 +16,7 @@ enum class OperationType(
     IS_DISTINCT_FROM("IS DISTINCT FROM", OperationFixity.INFIX),
     IS_NOT_DISTINCT_FROM("IS NOT DISTINCT FROM", OperationFixity.INFIX),
 
-    MOD("MOD", OperationFixity.INFIX),
+    MOD("%", OperationFixity.INFIX),
 
     PLUS("+", OperationFixity.INFIX),
     MINUS("-", OperationFixity.INFIX),

@@ -1,6 +1,8 @@
 package io.koalaql.window.fluent
 
 import io.koalaql.expr.Expr
+import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.BuiltWindow
 import io.koalaql.window.built.BuiltWindowPartitions
 
 interface Partitionable: WindowOrderable {
@@ -8,8 +10,8 @@ interface Partitionable: WindowOrderable {
         val lhs: Partitionable,
         val partitions: List<Expr<*>>
     ): WindowOrderable {
-        override fun buildIntoWindowPartitions(partitions: BuiltWindowPartitions): Partitionable {
-            partitions.partitions = this.partitions
+        override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow? {
+            window.partitions.partitions = this.partitions
             return lhs
         }
     }

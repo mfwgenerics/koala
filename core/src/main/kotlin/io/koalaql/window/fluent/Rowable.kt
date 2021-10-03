@@ -4,10 +4,9 @@ import io.koalaql.expr.Expr
 import io.koalaql.window.FrameClauseType
 import io.koalaql.window.Window
 import io.koalaql.window.built.BuildsIntoWindow
-import io.koalaql.window.built.BuildsIntoWindowPartitions
 import io.koalaql.window.built.BuiltWindow
 
-interface Rowable: Window, BuildsIntoWindowPartitions {
+interface Rowable: Window, BuildsIntoWindow {
     private class FrameClauseWindow<T>(
         val lhs: BuildsIntoWindow,
         val type: FrameClauseType

@@ -75,6 +75,12 @@ operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =
 inline operator fun <reified T : Number> Expr<T>.div(rhs: T): Expr<T> =
     this / value(rhs)
 
+operator fun <T : Number> Expr<T>.rem(rhs: Expr<T>): Expr<T> =
+    OperationType.MOD(this, rhs)
+
+inline operator fun <reified T : Number> Expr<T>.rem(rhs: T): Expr<T> =
+    this % value(rhs)
+
 operator fun <T : Number> Expr<T>.times(rhs: Expr<T>): Expr<T> =
     OperationType.MULTIPLY(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.times(rhs: T): Expr<T> =

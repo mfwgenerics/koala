@@ -76,11 +76,34 @@ abstract class OperationTests : ProvideTestDatabase {
     @Test
     open fun `simple windows`() = withCxn(WindowTestTable) { cxn, _ ->
         WindowTestTable
-            .insert(values(0..29) {
+            .insert(values(0..9) {
                 this[WindowTestTable.value] = it
             })
             .performWith(cxn)
 
-        // TODO
+        val w = window()
+
+        val windows = listOf(
+            Pair(all(), w),
+            Pair(all().partitionBy(WindowTestTable.value % 3), w),
+            Pair(all().partitionBy(WindowTestTable.value % 3), w.orderBy(WindowTestTable.value.desc()))
+        )
+
+        windows.forEach { (window, over) ->
+            val results = WindowTestTable
+                .window(
+                    w as_ window
+                )
+                .orderBy(WindowTestTable.value)
+                .select(
+                    WindowTestTable,
+                    rowNumber() over over as_ name()
+                )
+                .performWith(cxn)
+                .map { row -> row.columns.map { row.getValue(it) } }
+                .toList()
+
+            // TODO asserts
+        }
     }
 }
