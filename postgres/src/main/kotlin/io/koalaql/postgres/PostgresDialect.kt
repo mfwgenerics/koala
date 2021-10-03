@@ -149,12 +149,8 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
-            sql.prefix("ORDER BY ", ", ").forEach(ordinals) {
-                val orderKey = it.toOrderKey()
-
-                compileExpr(orderKey.expr, false)
-
-                sql.addSql(" ${orderKey.order.sql}")
+            sql.compileOrderBy(ordinals) {
+                compileExpr(it, false)
             }
         }
 

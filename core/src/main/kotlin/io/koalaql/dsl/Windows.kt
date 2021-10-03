@@ -51,15 +51,40 @@ fun cumeDist(): WindowFunction<Double> =
 fun ntile(buckets: Int): WindowFunction<Int> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.NTILE, listOf(value(buckets).buildAggregatable())))
 
-/* TODO offset and default value parameter */
 fun <T : Any> lag(expr: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
         expr.buildAggregatable()
     )))
 
+fun <T : Any> lag(expr: Expr<T>, offset: Int): WindowFunction<T> =
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
+        expr.buildAggregatable(),
+        value(offset).buildAggregatable()
+    )))
+
+fun <T : Any> lag(expr: Expr<T>, offset: Int, default: Expr<T>): WindowFunction<T> =
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
+        expr.buildAggregatable(),
+        value(offset).buildAggregatable(),
+        default.buildAggregatable()
+    )))
+
 fun <T : Any> lead(expr: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LEAD, listOf(
         expr.buildAggregatable()
+    )))
+
+fun <T : Any> lead(expr: Expr<T>, offset: Int): WindowFunction<T> =
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.LEAD, listOf(
+        expr.buildAggregatable(),
+        value(offset).buildAggregatable()
+    )))
+
+fun <T : Any> lead(expr: Expr<T>, offset: Int, default: Expr<T>): WindowFunction<T> =
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
+        expr.buildAggregatable(),
+        value(offset).buildAggregatable(),
+        default.buildAggregatable()
     )))
 
 fun <T : Any> firstValue(expr: Expr<T>): WindowFunction<T> =

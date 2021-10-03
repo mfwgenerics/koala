@@ -1,8 +1,9 @@
 package io.koalaql.expr
 
-class OrderKey<T : Any>(
+data class OrderKey<T : Any>(
+    val expr: Expr<T>,
     val order: SortOrder,
-    val expr: Expr<T>
-) : Ordinal<T> {
+    val nulls: NullOrdering? = null
+): Ordinal<T> {
     override fun toOrderKey(): OrderKey<T> = this
 }

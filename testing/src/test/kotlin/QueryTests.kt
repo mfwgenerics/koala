@@ -4,12 +4,17 @@ import io.koalaql.data.INTEGER
 import io.koalaql.data.VARCHAR
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
+import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.event.ConnectionQueryType
+import io.koalaql.event.QueryEventWriter
 import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnConflicted
 import io.koalaql.setTo
+import io.koalaql.sql.SqlText
+import io.koalaql.transact
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -732,5 +737,36 @@ abstract class QueryTests: ProvideTestDatabase {
             .performWith(cxn)
 
         expectValueOf(4, 7, -3, -28)
+    }
+
+    @Test
+    open fun `nulls first and last`() = withCxn { cxn, _ ->
+        val column0 = name<Int>()
+        val column1 = name<Int>()
+
+        val values = values(0..9) {
+            this[column0] = it
+            if (it % 2 == 1) this[column1] = it
+        }
+
+        val evensFirst = values
+            .orderBy(cast(column1, INTEGER).nullsFirst(), cast(column0, INTEGER))
+            .select(column0)
+            .performWith(cxn)
+            .map { it.getValue(column0) }
+            .toList()
+
+        val oddsFirst = values
+            .orderBy(cast(column1, INTEGER).nullsLast(), cast(column0, INTEGER))
+            .select(column0)
+            .performWith(cxn)
+            .map { it.getValue(column0) }
+            .toList()
+
+        val expectedEvensFirst = listOf(0, 2, 4, 6, 8, 1, 3, 5, 7, 9)
+        val expectedOddsFirst = listOf(1, 3, 5, 7, 9, 0, 2, 4, 6, 8)
+
+        assertListEquals(expectedEvensFirst, evensFirst)
+        assertListEquals(expectedOddsFirst, oddsFirst)
     }
 }

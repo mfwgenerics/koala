@@ -234,7 +234,7 @@ class MysqlDialect(): SqlDialect {
             sql.addResolved(scope.resolve(name))
         }
 
-        fun compileOrderBy(ordinals: List<Ordinal<*>>) = sql.orderByClause(ordinals) {
+        fun compileOrderBy(ordinals: List<Ordinal<*>>) = sql.compileOrderBy(ordinals) {
             compileExpr(it, false)
         }
 

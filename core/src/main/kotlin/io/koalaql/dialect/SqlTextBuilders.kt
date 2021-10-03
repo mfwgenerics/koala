@@ -19,16 +19,6 @@ fun SqlTextBuilder.selectClause(selected: List<SelectedExpr<*>>, compileSelect: 
         }
 }
 
-fun SqlTextBuilder.orderByClause(ordinals: List<Ordinal<*>>, compileExpr: (Expr<*>) -> Unit) {
-    prefix("ORDER BY ", ", ").forEach(ordinals) {
-        val orderKey = it.toOrderKey()
-
-        compileExpr(orderKey.expr)
-
-        addSql(" ${orderKey.order.sql}")
-    }
-}
-
 fun SqlTextBuilder.compileRangeMarker(direction: String, marker: FrameRangeMarker<*>, compileExpr: (Expr<*>) -> Unit) {
     when (marker) {
         CurrentRow -> addSql("CURRENT ROW")
@@ -182,6 +172,12 @@ fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr
         compileExpr(orderKey.expr)
 
         addSql(" ${orderKey.order.sql}")
+
+        when (orderKey.nulls) {
+            NullOrdering.FIRST -> addSql(" NULLS FIRST")
+            NullOrdering.LAST -> addSql(" NULLS LAST")
+            null -> { }
+        }
     }
 }
 
