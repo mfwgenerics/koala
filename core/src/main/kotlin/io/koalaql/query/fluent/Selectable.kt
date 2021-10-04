@@ -28,8 +28,11 @@ interface Selectable: BuildsIntoQueryBody {
     fun selectAll(vararg references: SelectArgument): Subqueryable =
         selectInternal<Nothing>(references.asList(), true)
 
+    fun select(references: List<SelectArgument>): Subqueryable =
+        selectInternal<Nothing>(references, false)
+
     fun select(vararg references: SelectArgument): Subqueryable =
-        selectInternal<Nothing>(references.asList(), false)
+        select(references.asList())
 
     fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJust<T> =
         selectInternal(listOf(labeled), false)

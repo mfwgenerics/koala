@@ -6,8 +6,8 @@ import kotlin.test.assertEquals
 fun assertListEquals(expected: List<Any?>, actual: List<Any?>, message: String? = null) {
     assertEquals(expected.size, actual.size, message)
 
-    repeat(expected.size) {
-        assertEquals(expected[it], actual[it], message)
+    repeat(expected.size) { ix ->
+        assertEquals(expected[ix], actual[ix], "at index $ix${message?.let { ": $it" }?:""}")
     }
 }
 
