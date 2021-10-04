@@ -1,6 +1,9 @@
 package io.koalaql.dialect
 
 import io.koalaql.expr.*
+import io.koalaql.query.LabelList
+import io.koalaql.query.Relvar
+import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltJoin
 import io.koalaql.query.built.BuiltQueryBody
 import io.koalaql.query.built.BuiltRelation
@@ -177,6 +180,34 @@ fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr
             NullOrdering.FIRST -> addSql(" NULLS FIRST")
             NullOrdering.LAST -> addSql(" NULLS LAST")
             null -> { }
+        }
+    }
+}
+
+fun SqlTextBuilder.compileInsertLine(
+    insert: BuiltInsert,
+    table: Relvar = insert.unwrapTable(),
+    compileName: () -> Unit = { addIdentifier(table.relvarName) }
+) {
+    val columns = insert.query.columns
+
+    if (insert.ignore) {
+        addSql("INSERT IGNORE INTO ")
+    } else {
+        addSql("INSERT INTO ")
+    }
+
+    val tableColumnMap = table.columns.associateBy { it }
+
+    compileName()
+
+    parenthesize {
+        prefix("", ", ").forEach(columns) {
+            val column = checkNotNull(tableColumnMap[it]) {
+                "can't insert $it into ${table.relvarName}"
+            }
+
+            addIdentifier(column.symbol)
         }
     }
 }

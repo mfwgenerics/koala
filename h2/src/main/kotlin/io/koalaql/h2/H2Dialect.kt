@@ -445,28 +445,7 @@ class H2Dialect: SqlDialect {
 
             if (insert.withs.isNotEmpty()) sql.addSql("\n")
 
-            sql.addSql("INSERT INTO ")
-
-            val relvar = when (val relation = insert.relation.relation) {
-                is Relvar -> relation
-                else -> error("unsuitable subject for insert")
-            }
-
-            val tableColumnMap = relvar.columns.associateBy { it }
-            val columns = insert.query.columns
-
-            sql.addIdentifier(relvar.relvarName)
-            sql.addSql(" ")
-
-            sql.parenthesize {
-                sql.prefix("", ", ").forEach(columns) {
-                    val column = checkNotNull(tableColumnMap[it]) {
-                        "can't insert $it into ${relvar.relvarName}"
-                    }
-
-                    sql.addIdentifier(column.symbol)
-                }
-            }
+            sql.compileInsertLine(insert)
 
             sql.addSql("\n")
 

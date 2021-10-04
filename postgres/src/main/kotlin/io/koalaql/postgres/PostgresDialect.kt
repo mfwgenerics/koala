@@ -459,32 +459,16 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileInsert(insert: BuiltInsert) {
+            val relvar = insert.unwrapTable()
+
             compileWiths(insert.withType, insert.withs)
 
             if (insert.withs.isNotEmpty()) sql.addSql("\n")
 
-            sql.addSql("INSERT INTO ")
-
-            val relvar = when (val relation = insert.relation.relation) {
-                is Relvar -> relation
-                else -> error("insert not supported")
-            }
-
-            val tableColumnMap = relvar.columns.associateBy { it }
-            val columns = insert.query.columns
-
-            sql.addIdentifier(relvar.relvarName)
-            sql.addSql(" AS ")
-            sql.addSql(scope[insert.relation.computedAlias])
-
-            sql.parenthesize {
-                sql.prefix("", ", ").forEach(columns) {
-                    val column = checkNotNull(tableColumnMap[it]) {
-                        "can't insert $it into ${relvar.relvarName}"
-                    }
-
-                    sql.addIdentifier(column.symbol)
-                }
+            sql.compileInsertLine(insert) {
+                sql.addIdentifier(relvar.relvarName)
+                sql.addSql(" AS ")
+                sql.addSql(scope[insert.relation.computedAlias])
             }
 
             sql.addSql("\n")

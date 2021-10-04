@@ -9,18 +9,26 @@ import io.koalaql.values.ValuesRow
 
 interface Withed: BuildsIntoInsert, Joinable {
     private class Insert(
+        val ignore: Boolean,
         val of: Withed,
         val query: BuiltSubquery
     ): OnConflictable {
         override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
+            out.ignore = ignore
             out.query = query
             return of
         }
     }
 
     fun insert(queryable: Subqueryable): OnConflictable =
-        Insert(this, queryable.buildQuery())
+        Insert(false, this, queryable.buildQuery())
 
     fun insert(row: ValuesRow): OnConflictable =
         insert(values(row))
+
+    fun insertIgnore(queryable: Subqueryable): OnConflictable =
+        Insert(true, this, queryable.buildQuery())
+
+    fun insertIgnore(row: ValuesRow): OnConflictable =
+        insertIgnore(values(row))
 }
