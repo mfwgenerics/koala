@@ -12,6 +12,7 @@ Pre-release:
 * Common operators w/ tests for MySQL
 * Batch processing in DDL
 * Test failed transaction / rolls back correctly on close
+* FOR SHARE/UPDATE generated SQL test
 
 Post-release
 * SELECT DISTINCT

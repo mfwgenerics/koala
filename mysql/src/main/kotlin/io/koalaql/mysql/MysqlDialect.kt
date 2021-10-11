@@ -532,8 +532,8 @@ class MysqlDialect(): SqlDialect {
 
             select.body.locking?.let { locking ->
                 when (locking) {
-                    LockMode.SHARE -> sql.addSql("\nFOR UPDATE")
-                    LockMode.UPDATE -> sql.addSql("\nFOR SHARED")
+                    LockMode.SHARE -> sql.addSql("\nFOR SHARE")
+                    LockMode.UPDATE -> sql.addSql("\nFOR UPDATE")
                 }
             }
         }
