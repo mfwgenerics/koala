@@ -68,6 +68,15 @@ class JdbcDataSource(
             DeclareStrategy.Change -> changeSchema(
                 detectChanges(tables)
             )
+            DeclareStrategy.Expect -> {
+                val changes = detectChanges(tables)
+
+                val ddl = dialect.ddl(changes)
+
+                check (ddl.isEmpty() && changes.isEmpty()) {
+                    "Schema differs from expectation. Differences:\n$changes\nDdl:\n$ddl"
+                }
+            }
         }
     }
 

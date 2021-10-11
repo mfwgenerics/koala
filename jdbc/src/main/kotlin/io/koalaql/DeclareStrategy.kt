@@ -7,4 +7,6 @@ sealed interface DeclareStrategy {
     object CreateIfNotExists: DeclareStrategy
     /* use JDBC metadata to compute and apply a full diff. TODO parameterize */
     object Change: DeclareStrategy
+    /* use JDBC metadata to error on differences from expected schema */
+    object Expect: DeclareStrategy
 }
