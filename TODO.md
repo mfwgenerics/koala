@@ -13,6 +13,9 @@ Pre-release:
 * Batch processing in DDL
 * Test failed transaction / rolls back correctly on close
 * FOR SHARE/UPDATE generated SQL test
+* CheckReturnType style annotation
+* Default for empty inValues?
+
 
 Post-release
 * SELECT DISTINCT

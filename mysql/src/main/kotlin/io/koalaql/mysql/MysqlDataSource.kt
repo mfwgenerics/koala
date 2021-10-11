@@ -8,7 +8,10 @@ import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import java.sql.DatabaseMetaData
 
-fun MysqlDataSource(provider: JdbcProvider): JdbcDataSource = JdbcDataSource(
+fun MysqlDataSource(
+    provider: JdbcProvider,
+    declareBy: DeclareStrategy = DeclareStrategy.Change
+): JdbcDataSource = JdbcDataSource(
     object : JdbcSchemaDetection {
         override fun detectChanges(dbName: String, metadata: DatabaseMetaData, tables: List<Table>): SchemaChange =
             MysqlSchemaDiff(dbName, metadata).detectChanges(tables)
@@ -16,5 +19,5 @@ fun MysqlDataSource(provider: JdbcProvider): JdbcDataSource = JdbcDataSource(
     MysqlDialect(),
     provider,
     MysqlTypeMappings(),
-    DeclareStrategy.Change
+    declareBy
 )
