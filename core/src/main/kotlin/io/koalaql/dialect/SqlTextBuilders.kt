@@ -3,13 +3,12 @@ package io.koalaql.dialect
 import io.koalaql.expr.*
 import io.koalaql.query.LabelList
 import io.koalaql.query.Relvar
-import io.koalaql.query.built.BuiltInsert
-import io.koalaql.query.built.BuiltJoin
-import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.BuiltRelation
+import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.sql.SqlTextBuilder
+import io.koalaql.values.RowIterator
 import io.koalaql.window.*
+import kotlin.reflect.KClass
 
 fun SqlTextBuilder.selectClause(selected: List<SelectedExpr<*>>, compileSelect: (SelectedExpr<*>) -> Unit) {
     val selectPrefix = prefix("SELECT ", "\n, ")
@@ -250,4 +249,48 @@ fun SqlTextBuilder.compileQueryBody(
     body.having?.let(compileHaving)
 
     if (body.windows.isNotEmpty()) compileWindows(body.windows)
+}
+
+fun SqlTextBuilder.compileRow(
+    iter: RowIterator
+) {
+    addSql("(")
+    prefix("", ", ").forEach(iter.columns) {
+        @Suppress("unchecked_cast")
+        addLiteral(Literal(
+            it.type as KClass<Any>,
+            iter.row.getOrNull(it)
+        ))
+    }
+    addSql(")")
+}
+
+fun SqlTextBuilder.compileValues(
+    query: BuiltValuesQuery,
+    emptyValues: (LabelList) -> Unit = {
+        check(it.isNotEmpty()) { "empty VALUES with no columns" }
+
+        prefix("SELECT ", ",").forEach(it) {
+            addSql("NULL")
+        }
+
+        addSql(" LIMIT 0")
+    },
+    compileRow: (RowIterator) -> Unit = { this.compileRow(it) }
+) {
+    val values = query.values
+
+    val iter = values.rowIterator()
+
+    if (iter.next()) {
+        val rowPrefix = prefix("VALUES ", "\n, ")
+
+        do {
+            rowPrefix.next {
+                compileRow(iter)
+            }
+        } while (iter.next())
+    } else {
+        emptyValues(values.columns)
+    }
 }

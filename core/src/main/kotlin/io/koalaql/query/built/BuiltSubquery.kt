@@ -93,7 +93,7 @@ class BuiltSelectQuery(
     fun reorderToMatchUnion(outerSelected: List<SelectedExpr<*>>): BuiltSelectQuery {
         val selectedByNames = selected.associateByTo(hashMapOf()) { it.name }
 
-        check (selectedByNames.size == selected.size) {
+        check(selectedByNames.size == selected.size) {
             "duplicate labels in select"
         }
 
@@ -104,7 +104,7 @@ class BuiltSelectQuery(
             corresponding ?: (SelectedExpr(Literal(it.name.type as KClass<Any>, null), it.name as Reference<Any>))
         }
 
-        check (selectedByNames.isEmpty()) {
+        check(selectedByNames.isEmpty()) {
             "Labels ${selectedByNames.keys} appeared in union selected but not in top level select"
         }
 

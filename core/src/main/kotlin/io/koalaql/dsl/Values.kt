@@ -88,9 +88,6 @@ inline fun <T> values(
         writer.next()
     }
 
-    check (labels.isNotEmpty())
-        { "values requires at least one value with at least one assignment" }
-
     return Values(labels) {
         IteratorToRowIterator(labels, rows.iterator())
     }
@@ -115,8 +112,6 @@ fun values(
     rows.forEach {
         labelSet.addAll(it.columns)
     }
-
-    check (labelSet.isNotEmpty()) { "empty values" }
 
     val columns = LabelListOf(labelSet.toList())
 

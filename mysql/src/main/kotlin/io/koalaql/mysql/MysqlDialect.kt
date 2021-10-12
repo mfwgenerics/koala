@@ -331,7 +331,7 @@ class MysqlDialect(): SqlDialect {
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
             when {
                 expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
-                    check (expr.args.isEmpty())
+                    check(expr.args.isEmpty())
 
                     sql.parenthesize(emitParens) {
                         sql.addSql("UTC_TIMESTAMP")
@@ -524,7 +524,7 @@ class MysqlDialect(): SqlDialect {
             }
 
             if (select.body.offset != 0) {
-                check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.body.offset))
@@ -539,27 +539,10 @@ class MysqlDialect(): SqlDialect {
         }
 
         fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
-            val values = query.values
+            sql.compileValues(query) {
+                if (!forInsert) sql.addSql("ROW ")
 
-            val columns = values.columns
-            val iter = values.rowIterator()
-
-            val rowPrefix = sql.prefix("VALUES ", "\n, ")
-
-            while (iter.next()) {
-                rowPrefix.next {
-                    if (!forInsert) sql.addSql("ROW ")
-
-                    sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns) {
-                        @Suppress("unchecked_cast")
-                        sql.addLiteral(Literal(
-                            it.type as KClass<Any>,
-                            iter.row.getOrNull(it)
-                        ))
-                    }
-                    sql.addSql(")")
-                }
+                sql.compileRow(it)
             }
         }
 
@@ -577,10 +560,10 @@ class MysqlDialect(): SqlDialect {
             compileQuery(emptyList(), insert.query, true)
 
             insert.onConflict?.let { onConflict ->
-                check (onConflict is OnConflictAction.Update)
+                check(onConflict is OnConflictAction.Update)
                     { "MySQL does not support onConflict Ignore" }
 
-                check (onConflict.keys.isEmpty())
+                check(onConflict.keys.isEmpty())
                     { "MySQL does not support onConflict keys" }
 
                 sql.addSql("\nON DUPLICATE KEY UPDATE")
@@ -616,7 +599,7 @@ class MysqlDialect(): SqlDialect {
 
             val updatePrefix = sql.prefix("", ", ")
 
-            check (query.joins.isEmpty()) {
+            check(query.joins.isEmpty()) {
                 "dialect does not support JOIN in update"
             }
 
@@ -661,7 +644,7 @@ class MysqlDialect(): SqlDialect {
                 compileWindows = { windows -> compileWindows(windows) }
             )
 
-            check (delete.query.setOperations.isEmpty())
+            check(delete.query.setOperations.isEmpty())
 
             if (delete.query.orderBy.isNotEmpty()) sql.addSql("\n")
             compileOrderBy(delete.query.orderBy)
@@ -672,7 +655,7 @@ class MysqlDialect(): SqlDialect {
             }
 
             if (delete.query.offset != 0) {
-                check (delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(delete.query.offset))

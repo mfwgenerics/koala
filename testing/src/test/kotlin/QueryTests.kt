@@ -4,6 +4,7 @@ import io.koalaql.data.INTEGER
 import io.koalaql.data.TEXT
 import io.koalaql.data.VARCHAR
 import io.koalaql.ddl.Table
+import io.koalaql.ddl.Table.Companion.autoIncrement
 import io.koalaql.dsl.*
 import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
@@ -783,5 +784,32 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assert(result.getValue(label1))
         assert(!result.getValue(label2))
+    }
+
+    @Test
+    open fun `empty insert defaults to table columns`() = withCxn(MergeTest) { cxn, _ ->
+        assertEquals(0, MergeTest
+            .selectAll()
+            .performWith(cxn)
+            .count()
+        )
+
+        MergeTest
+            .insert(values(emptyList<Int>(), listOf(
+                MergeTest.id,
+
+                MergeTest.x,
+                MergeTest.y,
+
+                MergeTest.z,
+                MergeTest.nz
+            )) { })
+            .performWith(cxn)
+
+        assertEquals(0, MergeTest
+            .selectAll()
+            .performWith(cxn)
+            .count()
+        )
     }
 }

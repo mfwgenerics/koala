@@ -73,7 +73,7 @@ class JdbcDataSource(
 
                 val ddl = dialect.ddl(changes)
 
-                check (ddl.isEmpty() && changes.isEmpty()) {
+                check(ddl.isEmpty() && changes.isEmpty()) {
                     "Schema differs from expectation. Differences:\n$changes\nDdl:\n$ddl"
                 }
             }

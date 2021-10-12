@@ -403,7 +403,7 @@ class H2Dialect: SqlDialect {
             }
 
             if (select.body.offset != 0) {
-                check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.body.offset))
@@ -418,26 +418,7 @@ class H2Dialect: SqlDialect {
         }
 
         fun compileValues(query: BuiltValuesQuery) {
-            val values = query.values
-
-            val columns = values.columns
-            val iter = values.rowIterator()
-
-            val rowPrefix = sql.prefix("VALUES ", "\n, ")
-
-            while (iter.next()) {
-                rowPrefix.next {
-                    sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns) {
-                        @Suppress("unchecked_cast")
-                        sql.addLiteral(Literal(
-                            it.type as KClass<Any>,
-                            iter.row.getOrNull(it)
-                        ))
-                    }
-                    sql.addSql(")")
-                }
-            }
+            sql.compileValues(query)
         }
 
         fun compileInsert(insert: BuiltInsert) {
@@ -467,7 +448,7 @@ class H2Dialect: SqlDialect {
 
             val updatePrefix = sql.prefix("", ", ")
 
-            check (query.joins.isEmpty()) {
+            check(query.joins.isEmpty()) {
                 "H2 does not support JOIN in update"
             }
 
@@ -505,7 +486,7 @@ class H2Dialect: SqlDialect {
                 compileHaving = { error("can't having in a delete") }
             )
 
-            check (select.query.setOperations.isEmpty())
+            check(select.query.setOperations.isEmpty())
 
             if (select.query.orderBy.isNotEmpty()) sql.addSql("\n")
             compileOrderBy(select.query.orderBy)
@@ -516,7 +497,7 @@ class H2Dialect: SqlDialect {
             }
 
             if (select.query.offset != 0) {
-                check (select.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(select.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.query.offset))

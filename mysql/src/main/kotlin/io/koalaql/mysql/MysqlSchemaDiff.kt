@@ -262,7 +262,7 @@ class MysqlSchemaDiff(
 
         val toCreate = tables.associateByTo(hashMapOf()) { it.relvarName }
 
-        check (tables.size == toCreate.size) {
+        check(tables.size == toCreate.size) {
             "Duplicate table names ${tables.map { it.relvarName }.groupBy { it }.filterValues { it.size > 1 }.keys}"
         }
 

@@ -421,7 +421,7 @@ class PostgresDialect: SqlDialect {
             }
 
             if (select.body.offset != 0) {
-                check (select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.body.offset))
@@ -436,26 +436,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
-            val values = query.values
-
-            val columns = values.columns
-            val iter = values.rowIterator()
-
-            val rowPrefix = sql.prefix("VALUES ", "\n, ")
-
-            while (iter.next()) {
-                rowPrefix.next {
-                    sql.addSql("(")
-                    sql.prefix("", ", ").forEach(columns) {
-                        @Suppress("unchecked_cast")
-                        sql.addLiteral(Literal(
-                            it.type as KClass<Any>,
-                            iter.row.getOrNull(it)
-                        ))
-                    }
-                    sql.addSql(")")
-                }
-            }
+            sql.compileValues(query)
         }
 
         fun compileInsert(insert: BuiltInsert) {
@@ -521,7 +502,7 @@ class PostgresDialect: SqlDialect {
 
             val updatePrefix = sql.prefix("", ", ")
 
-            check (query.joins.isEmpty()) {
+            check(query.joins.isEmpty()) {
                 "JOIN in update not supported"
             }
 
@@ -595,7 +576,7 @@ class PostgresDialect: SqlDialect {
                 compileWindows = { windows -> compileWindows(windows) }
             )
 
-            check (delete.query.setOperations.isEmpty())
+            check(delete.query.setOperations.isEmpty())
 
             if (delete.query.orderBy.isNotEmpty()) sql.addSql("\n")
             compileOrderBy(delete.query.orderBy)
@@ -606,7 +587,7 @@ class PostgresDialect: SqlDialect {
             }
 
             if (delete.query.offset != 0) {
-                check (delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
+                check(delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
 
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(delete.query.offset))

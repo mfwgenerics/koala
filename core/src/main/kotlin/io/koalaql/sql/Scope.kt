@@ -35,7 +35,7 @@ class Scope(
         { "missing cte $cte in scope $this" }
 
     fun external(name: Reference<*>, symbol: String? = null) {
-        check (external.putIfAbsent(name, symbol?:names[name]) == null)
+        check(external.putIfAbsent(name, symbol?:names[name]) == null)
     }
 
     fun internal(

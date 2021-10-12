@@ -7,7 +7,7 @@ class InsertableLabelList(
 ): LabelList, List<Reference<*>> by values {
     private val positions = hashMapOf<Reference<*>, Int>().also { positions ->
         values.forEachIndexed { ix, it ->
-            check (positions.putIfAbsent(it, ix) == null)
+            check(positions.putIfAbsent(it, ix) == null)
             { "duplicate label $it" }
         }
     }
