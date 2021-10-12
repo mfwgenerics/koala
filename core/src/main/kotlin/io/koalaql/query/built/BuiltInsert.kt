@@ -1,6 +1,7 @@
 package io.koalaql.query.built
 
 import io.koalaql.query.OnConflictAction
+import io.koalaql.query.OnConflictOrDuplicateAction
 import io.koalaql.query.Relvar
 import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
@@ -13,7 +14,7 @@ class BuiltInsert: BuiltStatement {
     var withType: WithType = WithType.NOT_RECURSIVE
     var withs: List<BuiltWith> = emptyList()
 
-    var onConflict: OnConflictAction? = null
+    var onConflict: OnConflictOrDuplicateAction? = null
 
     lateinit var query: BuiltSubquery
 

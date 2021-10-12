@@ -19,7 +19,9 @@ import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
-class H2Dialect: SqlDialect {
+class H2Dialect(
+    private val compatibilityMode: H2CompatibilityMode? = null
+): SqlDialect {
     override fun ddl(change: SchemaChange): List<SqlText> {
         val results = mutableListOf<SqlText>()
 
@@ -37,7 +39,7 @@ class H2Dialect: SqlDialect {
         return results
     }
 
-    private class Compilation(
+    private inner class Compilation(
         val scope: Scope,
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
     ): ExpressionCompiler {
@@ -137,7 +139,15 @@ class H2Dialect: SqlDialect {
         }
 
         override fun excluded(reference: Reference<*>) {
-            error("Excluded[] is not supported by this dialect")
+            when (compatibilityMode) {
+                H2CompatibilityMode.MYSQL -> {
+                    sql.addSql("VALUES")
+                    sql.parenthesize {
+                        compileReference(reference)
+                    }
+                }
+                null -> error("Excluded[] is not supported by this dialect")
+            }
         }
 
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
@@ -430,7 +440,25 @@ class H2Dialect: SqlDialect {
 
             sql.addSql("\n")
 
+            val relvar = insert.unwrapTable()
+
             compileQuery(insert.query)
+
+            sql.compileOnConflict(insert.onConflict) { assignments ->
+                val innerScope = scope.innerScope()
+
+                relvar.columns.forEach {
+                    innerScope.internal(it, it.symbol, null)
+                }
+
+                val updateCtx = Compilation(innerScope, sql)
+
+                sql.prefix(" ", "\n,").forEach(assignments) {
+                    updateCtx.compileExpr(it.reference)
+                    sql.addSql(" = ")
+                    updateCtx.compileExpr(it.expr)
+                }
+            }
         }
 
         fun compileUpdate(update: BuiltUpdate) {

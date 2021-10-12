@@ -559,15 +559,7 @@ class MysqlDialect(): SqlDialect {
 
             compileQuery(emptyList(), insert.query, true)
 
-            insert.onConflict?.let { onConflict ->
-                check(onConflict is OnConflictAction.Update)
-                    { "MySQL does not support onConflict Ignore" }
-
-                check(onConflict.keys.isEmpty())
-                    { "MySQL does not support onConflict keys" }
-
-                sql.addSql("\nON DUPLICATE KEY UPDATE")
-
+            sql.compileOnConflict(insert.onConflict) { assignments ->
                 val innerScope = scope.innerScope()
 
                 relvar.columns.forEach {
@@ -576,7 +568,7 @@ class MysqlDialect(): SqlDialect {
 
                 val updateCtx = Compilation(innerScope, sql)
 
-                sql.prefix(" ", "\n,").forEach(onConflict.assignments) {
+                sql.prefix(" ", "\n,").forEach(assignments) {
                     updateCtx.compileExpr(it.reference)
                     sql.addSql(" = ")
                     updateCtx.compileExpr(it.expr)

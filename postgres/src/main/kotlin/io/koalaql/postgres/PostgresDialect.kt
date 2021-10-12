@@ -456,33 +456,19 @@ class PostgresDialect: SqlDialect {
 
             compileQuery(emptyList(), insert.query, true)
 
-            insert.onConflict?.let { onConflict ->
-                sql.addSql("\nON CONFLICT ON CONSTRAINT ")
-                sql.addIdentifier(checkNotNull(onConflict.keys.singleOrNull()) {
-                    "Postgres ON CONFLICT requires a key constraint"
-                }.name)
+            sql.compileOnConflict(insert.onConflict) { assignments ->
+                val innerScope = scope.innerScope()
 
-                when (onConflict) {
-                    is OnConflictAction.Ignore -> {
-                        sql.addSql(" DO NOTHING")
-                    }
-                    is OnConflictAction.Update -> {
-                        sql.addSql(" DO UPDATE SET")
+                relvar.columns.forEach {
+                    innerScope.internal(it, it.symbol, insert.relation.computedAlias)
+                }
 
-                        val innerScope = scope.innerScope()
+                val updateCtx = Compilation(innerScope, sql)
 
-                        relvar.columns.forEach {
-                            innerScope.internal(it, it.symbol, insert.relation.computedAlias)
-                        }
-
-                        val updateCtx = Compilation(innerScope, sql)
-
-                        sql.prefix(" ", "\n,").forEach(onConflict.assignments) {
-                            sql.addIdentifier(it.reference.symbol)
-                            sql.addSql(" = ")
-                            updateCtx.compileExpr(it.expr)
-                        }
-                    }
+                sql.prefix(" ", "\n,").forEach(assignments) {
+                    sql.addIdentifier(it.reference.symbol)
+                    sql.addSql(" = ")
+                    updateCtx.compileExpr(it.expr)
                 }
             }
         }

@@ -2,14 +2,14 @@ package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
 import io.koalaql.ddl.built.BuiltNamedIndex
-import io.koalaql.query.OnConflictAction
+import io.koalaql.query.*
 import io.koalaql.query.built.BuildsIntoInsert
 import io.koalaql.query.built.BuiltInsert
 
 interface OnConflictable: Returningable {
     private class OnConflict(
         val lhs: OnConflictable,
-        val action: OnConflictAction
+        val action: OnConflictOrDuplicateAction
     ): Returningable {
         override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert {
             out.onConflict = action
@@ -17,19 +17,18 @@ interface OnConflictable: Returningable {
         }
     }
 
-    private fun onConflict(keys: List<BuiltNamedIndex>): OnConflicted {
+    fun onConflict(keys: BuiltNamedIndex): OnConflicted {
         return object : OnConflicted {
             override fun ignore(): Returningable =
-                OnConflict(this@OnConflictable, OnConflictAction.Ignore(keys))
+                OnConflict(this@OnConflictable, OnConflictIgnore(keys))
 
             override fun update(assignments: List<Assignment<*>>): Returningable =
-                OnConflict(this@OnConflictable, OnConflictAction.Update(keys, assignments))
+                OnConflict(this@OnConflictable, OnConflictUpdate(keys, assignments))
         }
     }
 
-    fun onConflict(keys: BuiltNamedIndex): OnConflicted =
-        onConflict(listOf(keys))
-
-    fun onDuplicate(): OnConflicted =
-        onConflict(emptyList())
+    fun onDuplicate(): OnDuplicated = object : OnDuplicated {
+        override fun update(assignments: List<Assignment<*>>): Returningable =
+            OnConflict(this@OnConflictable, OnDuplicateUpdate(assignments))
+    }
 }

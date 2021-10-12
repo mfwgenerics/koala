@@ -9,20 +9,27 @@ import java.sql.DriverManager
 
 fun H2DataSource(
     provider: JdbcProvider,
-    declareStrategy: DeclareStrategy = DeclareStrategy.CreateIfNotExists
+    declareStrategy: DeclareStrategy = DeclareStrategy.CreateIfNotExists,
+    dialect: H2Dialect = H2Dialect()
 ): JdbcDataSource = JdbcDataSource(
     JdbcSchemaDetection.NotSupported,
-    H2Dialect(),
+    dialect,
     provider,
     H2TypeMappings(),
     declareStrategy
 )
 
-fun H2Database(db: String): JdbcDataSource {
-    val keepAlive = DriverManager.getConnection("jdbc:h2:mem:$db;MV_STORE=false")
+fun H2Database(db: String, mode: H2CompatibilityMode? = null): JdbcDataSource {
+    val url = when (mode) {
+        H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MV_STORE=false;MODE=MYSQL"
+        null -> "jdbc:h2:mem:$db;MV_STORE=false"
+    }
+
+    val keepAlive = DriverManager.getConnection(url)
 
     return H2DataSource(
-        object : JdbcProvider {
+        dialect = H2Dialect(mode),
+        provider = object : JdbcProvider {
             override fun connect(): Connection =
                 DriverManager.getConnection("jdbc:h2:mem:$db;MV_STORE=false")
 

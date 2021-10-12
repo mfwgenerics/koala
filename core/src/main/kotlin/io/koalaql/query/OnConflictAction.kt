@@ -3,15 +3,21 @@ package io.koalaql.query
 import io.koalaql.Assignment
 import io.koalaql.ddl.built.BuiltNamedIndex
 
-sealed class OnConflictAction private constructor() {
-    abstract val keys: List<BuiltNamedIndex>
+sealed interface OnConflictOrDuplicateAction
 
-    class Ignore(
-        override val keys: List<BuiltNamedIndex>
-    ): OnConflictAction()
-
-    data class Update(
-        override val keys: List<BuiltNamedIndex>,
-        val assignments: List<Assignment<*>>
-    ): OnConflictAction()
+sealed interface OnConflictAction: OnConflictOrDuplicateAction {
+    val key: BuiltNamedIndex
 }
+
+class OnConflictIgnore(
+    override val key: BuiltNamedIndex
+): OnConflictAction
+
+class OnConflictUpdate(
+    override val key: BuiltNamedIndex,
+    val assignments: List<Assignment<*>>
+): OnConflictAction
+
+class OnDuplicateUpdate(
+    val assignments: List<Assignment<*>>
+): OnConflictOrDuplicateAction

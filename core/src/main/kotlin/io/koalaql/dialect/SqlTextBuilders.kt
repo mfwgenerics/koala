@@ -1,8 +1,8 @@
 package io.koalaql.dialect
 
+import io.koalaql.Assignment
 import io.koalaql.expr.*
-import io.koalaql.query.LabelList
-import io.koalaql.query.Relvar
+import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.sql.SqlTextBuilder
@@ -292,5 +292,32 @@ fun SqlTextBuilder.compileValues(
         } while (iter.next())
     } else {
         emptyValues(values.columns)
+    }
+}
+
+fun SqlTextBuilder.compileOnConflict(
+    onConflict: OnConflictOrDuplicateAction?,
+    compileAssignments: (List<Assignment<*>>) -> Unit
+) {
+    when (onConflict) {
+        is OnConflictIgnore -> {
+            addSql("\nON CONFLICT ON CONSTRAINT ")
+            addIdentifier(onConflict.key.name)
+            addSql(" DO NOTHING")
+        }
+        is OnConflictUpdate -> {
+            addSql("\nON CONFLICT ON CONSTRAINT ")
+            addIdentifier(onConflict.key.name)
+
+            addSql(" DO UPDATE SET")
+
+            compileAssignments(onConflict.assignments)
+        }
+        is OnDuplicateUpdate -> {
+            addSql("\nON DUPLICATE KEY UPDATE")
+
+            compileAssignments(onConflict.assignments)
+        }
+        null -> { }
     }
 }

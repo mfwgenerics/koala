@@ -16,7 +16,8 @@ class H2QueryTests: QueryTests() {
 
         try {
             super.`factorial recursive CTE`()
-        } catch (ex: GeneratedSqlException) { }
+            assert(false)
+        } catch (ex: Exception) { }
     }
 
     override fun `on duplicate update with values`() {
@@ -24,6 +25,7 @@ class H2QueryTests: QueryTests() {
 
         try {
             super.`on duplicate update with values`()
-        } catch (ex: GeneratedSqlException) { }
+            assert(false)
+        } catch (ex: Exception) { }
     }
 }

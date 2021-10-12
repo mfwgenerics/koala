@@ -11,6 +11,7 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnConflicted
+import io.koalaql.query.fluent.OnDuplicated
 import io.koalaql.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -665,7 +666,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     open fun `on duplicate update with values`() = withCxn(MergeTest) { cxn, _ ->
-        fun OnConflictable.onConflict0(): OnConflicted {
+        fun OnConflictable.onConflict0(): OnDuplicated {
             return if (requiresOnConflictKey) {
                 onConflict(MergeTest.conflictKey)
             } else {
