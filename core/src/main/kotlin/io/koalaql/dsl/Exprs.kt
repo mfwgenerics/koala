@@ -47,10 +47,17 @@ infix fun <T : Any> Expr<T>.inQuery(query: SelectedJust<T>): Expr<Boolean> =
 infix fun <T : Any> Expr<T>.notInQuery(query: SelectedJust<T>): Expr<Boolean> =
     OperationType.NOT_IN(this, query)
 
-infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> =
+infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
+    value(false)
+} else {
     OperationType.IN(this, ExprListExpr(values))
-infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolean> =
+}
+
+infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
+    value(true)
+} else {
     OperationType.NOT_IN(this, ExprListExpr(values))
+}
 
 inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T?>): Expr<Boolean> =
     inExprs(values.map { value(it) })

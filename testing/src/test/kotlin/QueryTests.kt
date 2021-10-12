@@ -1,20 +1,16 @@
 import io.koalaql.DataConnection
 import io.koalaql.data.FLOAT
 import io.koalaql.data.INTEGER
+import io.koalaql.data.TEXT
 import io.koalaql.data.VARCHAR
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
-import io.koalaql.event.ConnectionEventWriter
-import io.koalaql.event.ConnectionQueryType
-import io.koalaql.event.QueryEventWriter
 import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnConflicted
 import io.koalaql.setTo
-import io.koalaql.sql.SqlText
-import io.koalaql.transact
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -768,5 +764,24 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertListEquals(expectedEvensFirst, evensFirst)
         assertListEquals(expectedOddsFirst, oddsFirst)
+    }
+
+    @Test
+    open fun `empty in and not in`() = withCxn { cxn, _ ->
+        val label0 = name<String>()
+        val label1 = name<Boolean>()
+        val label2 = name<Boolean>()
+
+        val result = select(cast(value("1"), TEXT) as_ label0)
+            .subquery()
+            .select(
+                label0 notInValues listOf() as_ label1,
+                label0 inValues listOf() as_ label2
+            )
+            .performWith(cxn)
+            .single()
+
+        assert(result.getValue(label1))
+        assert(!result.getValue(label2))
     }
 }
