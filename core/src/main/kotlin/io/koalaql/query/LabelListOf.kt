@@ -16,4 +16,6 @@ class LabelListOf(
 
     override fun positionOf(reference: Reference<*>): Int? =
         positions[reference]
+
+    override fun toString(): String = "$values"
 }

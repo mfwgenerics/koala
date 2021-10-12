@@ -60,4 +60,6 @@ class ResultSetRowSequence(
 
         return this
     }
+
+    override fun toString(): String = "Results(${columns}, read=$readCount)"
 }

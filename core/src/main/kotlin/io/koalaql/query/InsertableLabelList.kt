@@ -22,4 +22,6 @@ class InsertableLabelList(
         values.add(reference)
         return values.size - 1
     }
+
+    override fun toString(): String = "$values"
 }
