@@ -10,11 +10,12 @@ abstract class DataType<F : Any, T : Any> {
 
     abstract fun <R : Any> map(mapping: TypeMapping<T, R>): DataType<F, R>
 
-    inline fun <reified R : Any> map(noinline to: (T) -> R, noinline from: (R) -> T): DataType<F, R> {
-        return map(object : TypeMapping<T, R> {
-            override val type: KClass<R> = R::class
-            override fun convert(value: T): R = to(value)
-            override fun unconvert(value: R): T = from(value)
-        })
-    }
+    fun <R : Any> map(type: KClass<R>, to: (T) -> R, from: (R) -> T): DataType<F, R> = map(object : TypeMapping<T, R> {
+        override val type: KClass<R> = type
+        override fun convert(value: T): R = to(value)
+        override fun unconvert(value: R): T = from(value)
+    })
+
+    inline fun <reified R : Any> map(noinline to: (T) -> R, noinline from: (R) -> T): DataType<F, R> =
+        map(R::class, to, from)
 }
