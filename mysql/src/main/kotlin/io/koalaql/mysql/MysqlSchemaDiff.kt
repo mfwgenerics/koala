@@ -286,7 +286,9 @@ class MysqlSchemaDiff(
         toCreate.forEach { (name, table) -> diff.tables.created[name] = table }
 
         toDiff.forEach { table ->
-            diff.tables.altered[table.relvarName] = diffTable(table)
+            val tableDiff = diffTable(table)
+
+            if (!tableDiff.isEmpty()) diff.tables.altered[table.relvarName] = tableDiff
         }
 
         return diff

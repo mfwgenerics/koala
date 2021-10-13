@@ -127,6 +127,8 @@ abstract class Table protected constructor(
     protected fun index(vararg keys: Expr<*>): BuiltNamedIndex =
         index(KeyList(keys.asList()))
 
+    override fun toString(): String = relvarName
+
     companion object {
         fun <T : Any> DataType<*, T>.autoIncrement() = BaseColumnType(this).autoIncrement()
 

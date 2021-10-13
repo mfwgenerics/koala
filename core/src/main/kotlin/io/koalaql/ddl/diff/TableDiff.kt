@@ -9,4 +9,7 @@ data class TableDiff(
 
     val columns: Diff<String, TableColumn<*>, ColumnDiff> = Diff(),
     val indexes: Diff<String, BuiltIndexDef, BuiltIndexDef> = Diff()
-)
+) {
+    fun isEmpty() = columns.isEmpty()
+        && indexes.isEmpty()
+}

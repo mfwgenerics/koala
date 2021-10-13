@@ -3,6 +3,7 @@ import io.koalaql.ddl.BaseColumnType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.createTables
 import io.koalaql.ddl.diff.ColumnDiff
+import io.koalaql.ddl.diff.Diff
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.ddl.diff.TableDiff
 import io.koalaql.dsl.keys
@@ -27,22 +28,16 @@ abstract class DdlTests: ProvideTestDatabase {
 
     private fun testExpectedTableDiff(
         db: JdbcDataSource,
-        expected: TableDiff,
+        expected: SchemaChange,
         table: Table
     ) {
         val diff = db.detectChanges(listOf(table))
-            .tables.altered.values.single()
 
         expected.assertMatch(diff)
 
-        db.changeSchema(SchemaChange().apply {
-            tables.altered[table.relvarName] = diff
-        })
+        db.changeSchema(diff)
 
-        val newDiff = db.detectChanges(listOf(table))
-            .tables.altered.values.single()
-
-        TableDiff(table).assertMatch(newDiff)
+        assert(db.detectChanges(listOf(table)).isEmpty())
     }
 
     @Test
@@ -51,7 +46,7 @@ abstract class DdlTests: ProvideTestDatabase {
             CustomerTable
         ))
 
-        testExpectedTableDiff(db, TableDiff(CustomerTable), CustomerTable)
+        testExpectedTableDiff(db, SchemaChange(), CustomerTable)
     }
 
     @Test
@@ -74,20 +69,26 @@ abstract class DdlTests: ProvideTestDatabase {
         }
 
         testExpectedTableDiff(db,
-            TableDiff(CustomerTable)
-                .apply {
-                    columns.apply {
-                        altered["firstName"] = ColumnDiff(
-                            newColumn = differentTable.firstName,
-                            type = BaseColumnType(VARCHAR(101))
-                        )
-                    }
+            SchemaChange(
+                tables = Diff(
+                    altered = mutableMapOf(CustomerTable.relvarName to
+                        TableDiff(CustomerTable)
+                            .apply {
+                                columns.apply {
+                                    altered["firstName"] = ColumnDiff(
+                                        newColumn = differentTable.firstName,
+                                        type = BaseColumnType(VARCHAR(101))
+                                    )
+                                }
 
-                    indexes.apply {
-                        created["Customer_firstName_lastName_key"] = differentTable.namesKey.def
-                        dropped.add("Customer_lastName_firstName_key")
-                    }
-                },
+                                indexes.apply {
+                                    created["Customer_firstName_lastName_key"] = differentTable.namesKey.def
+                                    dropped.add("Customer_lastName_firstName_key")
+                                }
+                            }
+                    )
+                )
+            ),
             differentTable
         )
     }
