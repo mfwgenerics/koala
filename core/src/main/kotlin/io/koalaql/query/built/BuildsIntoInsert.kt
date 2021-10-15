@@ -4,7 +4,7 @@ import io.koalaql.unfoldBuilder
 
 interface BuildsIntoInsert {
     fun buildInsert(): BuiltInsert =
-        unfoldBuilder(BuiltInsert()) { buildIntoInsert(it) }
+        unfoldBuilder(BuiltInsert()) { it.buildIntoInsert() }
 
-    fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert?
+    fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert?
 }

@@ -84,7 +84,9 @@ class BuiltSelectQuery(
                 }
 
                 references.forEach {
-                    it.buildIntoSelection(builder)
+                    with (it) {
+                        builder.buildIntoSelection()
+                    }
                 }
             }
             .toList()

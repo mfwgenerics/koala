@@ -13,9 +13,9 @@ interface Withed: BuildsIntoInsert, Joinable {
         val of: Withed,
         val query: BuiltSubquery
     ): OnConflictable {
-        override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
-            out.ignore = ignore
-            out.query = query
+        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+            ignore = this@Insert.ignore
+            query = this@Insert.query
             return of
         }
     }

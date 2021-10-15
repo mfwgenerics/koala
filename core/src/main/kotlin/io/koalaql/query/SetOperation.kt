@@ -12,8 +12,8 @@ class SetOperation(
     val type: SetOperationType,
     val distinctness: Distinctness
 ): Unionable {
-    override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-        out.setOperations.add(BuiltSetOperation(
+    override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+        setOperations.add(BuiltSetOperation(
             type = type,
             distinctness = distinctness,
             body = against.buildUnionOperand()

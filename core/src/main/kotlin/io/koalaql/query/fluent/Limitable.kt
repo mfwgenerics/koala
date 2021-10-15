@@ -8,8 +8,8 @@ interface Limitable: Lockable {
         val of: Limitable,
         val rows: Int
     ): Lockable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-            out.limit = rows
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+            limit = rows
 
             return of
         }

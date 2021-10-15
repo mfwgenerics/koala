@@ -14,8 +14,8 @@ interface Joinable: Whereable {
         val to: AliasedRelation,
         val on: Expr<Boolean>
     ): Joinable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-            out.joins.add(BuiltJoin(
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+            joins.add(BuiltJoin(
                 type = type,
                 to = to.buildQueryRelation(),
                 on = on

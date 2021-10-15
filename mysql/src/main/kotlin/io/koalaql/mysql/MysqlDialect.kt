@@ -37,7 +37,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.created.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addIdentifier(table.newTable.tableName)
                     sql.addSql(" ADD COLUMN ")
 
                     Compilation(
@@ -50,7 +50,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.altered.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addIdentifier(table.newTable.tableName)
                     sql.addSql(" MODIFY COLUMN ")
 
                     Compilation(
@@ -63,7 +63,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.dropped.forEach { column ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addIdentifier(table.newTable.tableName)
                     sql.addSql(" DROP COLUMN ")
                     sql.addIdentifier(column)
                 }
@@ -72,7 +72,7 @@ class MysqlDialect(): SqlDialect {
             table.indexes.created.forEach { (name, index) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addIdentifier(table.newTable.tableName)
                     sql.addSql(" ADD ")
 
                     Compilation(
@@ -85,7 +85,7 @@ class MysqlDialect(): SqlDialect {
             table.indexes.dropped.forEach { name ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.relvarName)
+                    sql.addIdentifier(table.newTable.tableName)
                     sql.addSql(" DROP INDEX ")
                     sql.addIdentifier(name)
                 }
@@ -177,7 +177,7 @@ class MysqlDialect(): SqlDialect {
         fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
             sql.addSql("CREATE TABLE IF NOT EXISTS ")
 
-            sql.addSql(table.relvarName)
+            sql.addSql(table.tableName)
             sql.parenthesize {
                 val comma = sql.prefix("\n", ",\n")
 
@@ -351,7 +351,7 @@ class MysqlDialect(): SqlDialect {
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addSql(baseRelation.relvarName)
+                    sql.addSql(baseRelation.tableName)
                     null
                 }
                 is Subquery -> {

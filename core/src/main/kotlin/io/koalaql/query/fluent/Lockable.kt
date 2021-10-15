@@ -9,8 +9,8 @@ interface Lockable: Selectable {
         val of: Lockable,
         val mode: LockMode
     ): Selectable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-            out.locking = mode
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+            locking = mode
 
             return of
         }

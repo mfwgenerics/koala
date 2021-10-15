@@ -71,7 +71,7 @@ abstract class DdlTests: ProvideTestDatabase {
         testExpectedTableDiff(db,
             SchemaChange(
                 tables = Diff(
-                    altered = mutableMapOf(CustomerTable.relvarName to
+                    altered = mutableMapOf(CustomerTable.tableName to
                         TableDiff(CustomerTable)
                             .apply {
                                 columns.apply {

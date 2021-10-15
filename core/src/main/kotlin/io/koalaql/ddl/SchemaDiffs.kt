@@ -6,7 +6,7 @@ fun createTables(vararg tables: Table): SchemaChange {
     val result = SchemaChange()
 
     tables.forEach {
-        result.tables.created[it.relvarName] = it
+        result.tables.created[it.tableName] = it
     }
 
     return result

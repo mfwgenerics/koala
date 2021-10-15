@@ -10,8 +10,8 @@ interface Havingable: Windowable {
         val of: Havingable,
         val having: Expr<Boolean>
     ): Havingable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
-            out.having = out.having?.and(having)?:having
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+            having = having?.and(this@Having.having)?:this@Having.having
             return of
         }
     }

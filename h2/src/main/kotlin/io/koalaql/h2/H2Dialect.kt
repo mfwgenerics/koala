@@ -99,7 +99,7 @@ class H2Dialect(
         fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
             sql.addSql("CREATE TABLE IF NOT EXISTS ")
 
-            sql.addIdentifier(table.relvarName)
+            sql.addIdentifier(table.tableName)
             sql.parenthesize {
                 val comma = sql.prefix("\n", ",\n")
 
@@ -272,7 +272,7 @@ class H2Dialect(
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addIdentifier(baseRelation.relvarName)
+                    sql.addIdentifier(baseRelation.tableName)
                     null
                 }
                 is Subquery -> {

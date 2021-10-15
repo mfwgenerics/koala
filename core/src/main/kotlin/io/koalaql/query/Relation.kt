@@ -18,7 +18,7 @@ sealed interface Relation: AliasableRelation {
 object EmptyRelation: Relation
 
 interface Relvar: Relation {
-    val relvarName: String
+    val tableName: String
 
     val columns: List<RelvarColumn<*>>
 }

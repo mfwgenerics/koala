@@ -9,8 +9,8 @@ interface Windowable: UnionableUnionOperand {
         val lhs: Windowable,
         val windows: List<LabeledWindow>
     ): UnionableUnionOperand {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
-            out.windows = windows
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+            windows = this@WindowedQuery.windows
             return lhs
         }
     }

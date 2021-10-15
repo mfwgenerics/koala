@@ -186,7 +186,7 @@ fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr
 fun SqlTextBuilder.compileInsertLine(
     insert: BuiltInsert,
     table: Relvar = insert.unwrapTable(),
-    compileName: () -> Unit = { addIdentifier(table.relvarName) }
+    compileName: () -> Unit = { addIdentifier(table.tableName) }
 ) {
     val columns = insert.query.columns
 
@@ -203,7 +203,7 @@ fun SqlTextBuilder.compileInsertLine(
     parenthesize {
         prefix("", ", ").forEach(columns) {
             val column = checkNotNull(tableColumnMap[it]) {
-                "can't insert $it into ${table.relvarName}"
+                "can't insert $it into ${table.tableName}"
             }
 
             addIdentifier(column.symbol)

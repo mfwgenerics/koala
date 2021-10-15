@@ -4,7 +4,7 @@ import io.koalaql.unfoldBuilder
 
 interface BuildsIntoQueryBody {
     fun buildQueryBody(): BuiltQueryBody =
-        unfoldBuilder(BuiltQueryBody()) { buildIntoQueryBody(it) }
+        unfoldBuilder(BuiltQueryBody()) { it.buildIntoQueryBody() }
 
-    fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody?
+    fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody?
 }

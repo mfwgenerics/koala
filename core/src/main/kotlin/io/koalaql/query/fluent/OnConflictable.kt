@@ -11,8 +11,8 @@ interface OnConflictable: Returningable {
         val lhs: OnConflictable,
         val action: OnConflictOrDuplicateAction
     ): Returningable {
-        override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert {
-            out.onConflict = action
+        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+            onConflict = action
             return lhs
         }
     }

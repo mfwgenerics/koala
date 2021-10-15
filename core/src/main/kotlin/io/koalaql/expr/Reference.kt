@@ -9,8 +9,8 @@ sealed interface Reference<T : Any>: AsReference<T>, SelectArgument {
 
     val identifier: IdentifierName?
 
-    override fun buildIntoSelection(selection: SelectionBuilder) {
-        selection.expression(this, this)
+    override fun SelectionBuilder.buildIntoSelection() {
+        expression(this@Reference, this@Reference)
     }
 
     override fun asReference(): Reference<T> = this

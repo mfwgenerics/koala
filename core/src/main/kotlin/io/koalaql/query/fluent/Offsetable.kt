@@ -8,8 +8,8 @@ interface Offsetable: Limitable {
         val of: Offsetable,
         val rows: Int
     ): Limitable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-            out.offset = rows
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+            offset = rows
 
             return of
         }

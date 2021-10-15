@@ -68,7 +68,7 @@ class PostgresDialect: SqlDialect {
     private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
         sql.addSql("CREATE TABLE IF NOT EXISTS ")
 
-        sql.addIdentifier(table.relvarName)
+        sql.addIdentifier(table.tableName)
         sql.parenthesize {
             val comma = sql.prefix("\n", ",\n")
 
@@ -253,7 +253,7 @@ class PostgresDialect: SqlDialect {
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
                 is Relvar -> {
-                    sql.addIdentifier(baseRelation.relvarName)
+                    sql.addIdentifier(baseRelation.tableName)
                     null
                 }
                 is Subquery -> {
@@ -447,7 +447,7 @@ class PostgresDialect: SqlDialect {
             if (insert.withs.isNotEmpty()) sql.addSql("\n")
 
             sql.compileInsertLine(insert) {
-                sql.addIdentifier(relvar.relvarName)
+                sql.addIdentifier(relvar.tableName)
                 sql.addSql(" AS ")
                 sql.addSql(scope[insert.relation.computedAlias])
             }

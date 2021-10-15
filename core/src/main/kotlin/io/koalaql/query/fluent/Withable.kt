@@ -11,9 +11,9 @@ interface Withable: Withed {
         val type: WithType,
         val queries: List<CtedQueryable>
     ): Withed, BuildsIntoQueryBody {
-        override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
-            out.withType = type
-            out.withs = queries.map {
+        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+            withType = type
+            withs = queries.map {
                 BuiltWith(
                     it.cte,
                     it.queryable.buildQuery()
@@ -23,9 +23,9 @@ interface Withable: Withed {
             return of
         }
 
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
-            out.withType = type
-            out.withs = queries.map {
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+            withType = type
+            withs = queries.map {
                 BuiltWith(
                     it.cte,
                     it.queryable.buildQuery()

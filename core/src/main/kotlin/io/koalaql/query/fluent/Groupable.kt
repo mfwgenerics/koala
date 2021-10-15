@@ -9,8 +9,8 @@ interface Groupable: Windowable, Orderable, BuildsIntoQueryBody {
         val of: Groupable,
         val on: List<Expr<*>>
     ): Havingable {
-        override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody {
-            out.groupBy = on
+        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+            groupBy = on
             return of
         }
     }

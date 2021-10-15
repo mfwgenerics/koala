@@ -12,7 +12,7 @@ import io.koalaql.query.Relvar
 import io.koalaql.query.built.BuiltRelation
 
 abstract class Table protected constructor(
-    override val relvarName: String
+    override val tableName: String
 ): Relvar {
     private val alias = Alias()
 
@@ -28,7 +28,7 @@ abstract class Table protected constructor(
         check(usedNames.add(name)) { "field name $name is already in use" }
     }
 
-    fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
+    protected fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
         takeName(name)
 
         val column = TableColumn(this, name, def)
@@ -52,7 +52,7 @@ abstract class Table protected constructor(
     var primaryKey: BuiltNamedIndex? = null
         private set
 
-    val internalIndexes = arrayListOf<BuiltNamedIndex>()
+    private val internalIndexes = arrayListOf<BuiltNamedIndex>()
     val indexes: List<BuiltNamedIndex> get() = internalIndexes
 
     private fun nameKeys(keys: KeyList): String = keys.keys.asSequence()
@@ -65,7 +65,7 @@ abstract class Table protected constructor(
         .joinToString("_")
 
     private fun nameIndex(keys: KeyList, suffix: String): String =
-        "${relvarName}_${nameKeys(keys)}_$suffix"
+        "${tableName}_${nameKeys(keys)}_$suffix"
 
     protected fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
         check(primaryKey == null) { "multiple primary keys $name, $keys" }
@@ -127,7 +127,7 @@ abstract class Table protected constructor(
     protected fun index(vararg keys: Expr<*>): BuiltNamedIndex =
         index(KeyList(keys.asList()))
 
-    override fun toString(): String = relvarName
+    override fun toString(): String = tableName
 
     companion object {
         fun <T : Any> DataType<*, T>.autoIncrement() = BaseColumnType(this).autoIncrement()

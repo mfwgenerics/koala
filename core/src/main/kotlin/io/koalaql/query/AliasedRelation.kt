@@ -6,19 +6,19 @@ import io.koalaql.query.built.*
 import io.koalaql.query.fluent.Withable
 
 interface AliasedRelation: Withable, SelectArgument {
-    override fun buildIntoSelection(selection: SelectionBuilder) {
-        selection.fromRelation(buildQueryRelation())
+    override fun SelectionBuilder.buildIntoSelection() {
+        fromRelation(buildQueryRelation())
     }
 
     fun buildQueryRelation(): BuiltRelation
 
-    override fun buildIntoQueryBody(out: BuiltQueryBody): BuildsIntoQueryBody? {
-        out.relation = buildQueryRelation()
+    override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+        relation = buildQueryRelation()
         return null
     }
 
-    override fun buildIntoInsert(out: BuiltInsert): BuildsIntoInsert? {
-        out.relation = buildQueryRelation()
+    override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+        relation = buildQueryRelation()
         return null
     }
 }

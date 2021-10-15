@@ -13,5 +13,5 @@ class TableColumn<T : Any>(
     def: ColumnDefinition<T>,
     val builtDef: BuiltColumnDef = def.buildColumnDef()
 ): RelvarColumn<T>(symbol, builtDef.columnType.type as KClass<T>, IdentifierName()) {
-    override fun toString(): String = "${table.relvarName}.$symbol"
+    override fun toString(): String = "${table.tableName}.$symbol"
 }

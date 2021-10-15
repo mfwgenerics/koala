@@ -60,7 +60,7 @@ class JdbcDataSource(
                 val diff = SchemaChange()
 
                 tables.forEach {
-                    diff.tables.created[it.relvarName] = it
+                    diff.tables.created[it.tableName] = it
                 }
 
                 changeSchema(diff)

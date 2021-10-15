@@ -61,7 +61,7 @@ class MysqlSchemaDiff(
     }
 
     private fun diffColumns(table: Table, result: TableDiff) {
-        val tableName = table.relvarName
+        val tableName = table.tableName
 
         val expectedColumnsByName = hashMapOf<String, TableColumn<*>>()
 
@@ -180,7 +180,7 @@ class MysqlSchemaDiff(
     }
 
     private fun diffKeys(table: Table, result: TableDiff) {
-        val tableName = table.relvarName
+        val tableName = table.tableName
 
         val existingPrimaryKey = fetchExistingPrimaryKey(tableName)
 
@@ -260,10 +260,10 @@ class MysqlSchemaDiff(
     ): SchemaChange {
         val diff = SchemaChange()
 
-        val toCreate = tables.associateByTo(hashMapOf()) { it.relvarName }
+        val toCreate = tables.associateByTo(hashMapOf()) { it.tableName }
 
         check(tables.size == toCreate.size) {
-            "Duplicate table names ${tables.map { it.relvarName }.groupBy { it }.filterValues { it.size > 1 }.keys}"
+            "Duplicate table names ${tables.map { it.tableName }.groupBy { it }.filterValues { it.size > 1 }.keys}"
         }
 
         val toDiff = arrayListOf<Table>()
@@ -288,7 +288,7 @@ class MysqlSchemaDiff(
         toDiff.forEach { table ->
             val tableDiff = diffTable(table)
 
-            if (!tableDiff.isEmpty()) diff.tables.altered[table.relvarName] = tableDiff
+            if (!tableDiff.isEmpty()) diff.tables.altered[table.tableName] = tableDiff
         }
 
         return diff
