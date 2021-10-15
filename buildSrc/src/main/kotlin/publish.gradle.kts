@@ -65,17 +65,24 @@ publishing {
     }
 
     signing {
+        useInMemoryPgpKeys(
+            System.getenv("GPG_PRIVATE_KEY"),
+            System.getenv("GPG_PRIVATE_PASSWORD")
+        )
+
         sign(publishing.publications["koala"])
     }
 
     repositories {
         maven {
+            val repoId = System.getenv("REPOSITORY_ID")
+
             name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deployByRepositoryId/$repoId/")
 
             credentials {
-                username = System.getenv("MAVEN_USERNAME")
-                password = System.getenv("MAVEN_PASSWORD")
+                username = System.getenv("SONATYPE_USERNAME")
+                password = System.getenv("SONATYPE_PASSWORD")
             }
         }
     }
