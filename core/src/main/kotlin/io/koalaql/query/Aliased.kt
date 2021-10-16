@@ -7,9 +7,11 @@ import io.koalaql.query.built.BuiltRelation
 class Aliased(
     private val of: Relation,
     private val alias: Alias
-): AliasedRelation, GetsAliasedReference {
-    override fun buildQueryRelation(): BuiltRelation
-        = BuiltRelation(of, alias)
+): RelationBuilder, GetsAliasedReference {
+    override fun BuiltRelation.buildIntoRelation() {
+        relation = of
+        setAliases(alias)
+    }
 
     override fun <T : Any> get(reference: AsReference<T>): AliasedReference<T> = alias[reference]
 }

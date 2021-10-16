@@ -3,15 +3,19 @@ package io.koalaql.query.built
 import io.koalaql.query.*
 import io.koalaql.sql.Scope
 
-class BuiltRelation(
-    val relation: Relation,
-    val explicitAlias: Alias?,
-    defaultAlias: Alias? = null
-) {
-    val computedAlias = explicitAlias?:defaultAlias?:Alias()
+class BuiltRelation {
+    lateinit var relation: Relation
+
+    var explicitAlias: Alias? = null
+    lateinit var computedAlias: Alias
+
+    fun setAliases(explicitAlias: Alias?, defaultAlias: Alias? = null) {
+        this.explicitAlias = explicitAlias
+        computedAlias = explicitAlias?:defaultAlias?:Alias()
+    }
 
     fun populateScope(scope: Scope) {
-        val names = when (relation) {
+        val names = when (val relation = relation) {
             is Relvar -> relation.columns.map { it to it.symbol }
             is Subquery -> relation.of.columns.map { it to scope.names[it] }
             is Cte -> scope.cteColumns(relation).map { it to scope.names[it] }
@@ -25,6 +29,12 @@ class BuiltRelation(
                 symbol,
                 computedAlias
             )
+        }
+    }
+
+    companion object {
+        fun from(builder: RelationBuilder): BuiltRelation = with (builder) {
+            BuiltRelation().also { it.buildIntoRelation() }
         }
     }
 }

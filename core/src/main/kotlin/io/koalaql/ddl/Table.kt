@@ -15,8 +15,10 @@ abstract class Table protected constructor(
 ): Relvar {
     private val alias = Alias()
 
-    override fun buildQueryRelation(): BuiltRelation =
-        BuiltRelation(this, null, alias)
+    override fun BuiltRelation.buildIntoRelation() {
+        relation = this@Table
+        setAliases(null, alias)
+    }
 
     private val internalColumns = arrayListOf<TableColumn<*>>()
     override val columns: List<TableColumn<*>> get() = internalColumns

@@ -5,5 +5,5 @@ class AliasedCtedQueryable(
     private val asWithOperand: WithOperand
 ):
     WithOperand by asWithOperand,
-    AliasedRelation by asRelation,
+    RelationBuilder by asRelation,
     GetsAliasedReference by asRelation

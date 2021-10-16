@@ -12,7 +12,7 @@ class BuiltAggregatedExpr {
     var over: BuiltWindow? = null
 
     companion object {
-        fun from(builder: BuildsIntoAggregatedExpr): BuiltAggregatedExpr =
+        fun from(builder: AggregatedExprBuilder): BuiltAggregatedExpr =
             unfoldBuilder(builder, BuiltAggregatedExpr()) { it.buildIntoAggregatedExpr() }
     }
 }

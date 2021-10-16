@@ -5,20 +5,20 @@ import io.koalaql.expr.SelectionBuilder
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.Withable
 
-interface AliasedRelation: Withable, SelectArgument {
+interface RelationBuilder: Withable, SelectArgument {
     override fun SelectionBuilder.buildIntoSelection() {
-        fromRelation(buildQueryRelation())
+        fromRelation(BuiltRelation.from(this@RelationBuilder))
     }
 
-    fun buildQueryRelation(): BuiltRelation
+    fun BuiltRelation.buildIntoRelation()
 
     override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
-        relation = buildQueryRelation()
+        relation = BuiltRelation.from(this@RelationBuilder)
         return null
     }
 
     override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
-        relation = buildQueryRelation()
+        relation = BuiltRelation.from(this@RelationBuilder)
         return null
     }
 }

@@ -11,8 +11,10 @@ import io.koalaql.values.RowSequence
 sealed interface Relation: AliasableRelation {
     override fun as_(alias: Alias): Aliased = Aliased(this, alias)
 
-    override fun buildQueryRelation(): BuiltRelation
-        = BuiltRelation(this, null)
+    override fun BuiltRelation.buildIntoRelation() {
+        relation = this@Relation
+        setAliases(null)
+    }
 }
 
 object EmptyRelation: Relation
@@ -38,8 +40,10 @@ class Values(
 class Cte(
     val identifier: IdentifierName = IdentifierName()
 ): Relation {
-    override fun buildQueryRelation(): BuiltRelation =
-        BuiltRelation(this, null, Alias(identifier))
+    override fun BuiltRelation.buildIntoRelation() {
+        relation = this@Cte
+        setAliases(null, Alias(identifier))
+    }
 
     override fun equals(other: Any?): Boolean =
         other is Alias && identifier == other.identifier
