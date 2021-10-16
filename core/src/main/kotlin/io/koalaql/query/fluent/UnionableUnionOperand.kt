@@ -3,10 +3,7 @@ package io.koalaql.query.fluent
 import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectedExpr
-import io.koalaql.query.built.QueryBodyBuilder
-import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.BuiltSelectQuery
-import io.koalaql.query.built.BuiltUnionOperand
+import io.koalaql.query.built.*
 
 interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
     private class BuiltSelectedUnionOperand(
@@ -26,8 +23,9 @@ interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
             false
         )
 
-        override fun buildUnionOperand() =
-            BuiltSelectedUnionOperand(buildQuery())
+        override fun BuiltSetOperation.buildIntoSetOperation() {
+            body = BuiltSelectedUnionOperand(buildQuery())
+        }
     }
 
     private class BuiltQueryUnionOperand(
@@ -37,8 +35,9 @@ interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
             BuiltSelectQuery(query, selected)
     }
 
-    override fun buildUnionOperand(): BuiltUnionOperand =
-        BuiltQueryUnionOperand(BuiltQueryBody.from(this))
+    override fun BuiltSetOperation.buildIntoSetOperation() {
+        body = BuiltQueryUnionOperand(BuiltQueryBody.from(this@UnionableUnionOperand))
+    }
 
     override fun select(vararg references: SelectArgument): SelectedUnionOperand =
         SelectUnionableUnionOperand<Nothing>(this, references.asList())

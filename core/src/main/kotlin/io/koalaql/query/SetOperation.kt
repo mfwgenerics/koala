@@ -13,11 +13,14 @@ class SetOperation(
     val distinctness: Distinctness
 ): Unionable {
     override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
-        setOperations.add(BuiltSetOperation(
+        val op = BuiltSetOperation(
             type = type,
-            distinctness = distinctness,
-            body = against.buildUnionOperand()
-        ))
+            distinctness = distinctness
+        )
+
+        with (against) { op.buildIntoSetOperation() }
+
+        setOperations.add(op)
 
         return of
     }

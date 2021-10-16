@@ -1,7 +1,7 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.built.BuiltUnionOperand
+import io.koalaql.query.built.BuiltSetOperation
 
 interface UnionOperand {
-    fun buildUnionOperand(): BuiltUnionOperand
+    fun BuiltSetOperation.buildIntoSetOperation()
 }
