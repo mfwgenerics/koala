@@ -1,6 +1,6 @@
 package io.koalaql.h2
 
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
@@ -373,7 +373,7 @@ class H2Dialect(
                 sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
-                compileWindow(it.window.buildWindow())
+                compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
             }
         }

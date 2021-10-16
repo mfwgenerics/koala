@@ -9,8 +9,8 @@ interface FilterableExpr<T : Any>: OverableAggregateExpr<T> {
         val lhs: FilterableExpr<T>,
         val filter: Expr<Boolean>
     ): OverableAggregateExpr<T> {
-        override fun buildIntoGroupExpr(aggregatedExpr: BuiltAggregatedExpr): AggregatedExpr<*>? {
-            aggregatedExpr.filter = filter
+        override fun BuiltAggregatedExpr.buildIntoAggregatedExpr(): AggregatedExpr<*>? {
+            filter = this@Filtered.filter
             return lhs
         }
     }

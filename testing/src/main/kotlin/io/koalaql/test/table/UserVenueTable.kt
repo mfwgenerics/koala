@@ -1,8 +1,8 @@
 package io.koalaql.test.table
 
-import io.koalaql.data.BOOLEAN
-import io.koalaql.data.INTEGER
-import io.koalaql.data.VARCHAR
+import io.koalaql.ddl.BOOLEAN
+import io.koalaql.ddl.INTEGER
+import io.koalaql.ddl.VARCHAR
 import io.koalaql.ddl.Table
 
 object UserVenueTable: Table("UserVenue") {

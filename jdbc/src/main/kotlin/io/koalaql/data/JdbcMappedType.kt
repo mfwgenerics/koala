@@ -1,5 +1,6 @@
 package io.koalaql.data
 
+import io.koalaql.ddl.TypeMapping
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 

@@ -9,8 +9,8 @@ class GroupedOperationExpr<T : Any>(
     val type: OperationType,
     val args: Collection<BuiltAggregatable>
 ): FilterableExpr<T> {
-    override fun buildIntoGroupExpr(aggregatedExpr: BuiltAggregatedExpr): BuildsIntoAggregatedExpr? {
-        aggregatedExpr.expr = this
+    override fun BuiltAggregatedExpr.buildIntoAggregatedExpr(): BuildsIntoAggregatedExpr? {
+        expr = this@GroupedOperationExpr
         return null
     }
 }

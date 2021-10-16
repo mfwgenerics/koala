@@ -1,5 +1,7 @@
 package io.koalaql.data
 
+import io.koalaql.ddl.*
+
 fun <T : Any> computeWithColumnDefaults(type: UnmappedDataType<*>, block: (type: UnmappedDataType<*>) -> T?): T {
     var nextType = type
 

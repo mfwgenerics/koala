@@ -10,8 +10,8 @@ interface Withable: Withed {
         val of: Withable,
         val type: WithType,
         val queries: List<CtedQueryable>
-    ): Withed, BuildsIntoQueryBody {
-        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+    ): Withed, QueryBodyBuilder {
+        override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
             withType = type
             withs = queries.map {
                 BuiltWith(
@@ -23,7 +23,7 @@ interface Withable: Withed {
             return of
         }
 
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
             withType = type
             withs = queries.map {
                 BuiltWith(

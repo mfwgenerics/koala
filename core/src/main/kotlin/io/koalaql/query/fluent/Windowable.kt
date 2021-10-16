@@ -1,6 +1,6 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 import io.koalaql.window.LabeledWindow
 
@@ -9,7 +9,7 @@ interface Windowable: UnionableUnionOperand {
         val lhs: Windowable,
         val windows: List<LabeledWindow>
     ): UnionableUnionOperand {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
             windows = this@WindowedQuery.windows
             return lhs
         }

@@ -1,5 +1,5 @@
-import io.koalaql.data.DOUBLE
-import io.koalaql.data.INTEGER
+import io.koalaql.ddl.DOUBLE
+import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
 import io.koalaql.jdbc.performWith

@@ -1,7 +1,7 @@
 package io.koalaql.ddl.fluent
 
 import io.koalaql.ddl.IndexType
-import io.koalaql.ddl.built.BuildsIntoColumnDef
+import io.koalaql.ddl.built.ColumnDefBuilder
 import io.koalaql.ddl.built.BuiltColumnDef
 
 interface ColumnKeyable<T : Any>: ColumnReferenceable<T> {
@@ -9,8 +9,8 @@ interface ColumnKeyable<T : Any>: ColumnReferenceable<T> {
         val lhs: ColumnKeyable<T>,
         val type: IndexType
     ): ColumnReferenceable<T> {
-        override fun buildIntoColumnDef(out: BuiltColumnDef): BuildsIntoColumnDef? {
-            out.markedAsKey = type
+        override fun BuiltColumnDef.buildIntoColumnDef(): ColumnDefBuilder? {
+            markedAsKey = type
             return lhs
         }
     }

@@ -1,5 +1,5 @@
 package io.koalaql.query
 
-import io.koalaql.query.built.BuildsIntoInsert
+import io.koalaql.query.built.InsertBuilder
 
-interface Inserted: PerformableStatement, BuildsIntoInsert
+interface Inserted: PerformableStatement, InsertBuilder

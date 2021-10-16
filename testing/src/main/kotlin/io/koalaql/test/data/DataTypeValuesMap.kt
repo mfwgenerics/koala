@@ -1,6 +1,6 @@
 package io.koalaql.test.data
 
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.ddl.UnmappedDataType
 
 class DataTypeValuesMap {
     private val mapping = hashMapOf<UnmappedDataType<*>, List<Any>>()

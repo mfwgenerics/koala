@@ -1,17 +1,16 @@
 package io.koalaql.window.fluent
 
 import io.koalaql.expr.Ordinal
-import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
-import io.koalaql.window.built.BuiltWindowPartitions
 
 interface WindowOrderable: Rowable {
     private class OrderBy(
         val lhs: WindowOrderable,
         val orderBy: List<Ordinal<*>>
     ): Rangeable {
-        override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow? {
-            window.partitions.orderBy = orderBy
+        override fun BuiltWindow.buildIntoWindow(): WindowBuilder? {
+            partitions.orderBy = orderBy
             return lhs
         }
     }

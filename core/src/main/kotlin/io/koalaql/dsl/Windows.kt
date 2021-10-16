@@ -5,6 +5,7 @@ import io.koalaql.expr.Expr
 import io.koalaql.expr.GroupedOperationExpr
 import io.koalaql.expr.OperationType
 import io.koalaql.expr.WindowFunctionExpr
+import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.expr.fluent.WindowFunction
 import io.koalaql.window.*
 import io.koalaql.window.fluent.Partitionable
@@ -49,52 +50,52 @@ fun cumeDist(): WindowFunction<Double> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.CUME_DIST, emptyList()))
 
 fun ntile(buckets: Int): WindowFunction<Int> =
-    WindowFunctionExpr(GroupedOperationExpr(OperationType.NTILE, listOf(value(buckets).buildAggregatable())))
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.NTILE, listOf(BuiltAggregatable.from(value(buckets)))))
 
 fun <T : Any> lag(expr: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
-        expr.buildAggregatable()
+        BuiltAggregatable.from(expr)
     )))
 
 fun <T : Any> lag(expr: Expr<T>, offset: Int): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
-        expr.buildAggregatable(),
-        value(offset).buildAggregatable()
+        BuiltAggregatable.from(expr),
+        BuiltAggregatable.from(value(offset))
     )))
 
 fun <T : Any> lag(expr: Expr<T>, offset: Int, default: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
-        expr.buildAggregatable(),
-        value(offset).buildAggregatable(),
-        default.buildAggregatable()
+        BuiltAggregatable.from(expr),
+        BuiltAggregatable.from(value(offset)),
+        BuiltAggregatable.from(default)
     )))
 
 fun <T : Any> lead(expr: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LEAD, listOf(
-        expr.buildAggregatable()
+        BuiltAggregatable.from(expr)
     )))
 
 fun <T : Any> lead(expr: Expr<T>, offset: Int): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LEAD, listOf(
-        expr.buildAggregatable(),
-        value(offset).buildAggregatable()
+        BuiltAggregatable.from(expr),
+        BuiltAggregatable.from(value(offset))
     )))
 
 fun <T : Any> lead(expr: Expr<T>, offset: Int, default: Expr<T>): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.LAG, listOf(
-        expr.buildAggregatable(),
-        value(offset).buildAggregatable(),
-        default.buildAggregatable()
+        BuiltAggregatable.from(expr),
+        BuiltAggregatable.from(value(offset)),
+        BuiltAggregatable.from(default)
     )))
 
 fun <T : Any> firstValue(expr: Expr<T>): WindowFunction<T> =
-    WindowFunctionExpr(GroupedOperationExpr(OperationType.FIRST_VALUE, listOf(expr.buildAggregatable())))
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.FIRST_VALUE, listOf(BuiltAggregatable.from(expr))))
 
 fun <T : Any> lastValue(expr: Expr<T>): WindowFunction<T> =
-    WindowFunctionExpr(GroupedOperationExpr(OperationType.LAST_VALUE, listOf(expr.buildAggregatable())))
+    WindowFunctionExpr(GroupedOperationExpr(OperationType.LAST_VALUE, listOf(BuiltAggregatable.from(expr))))
 
 fun <T : Any> nthValue(expr: Expr<T>, ordinal: Int): WindowFunction<T> =
     WindowFunctionExpr(GroupedOperationExpr(OperationType.NTH_VALUE, listOf(
-        expr.buildAggregatable(),
-        value(ordinal).buildAggregatable()
+        BuiltAggregatable.from(expr),
+        BuiltAggregatable.from(value(ordinal))
     )))

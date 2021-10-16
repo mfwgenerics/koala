@@ -1,10 +1,6 @@
 package io.koalaql.mysql
 
-import io.koalaql.data.*
-import io.koalaql.ddl.BaseColumnType
-import io.koalaql.ddl.IndexType
-import io.koalaql.ddl.Table
-import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.*
 import io.koalaql.ddl.diff.ChangedDefault
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.SchemaChange

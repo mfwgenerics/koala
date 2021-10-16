@@ -2,15 +2,15 @@ package io.koalaql.window.fluent
 
 import io.koalaql.expr.Expr
 import io.koalaql.window.FrameClauseType
-import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
 
-interface Rangeable: Rowable, BuildsIntoWindow {
+interface Rangeable: Rowable, WindowBuilder {
     private class RangeClauseWindow<T>(
-        val lhs: BuildsIntoWindow
+        val lhs: WindowBuilder
     ): Betweenable<T> {
-        override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow {
-            window.type = FrameClauseType.RANGE
+        override fun BuiltWindow.buildIntoWindow(): WindowBuilder {
+            type = FrameClauseType.RANGE
             return lhs
         }
     }

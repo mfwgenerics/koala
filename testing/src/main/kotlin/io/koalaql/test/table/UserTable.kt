@@ -1,8 +1,8 @@
 package io.koalaql.test.table
 
-import io.koalaql.data.TIMESTAMP
-import io.koalaql.data.TEXT
-import io.koalaql.data.VARCHAR
+import io.koalaql.ddl.TIMESTAMP
+import io.koalaql.ddl.TEXT
+import io.koalaql.ddl.VARCHAR
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.currentTimestamp
 

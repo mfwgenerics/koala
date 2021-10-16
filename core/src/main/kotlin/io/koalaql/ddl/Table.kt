@@ -1,6 +1,5 @@
 package io.koalaql.ddl
 
-import io.koalaql.data.DataType
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.BuiltNamedIndex
 import io.koalaql.ddl.fluent.ColumnDefinition

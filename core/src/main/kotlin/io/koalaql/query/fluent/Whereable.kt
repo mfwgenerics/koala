@@ -2,7 +2,7 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
 import io.koalaql.expr.Expr
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 
 interface Whereable: Groupable {
@@ -10,7 +10,7 @@ interface Whereable: Groupable {
         val of: Whereable,
         val where: Expr<Boolean>
     ): Whereable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
             where = where?.and(this@Where.where)?:this@Where.where
             return of
         }

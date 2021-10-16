@@ -1,7 +1,6 @@
 import io.koalaql.IdentifierName
 import io.koalaql.DataConnection
-import io.koalaql.data.*
-import io.koalaql.ddl.Table
+import io.koalaql.ddl.*
 import io.koalaql.dsl.as_
 import io.koalaql.dsl.cast
 import io.koalaql.dsl.values

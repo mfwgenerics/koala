@@ -3,7 +3,7 @@ package io.koalaql.query.fluent
 import io.koalaql.expr.Expr
 import io.koalaql.query.AliasedRelation
 import io.koalaql.query.JoinType
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltJoin
 import io.koalaql.query.built.BuiltQueryBody
 
@@ -14,7 +14,7 @@ interface Joinable: Whereable {
         val to: AliasedRelation,
         val on: Expr<Boolean>
     ): Joinable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
             joins.add(BuiltJoin(
                 type = type,
                 to = to.buildQueryRelation(),

@@ -1,7 +1,6 @@
 package io.koalaql.test.table
 
-import io.koalaql.data.*
-import io.koalaql.ddl.Table
+import io.koalaql.ddl.*
 import io.koalaql.dsl.currentTimestamp
 import io.koalaql.dsl.keys
 

@@ -1,7 +1,7 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.query.LockMode
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 
 interface Lockable: Selectable {
@@ -9,7 +9,7 @@ interface Lockable: Selectable {
         val of: Lockable,
         val mode: LockMode
     ): Selectable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
             locking = mode
 
             return of

@@ -1,4 +1,4 @@
-package io.koalaql.data
+package io.koalaql.ddl
 
 import kotlin.reflect.KClass
 

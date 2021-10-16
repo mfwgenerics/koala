@@ -3,12 +3,12 @@ package io.koalaql.query.fluent
 import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectedExpr
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 import io.koalaql.query.built.BuiltSelectQuery
 import io.koalaql.query.built.BuiltUnionOperand
 
-interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
+interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
     private class BuiltSelectedUnionOperand(
         val select: BuiltSelectQuery
     ): BuiltUnionOperand {
@@ -21,7 +21,7 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
         val references: List<SelectArgument>
     ): SelectedUnionOperand, SelectedJustUnionOperand<T> {
         override fun buildQuery() = BuiltSelectQuery(
-            of.buildQueryBody(),
+            BuiltQueryBody.from(of),
             references,
             false
         )
@@ -38,7 +38,7 @@ interface UnionableUnionOperand: Unionable, UnionOperand, BuildsIntoQueryBody {
     }
 
     override fun buildUnionOperand(): BuiltUnionOperand =
-        BuiltQueryUnionOperand(buildQueryBody())
+        BuiltQueryUnionOperand(BuiltQueryBody.from(this))
 
     override fun select(vararg references: SelectArgument): SelectedUnionOperand =
         SelectUnionableUnionOperand<Nothing>(this, references.asList())

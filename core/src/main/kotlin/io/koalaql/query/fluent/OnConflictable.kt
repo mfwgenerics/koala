@@ -3,7 +3,7 @@ package io.koalaql.query.fluent
 import io.koalaql.Assignment
 import io.koalaql.ddl.built.BuiltNamedIndex
 import io.koalaql.query.*
-import io.koalaql.query.built.BuildsIntoInsert
+import io.koalaql.query.built.InsertBuilder
 import io.koalaql.query.built.BuiltInsert
 
 interface OnConflictable: Returningable {
@@ -11,7 +11,7 @@ interface OnConflictable: Returningable {
         val lhs: OnConflictable,
         val action: OnConflictOrDuplicateAction
     ): Returningable {
-        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+        override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
             onConflict = action
             return lhs
         }

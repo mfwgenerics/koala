@@ -1,7 +1,7 @@
 package io.koalaql.ddl.fluent
 
 import io.koalaql.ddl.TableColumn
-import io.koalaql.ddl.built.BuildsIntoColumnDef
+import io.koalaql.ddl.built.ColumnDefBuilder
 import io.koalaql.ddl.built.BuiltColumnDef
 
 interface ColumnReferenceable<T : Any>: ColumnDefinition<T> {
@@ -9,8 +9,8 @@ interface ColumnReferenceable<T : Any>: ColumnDefinition<T> {
         val lhs: ColumnReferenceable<T>,
         val column: TableColumn<T>
     ): ColumnDefinition<T> {
-        override fun buildIntoColumnDef(out: BuiltColumnDef): BuildsIntoColumnDef? {
-            out.references = column
+        override fun BuiltColumnDef.buildIntoColumnDef(): ColumnDefBuilder? {
+            references = column
             return lhs
         }
     }

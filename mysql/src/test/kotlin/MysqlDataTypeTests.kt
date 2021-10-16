@@ -1,4 +1,4 @@
-import io.koalaql.data.FLOAT
+import io.koalaql.ddl.FLOAT
 import io.koalaql.test.data.DataTypeValuesMap
 import kotlin.test.Test
 

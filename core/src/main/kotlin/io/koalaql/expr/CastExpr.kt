@@ -1,6 +1,6 @@
 package io.koalaql.expr
 
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.ddl.UnmappedDataType
 
 class CastExpr<T : Any>(
     val of: Expr<*>,

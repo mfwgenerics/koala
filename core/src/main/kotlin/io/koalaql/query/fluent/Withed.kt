@@ -2,18 +2,18 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.values
 import io.koalaql.query.Subqueryable
-import io.koalaql.query.built.BuildsIntoInsert
+import io.koalaql.query.built.InsertBuilder
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.values.ValuesRow
 
-interface Withed: BuildsIntoInsert, Joinable {
+interface Withed: InsertBuilder, Joinable {
     private class Insert(
         val ignore: Boolean,
         val of: Withed,
         val query: BuiltSubquery
     ): OnConflictable {
-        override fun BuiltInsert.buildIntoInsert(): BuildsIntoInsert? {
+        override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
             ignore = this@Insert.ignore
             query = this@Insert.query
             return of

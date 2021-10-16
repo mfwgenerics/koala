@@ -1,4 +1,7 @@
-import io.koalaql.data.*
+import io.koalaql.ddl.BIGINT
+import io.koalaql.ddl.INTEGER
+import io.koalaql.ddl.SMALLINT
+import io.koalaql.ddl.TINYINT
 import io.koalaql.h2.H2Database
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.data.DataTypeValuesMap

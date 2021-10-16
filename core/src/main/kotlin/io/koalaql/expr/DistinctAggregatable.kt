@@ -6,8 +6,8 @@ import io.koalaql.query.Distinctness
 class DistinctAggregatable<T : Any>(
     val expr: Expr<T>
 ): OrderableAggregatable<T> {
-    override fun buildIntoAggregatable(into: BuiltAggregatable): BuildsIntoAggregatable? {
-        into.distinct = Distinctness.DISTINCT
-        return expr
+    override fun BuiltAggregatable.buildIntoAggregatable(): AggregatableBuilder {
+        distinct = Distinctness.DISTINCT
+        return this@DistinctAggregatable.expr
     }
 }

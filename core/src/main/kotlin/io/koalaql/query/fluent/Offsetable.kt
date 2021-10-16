@@ -1,6 +1,6 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 
 interface Offsetable: Limitable {
@@ -8,7 +8,7 @@ interface Offsetable: Limitable {
         val of: Offsetable,
         val rows: Int
     ): Limitable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody? {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
             offset = rows
 
             return of

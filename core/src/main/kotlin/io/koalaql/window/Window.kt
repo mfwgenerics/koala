@@ -1,7 +1,7 @@
 package io.koalaql.window
 
-import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.WindowBuilder
 
-interface Window: BuildsIntoWindow {
+interface Window: WindowBuilder {
 }
 

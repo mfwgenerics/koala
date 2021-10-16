@@ -3,16 +3,16 @@ package io.koalaql.window.fluent
 import io.koalaql.expr.Expr
 import io.koalaql.window.FrameClauseType
 import io.koalaql.window.Window
-import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
 
-interface Rowable: Window, BuildsIntoWindow {
+interface Rowable: Window, WindowBuilder {
     private class FrameClauseWindow<T>(
-        val lhs: BuildsIntoWindow,
+        val lhs: WindowBuilder,
         val type: FrameClauseType
     ): Betweenable<T> {
-        override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow {
-            window.type = type
+        override fun BuiltWindow.buildIntoWindow(): WindowBuilder {
+            type = this@FrameClauseWindow.type
             return lhs
         }
     }

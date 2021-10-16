@@ -2,18 +2,18 @@ package io.koalaql.window.fluent
 
 import io.koalaql.window.FrameRangeMarker
 import io.koalaql.window.Window
-import io.koalaql.window.built.BuildsIntoWindow
+import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
 
-interface Betweenable<T>: BuildsIntoWindow {
+interface Betweenable<T>: WindowBuilder {
     private class RangedBetweenable<T>(
         val lhs: Betweenable<T>,
         val from: FrameRangeMarker<T>,
         val until: FrameRangeMarker<T>? = null
     ): Window {
-        override fun buildIntoWindow(window: BuiltWindow): BuildsIntoWindow {
-            window.from = from
-            window.until = until
+        override fun BuiltWindow.buildIntoWindow(): WindowBuilder {
+            from = this@RangedBetweenable.from
+            until = this@RangedBetweenable.until
             return lhs
         }
     }

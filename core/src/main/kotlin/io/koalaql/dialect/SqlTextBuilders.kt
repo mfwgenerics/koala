@@ -2,6 +2,7 @@ package io.koalaql.dialect
 
 import io.koalaql.Assignment
 import io.koalaql.expr.*
+import io.koalaql.expr.built.BuiltAggregatedExpr
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
@@ -52,7 +53,7 @@ fun SqlTextBuilder.compileExpr(
 ) {
     when (expr) {
         is AggregatedExpr<*> -> {
-            val aggregated = expr.buildAggregated()
+            val aggregated = BuiltAggregatedExpr.from(expr)
 
             addSql(aggregated.expr.type.sql)
             parenthesize {

@@ -1,7 +1,4 @@
-import io.koalaql.data.*
-import io.koalaql.ddl.BaseColumnType
-import io.koalaql.ddl.Table
-import io.koalaql.ddl.createTables
+import io.koalaql.ddl.*
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.Diff
 import io.koalaql.ddl.diff.SchemaChange

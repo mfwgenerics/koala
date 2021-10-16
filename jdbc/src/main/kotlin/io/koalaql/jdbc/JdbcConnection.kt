@@ -9,6 +9,7 @@ import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
 import io.koalaql.query.*
 import io.koalaql.query.built.BuiltGeneratesKeysInsert
+import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.sql.SqlText
 import io.koalaql.values.RowSequence
@@ -74,7 +75,7 @@ class JdbcConnection(
     }
 
     private fun execute(insert: Inserted): Int {
-        val built = insert.buildInsert()
+        val built = BuiltInsert.from(insert)
 
         val sql = dialect.compile(built)
 

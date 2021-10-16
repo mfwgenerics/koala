@@ -1,4 +1,4 @@
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.ddl.UnmappedDataType
 import kotlin.test.Test
 
 class MysqlDdlTests: DdlTests() {

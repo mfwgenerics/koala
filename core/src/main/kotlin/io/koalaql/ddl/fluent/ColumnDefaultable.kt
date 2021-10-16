@@ -8,8 +8,8 @@ interface ColumnDefaultable<T : Any>: ColumnKeyable<T> {
         val lhs: ColumnDefaultable<T>,
         val default: BuiltColumnDefault
     ): ColumnKeyable<T> {
-        override fun buildIntoColumnDef(out: BuiltColumnDef): BuildsIntoColumnDef {
-            out.default = default
+        override fun BuiltColumnDef.buildIntoColumnDef(): ColumnDefBuilder {
+            default = this@Defaulted.default
             return lhs
         }
     }

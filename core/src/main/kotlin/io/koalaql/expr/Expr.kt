@@ -9,8 +9,8 @@ sealed interface Expr<T : Any>: ComparisonOperand<T>, NullsOrderable<T>, Orderab
     fun asc(): NullsOrderable<T> = NullsOrderableOrderKey(OrderKey(this, SortOrder.ASC))
     fun desc(): NullsOrderable<T> = NullsOrderableOrderKey(OrderKey(this, SortOrder.DESC))
 
-    override fun buildIntoAggregatable(into: BuiltAggregatable): BuildsIntoAggregatable? {
-        into.expr = this
+    override fun BuiltAggregatable.buildIntoAggregatable(): AggregatableBuilder? {
+        expr = this@Expr
         return null
     }
 }

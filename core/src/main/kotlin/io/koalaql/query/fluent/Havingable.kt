@@ -2,7 +2,7 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
 import io.koalaql.expr.Expr
-import io.koalaql.query.built.BuildsIntoQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
 
 interface Havingable: Windowable {
@@ -10,7 +10,7 @@ interface Havingable: Windowable {
         val of: Havingable,
         val having: Expr<Boolean>
     ): Havingable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): BuildsIntoQueryBody {
+        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
             having = having?.and(this@Having.having)?:this@Having.having
             return of
         }

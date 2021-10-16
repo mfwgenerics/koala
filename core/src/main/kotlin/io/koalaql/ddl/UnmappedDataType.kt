@@ -1,4 +1,4 @@
-package io.koalaql.data
+package io.koalaql.ddl
 
 import io.koalaql.sql.StandardSql
 import java.math.BigDecimal

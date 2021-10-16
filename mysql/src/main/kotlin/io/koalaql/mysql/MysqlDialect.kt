@@ -1,9 +1,6 @@
 package io.koalaql.mysql
 
-import io.koalaql.data.*
-import io.koalaql.ddl.IndexType
-import io.koalaql.ddl.Table
-import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.*
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
@@ -430,7 +427,7 @@ class MysqlDialect(): SqlDialect {
                 sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
-                compileWindow(it.window.buildWindow())
+                compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
             }
         }
@@ -615,7 +612,7 @@ class MysqlDialect(): SqlDialect {
                 sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
-                compileWindow(it.window.buildWindow())
+                compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
             }
         }

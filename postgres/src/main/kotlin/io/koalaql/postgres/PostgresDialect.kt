@@ -1,9 +1,6 @@
 package io.koalaql.postgres
 
-import io.koalaql.data.*
-import io.koalaql.ddl.IndexType
-import io.koalaql.ddl.Table
-import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.*
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
@@ -232,7 +229,7 @@ class PostgresDialect: SqlDialect {
 
             when (query) {
                 is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
-                is BuiltValuesQuery -> compilation.compileValues(query, forInsert)
+                is BuiltValuesQuery -> compilation.compileValues(query)
             }
         }
 
@@ -242,7 +239,7 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileSetLhs(expr: Reference<*>, emitParens: Boolean = true) {
+        fun compileSetLhs(expr: Reference<*>) {
             sql.addIdentifier(scope.resolve(expr).innerName)
         }
 
@@ -276,7 +273,7 @@ class PostgresDialect: SqlDialect {
                 }
                 is Values -> {
                     sql.parenthesize {
-                        compileValues(BuiltValuesQuery(baseRelation), false)
+                        compileValues(BuiltValuesQuery(baseRelation))
                     }
                     baseRelation.columns
                 }
@@ -336,7 +333,7 @@ class PostgresDialect: SqlDialect {
                 sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
-                compileWindow(it.window.buildWindow())
+                compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
             }
         }
@@ -435,7 +432,7 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
+        fun compileValues(query: BuiltValuesQuery) {
             sql.compileValues(query)
         }
 
@@ -541,7 +538,7 @@ class PostgresDialect: SqlDialect {
                 sql.addSql(scope.nameOf(it.label))
                 sql.addSql(" AS ")
                 sql.addSql("(")
-                compileWindow(it.window.buildWindow())
+                compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
             }
         }
@@ -595,7 +592,7 @@ class PostgresDialect: SqlDialect {
 
         when (statement) {
             is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
-            is BuiltValuesQuery -> compilation.compileValues(statement, false)
+            is BuiltValuesQuery -> compilation.compileValues(statement)
             is BuiltInsert -> compilation.compileInsert(statement)
             is BuiltUpdate -> compilation.compileUpdate(statement)
             is BuiltDelete -> compilation.compileDelete(statement)

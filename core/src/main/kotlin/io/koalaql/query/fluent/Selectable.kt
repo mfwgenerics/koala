@@ -9,14 +9,14 @@ import io.koalaql.query.Subqueryable
 import io.koalaql.query.Updated
 import io.koalaql.query.built.*
 
-interface Selectable: BuildsIntoQueryBody {
+interface Selectable: QueryBodyBuilder {
     private class Select<T : Any>(
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
     ): SelectedJust<T> {
         override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
-            of.buildQueryBody(),
+            BuiltQueryBody.from(of),
             references,
             includeAll
         )
@@ -45,7 +45,7 @@ interface Selectable: BuildsIntoQueryBody {
         val assignments: List<Assignment<*>>
     ): Updated {
         override fun buildUpdate() = BuiltUpdate(
-            of.buildQueryBody(),
+            BuiltQueryBody.from(of),
             assignments
         )
     }
@@ -56,7 +56,7 @@ interface Selectable: BuildsIntoQueryBody {
     private class Delete(
         val of: Selectable
     ): Deleted {
-        override fun buildDelete() = BuiltDelete(of.buildQueryBody())
+        override fun buildDelete() = BuiltDelete(BuiltQueryBody.from(of))
     }
 
     fun delete(): Deleted = Delete(this)

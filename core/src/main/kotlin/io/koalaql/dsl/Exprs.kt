@@ -1,6 +1,6 @@
 package io.koalaql.dsl
 
-import io.koalaql.data.UnmappedDataType
+import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
 import io.koalaql.query.Subqueryable
 import io.koalaql.query.fluent.SelectedJust
