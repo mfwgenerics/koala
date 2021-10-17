@@ -64,11 +64,11 @@ class JdbcConnection(
             val rows = try {
                 executeUpdate()
             } catch (ex: Exception) {
-                event.failed(ex)
+                event.finished(Result.failure(ex))
                 throw ex
             }
 
-            event.succeeded(rows)
+            event.finished(Result.success(rows))
 
             rows
         }
@@ -108,11 +108,11 @@ class JdbcConnection(
                     val rows = try {
                         executeUpdate()
                     } catch (ex: Exception) {
-                        event.failed(ex)
+                        event.finished(Result.failure(ex))
                         throw ex
                     }
 
-                    event.succeeded(rows)
+                    event.finished(Result.success(rows))
 
                     ResultSetRowSequence(
                         LabelListOf(listOf(built.returning)),
@@ -131,11 +131,11 @@ class JdbcConnection(
                     val results = try {
                         executeQuery()
                     } catch (ex: Exception) {
-                        event.failed(ex)
+                        event.finished(Result.failure(ex))
                         throw ex
                     }
 
-                    event.succeeded(null)
+                    event.finished(Result.success(null))
 
                     ResultSetRowSequence(
                         built.columns,

@@ -18,19 +18,19 @@ class TextEventLogger(
 
     override fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter {
         return object : QueryEventWriter {
-            override fun succeeded(rows: Int?) {
-                if (rows != null) {
-                    log("${type.name} succeeded with rows $rows")
+            override fun finished(result: Result<Int?>) {
+                val message = if (result.isSuccess) {
+                    result.getOrNull()
+                        ?.let { "succeeded with $it" }
+                        ?: "succeeded"
                 } else {
-                    log("${type.name} succeeded")
+                    "failed with ${result.exceptionOrNull()}"
                 }
+
+                log("${type.name} $message")
             }
 
-            override fun failed(ex: Exception) {
-                log("${type.name} failed with $ex")
-            }
-
-            override fun finished(rows: Int) {
+            override fun fullyRead(rows: Int) {
                 log("${type.name} finished after $rows")
             }
         }

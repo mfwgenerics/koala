@@ -1,16 +1,15 @@
 package io.koalaql.event
 
 interface QueryEventWriter {
-    fun succeeded(rows: Int?)
-    fun failed(ex: Exception)
+    /* iff successful, result contains rows affected or null for non-statements */
+    fun finished(result: Result<Int?>)
 
-    /* Called after `succeeded` once the results have been read. not guaranteed to be called */
-    fun finished(rows: Int)
+    /* Called after `succeeded` once the results have been fully read. not guaranteed to be called */
+    fun fullyRead(rows: Int)
 
     object Discard : QueryEventWriter {
-        override fun succeeded(rows: Int?) { }
-        override fun failed(ex: Exception) { }
+        override fun finished(result: Result<Int?>) { }
 
-        override fun finished(rows: Int) { }
+        override fun fullyRead(rows: Int) { }
     }
 }

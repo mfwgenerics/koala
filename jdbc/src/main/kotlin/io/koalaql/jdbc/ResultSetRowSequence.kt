@@ -48,7 +48,7 @@ class ResultSetRowSequence(
     }
 
     override fun close() {
-        event.finished(readCount)
+        event.fullyRead(readCount)
         resultSet.close()
     }
 
