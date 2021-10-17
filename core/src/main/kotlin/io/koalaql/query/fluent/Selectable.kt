@@ -50,8 +50,11 @@ interface Selectable: QueryBodyBuilder {
         )
     }
 
+    fun update(assignments: List<Assignment<*>>): Updated =
+        Update(this, assignments)
+
     fun update(vararg assignments: Assignment<*>): Updated =
-        Update(this, assignments.asList())
+        update(assignments.asList())
 
     private class Delete(
         val of: Selectable
