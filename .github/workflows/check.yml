@@ -1,0 +1,19 @@
+name: Deploy staging
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 15
+      - name: Setup PostgreSQL
+        run: sudo postgres/setup.sh
+      - name: Setup MySQL
+        run: sudo mysql/setup.sh
+      - name: Gradle check
+        run: ./gradlew check

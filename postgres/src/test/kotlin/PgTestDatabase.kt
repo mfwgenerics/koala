@@ -4,11 +4,14 @@ import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import io.koalaql.postgres.PostgresDialect
+import io.koalaql.test.retrying
 import java.sql.Connection
 import java.sql.DriverManager
 
 fun PgTestDatabase(db: String): JdbcDataSource {
-    val outerCxn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
+    val outerCxn = retrying {
+        DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
+    }
 
     outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 

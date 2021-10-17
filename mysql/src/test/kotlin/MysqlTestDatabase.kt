@@ -1,11 +1,16 @@
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import io.koalaql.mysql.MysqlDataSource
+import io.koalaql.test.retrying
 import java.sql.Connection
 import java.sql.DriverManager
 
 fun MysqlTestDatabase(db: String): JdbcDataSource {
-    val outerCxn = DriverManager.getConnection("jdbc:mysql://localhost:3306/","root","my-secret-pw")
+    val outerCxn = retrying {
+        println(System.currentTimeMillis())
+
+        DriverManager.getConnection("jdbc:mysql://localhost:3306/","root","my-secret-pw")
+    }
 
     outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
