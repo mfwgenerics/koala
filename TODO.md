@@ -6,7 +6,6 @@ Pre-release:
 * Prevent delete/update without where or other limiting condition
 * Complete + test connection event logging interface
 * Memory leak proofing, idempotent close, auto-close resources when connection closes
-* Add table definitions + null cases to DataTypeTests
 * Large text blocks test
 * VARCHAR maxLength tests
 * Common operators w/ tests for MySQL

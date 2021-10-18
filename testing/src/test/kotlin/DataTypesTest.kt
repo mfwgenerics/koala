@@ -1,9 +1,7 @@
 import io.koalaql.IdentifierName
 import io.koalaql.DataConnection
 import io.koalaql.ddl.*
-import io.koalaql.dsl.as_
-import io.koalaql.dsl.cast
-import io.koalaql.dsl.values
+import io.koalaql.dsl.*
 import io.koalaql.expr.Name
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.performWith
@@ -18,6 +16,7 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 abstract class DataTypesTest : ProvideTestDatabase {
     abstract fun compatibilityAdjustment(values: DataTypeValuesMap)
@@ -128,5 +127,22 @@ abstract class DataTypesTest : ProvideTestDatabase {
         db.declareTables(*tables.toTypedArray())
 
         tables.forEach { it.insertData(db) }
+    }
+
+    @Test
+    fun `read and write null`() = withCxn { cxn, _ ->
+        examples().entries().forEach {
+            val name = Name(it.type.type, IdentifierName())
+            val wasNull = name.isNull() as_ name()
+
+            val row = values(listOf(1)) { this[name] = null }
+                .subquery()
+                .select(name, wasNull)
+                .performWith(cxn)
+                .single()
+
+            assertNull(row.getOrNull(name))
+            assert(row[wasNull])
+        }
     }
 }

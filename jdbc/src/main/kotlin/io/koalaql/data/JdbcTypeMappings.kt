@@ -68,7 +68,7 @@ class JdbcTypeMappings {
 
         register<ULong>(
             { stmt, index, value -> stmt.setBigDecimal(index, BigDecimal(value.toString())) },
-            { rs, index -> rs.getBigDecimal(index).toLong().toULong() }
+            { rs, index -> rs.getBigDecimal(index)?.toLong()?.toULong() }
         )
 
         register<Float>(
@@ -98,17 +98,17 @@ class JdbcTypeMappings {
 
         register<LocalDate>(
             { stmt, index, value -> stmt.setObject(index, value) },
-            { rs, index -> LocalDate.parse(rs.getString(index)) }
+            { rs, index -> rs.getString(index)?.let { LocalDate.parse(it) } }
         )
 
         register<LocalTime>(
             { stmt, index, value -> stmt.setObject(index, value) },
-            { rs, index -> LocalTime.parse(rs.getString(index)) }
+            { rs, index -> rs.getString(index)?.let { LocalTime.parse(it) } }
         )
 
         register<LocalDateTime>(
             { stmt, index, value -> stmt.setObject(index, value) },
-            { rs, index -> localDateTime.parse(rs.getString(index), LocalDateTime::from) }
+            { rs, index -> rs.getString(index)?.let { localDateTime.parse(it, LocalDateTime::from) } }
         )
     }
 
