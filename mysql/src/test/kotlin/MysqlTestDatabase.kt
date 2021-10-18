@@ -7,8 +7,6 @@ import java.sql.DriverManager
 
 fun MysqlTestDatabase(db: String): JdbcDataSource {
     val outerCxn = retrying {
-        println(System.currentTimeMillis())
-
         DriverManager.getConnection("jdbc:mysql://localhost:3306/","root","my-secret-pw")
     }
 

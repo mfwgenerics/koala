@@ -121,5 +121,10 @@ inline infix fun <T : Any, reified R : Any> ElseableCaseExpr<T, R>.else_(expr: R
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     OperationType.COALESCE(expr, *operands)
 
+infix fun Expr<String>.like(expr: Expr<String>): Expr<Boolean> =
+    OperationType.LIKE(this, expr)
+
+infix fun Expr<String>.like(expr: String) = like(value(expr))
+
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
