@@ -5,6 +5,7 @@ import io.koalaql.ddl.TEXT
 import io.koalaql.ddl.VARCHAR
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
+import io.koalaql.expr.Reference
 import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
@@ -828,5 +829,20 @@ abstract class QueryTests: ProvideTestDatabase {
             .single()
 
         assertListEquals(listOf(20, 12, 8, 3), results)
+    }
+
+    @Test
+    fun likes() = withCxn { cxn, _ ->
+        val result =
+            select(
+                (value("like") like "like") as_ name(),
+                (value("like") like "lik%") as_ name(),
+                (value("like") like "lik") as_ name()
+            )
+            .performWith(cxn)
+            .map { row -> row.columns.map { row.getValue(it as Reference<Boolean>) } }
+            .single()
+
+        assertListEquals(listOf(true, true, false), result)
     }
 }
