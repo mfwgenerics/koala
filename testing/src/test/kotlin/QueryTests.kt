@@ -811,4 +811,22 @@ abstract class QueryTests: ProvideTestDatabase {
             .count()
         )
     }
+
+    @Test
+    fun `closed form arithmetic`() = withCxn { cxn, _ ->
+        fun castInt(value: Int) = cast(value(value), INTEGER)
+
+        val results =
+            select(
+                castInt(10) * 2 as_ name(),
+                castInt(10) + 2 as_ name(),
+                castInt(10) - 2 as_ name(),
+                castInt(10) % 7 as_ name(),
+            )
+            .performWith(cxn)
+            .map { row -> row.columns.map { row.getValue(it) } }
+            .single()
+
+        assertListEquals(listOf(20, 12, 8, 3), results)
+    }
 }

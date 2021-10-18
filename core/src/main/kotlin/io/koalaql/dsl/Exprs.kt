@@ -101,7 +101,7 @@ inline operator fun <reified T : Number> Expr<T>.plus(rhs: T): Expr<T> =
 operator fun <T : Number> Expr<T>.minus(rhs: Expr<T>): Expr<T> =
     OperationType.MINUS(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.minus(rhs: T): Expr<T> =
-    this * value(rhs)
+    this - value(rhs)
 
 operator fun <T : Number> Expr<T>.unaryMinus(): Expr<T> =
     OperationType.UNARY_MINUS(this)
