@@ -28,9 +28,3 @@ class LiteralAssignment<T : Any>(
         row.set(reference, value)
     }
 }
-
-infix fun <T : Any> RelvarColumn<T>.setTo(rhs: Expr<T>): Assignment<T> =
-    ExprAssignment(this, rhs)
-
-inline infix fun <reified T : Any> RelvarColumn<T>.setTo(rhs: T?): LiteralAssignment<T> =
-    LiteralAssignment(this, rhs)

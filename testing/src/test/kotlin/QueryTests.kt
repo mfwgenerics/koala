@@ -11,7 +11,6 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnDuplicated
-import io.koalaql.setTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

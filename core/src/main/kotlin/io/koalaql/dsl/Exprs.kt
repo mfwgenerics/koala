@@ -1,5 +1,8 @@
 package io.koalaql.dsl
 
+import io.koalaql.Assignment
+import io.koalaql.ExprAssignment
+import io.koalaql.LiteralAssignment
 import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
 import io.koalaql.query.Subqueryable
@@ -128,3 +131,9 @@ infix fun Expr<String>.like(expr: String) = like(value(expr))
 
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
+
+infix fun <T : Any> RelvarColumn<T>.setTo(rhs: Expr<T>): Assignment<T> =
+    ExprAssignment(this, rhs)
+
+inline infix fun <reified T : Any> RelvarColumn<T>.setTo(rhs: T?): LiteralAssignment<T> =
+    LiteralAssignment(this, rhs)
