@@ -472,19 +472,21 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val results = PurchaseTable
             .select(
-                case(PurchaseTable.product,
-                    when_("Apple") then "aPPLE"
-                ) as_ n0,
-                case(
-                    when_(PurchaseTable.product eq "Apple") then "Apple?",
-                    when_(PurchaseTable.product eq "Pen") then "Pen?"
-                ) as_ n1,
-                case(PurchaseTable.product,
-                    when_("Hammer") then "'ammer"
-                ) else_ "'lse" as_ n2,
-                case(
-                    when_(PurchaseTable.product neq "Pear") then "not a pear"
-                ) else_ PurchaseTable.product as_ n3,
+                case(PurchaseTable.product)
+                    .when_("Apple").then("aPPLE")
+                .end() as_ n0,
+                case()
+                    .when_(PurchaseTable.product eq "Apple").then("Apple?")
+                    .when_(PurchaseTable.product eq "Pen").then("Pen?")
+                .end() as_ n1,
+                case(PurchaseTable.product)
+                    .when_("Hammer").then("'ammer")
+                    .else_("'lse")
+                .end() as_ n2,
+                case()
+                    .when_(PurchaseTable.product neq "Pear").then("not a pear")
+                    .else_(PurchaseTable.product)
+                .end() as_ n3,
                 rawExpr<Int> {
                     sql("CASE")
                     sql("\nWHEN "); expr(PurchaseTable.product eq "Apple"); sql(" THEN 12")

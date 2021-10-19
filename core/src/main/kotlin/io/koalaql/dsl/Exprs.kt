@@ -5,6 +5,9 @@ import io.koalaql.ExprAssignment
 import io.koalaql.LiteralAssignment
 import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
+import io.koalaql.expr.fluent.ElseableCase
+import io.koalaql.expr.fluent.ThenableCase
+import io.koalaql.expr.fluent.WhenableCase
 import io.koalaql.query.Subqueryable
 import io.koalaql.query.fluent.SelectedJust
 import io.koalaql.sql.RawSqlBuilder
@@ -109,17 +112,16 @@ inline operator fun <reified T : Number> Expr<T>.minus(rhs: T): Expr<T> =
 operator fun <T : Number> Expr<T>.unaryMinus(): Expr<T> =
     OperationType.UNARY_MINUS(this)
 
-fun <T : Any, R : Any> case(expr: Expr<T>, vararg cases: CaseWhenThen<T, R>): ElseableCaseExpr<T, R> =
-    ElseableCaseExpr(false, expr, cases.asList(), null)
+fun <T : Any> case(expr: Expr<T>): Case<T> = Case(expr)
+fun case(): Case<Boolean> = Case(null)
 
-fun <R : Any> case(vararg cases: CaseWhenThen<Boolean, R>): ElseableCaseExpr<Boolean, R> =
-    ElseableCaseExpr(true, value(true), cases.asList(), null)
+inline infix fun <reified S : Any> Case<S>.when_(expr: S) = when_(value(expr))
+inline infix fun <S : Any, reified T : Any> Case<S>.else_(expr: T) = else_(value(expr))
+inline infix fun <S : Any, reified T : Any> CaseWhen<S>.then(expr: T) = then(value(expr))
 
-fun <T : Any> when_(expr: Expr<T>): CaseWhen<T> = CaseWhen(expr)
-inline fun <reified T : Any> when_(expr: T): CaseWhen<T> = when_(value(expr))
-
-inline infix fun <T : Any, reified R : Any> ElseableCaseExpr<T, R>.else_(expr: R): Expr<R> =
-    CaseExpr(isGeneralCase, onExpr, cases, value(expr))
+inline infix fun <reified S : Any, T : Any> WhenableCase<S, T>.when_(expr: S) = when_(value(expr))
+inline infix fun <reified T : Any> ElseableCase<T>.else_(expr: T) = else_(value(expr))
+inline infix fun <S : Any, reified T : Any> ThenableCase<S, T>.then(expr: T) = then(value(expr))
 
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     OperationType.COALESCE(expr, *operands)

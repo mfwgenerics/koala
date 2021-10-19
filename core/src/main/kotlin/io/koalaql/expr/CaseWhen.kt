@@ -1,13 +1,21 @@
 package io.koalaql.expr
 
-import io.koalaql.dsl.value
+import io.koalaql.expr.fluent.WhenableCase
 
-class CaseWhen<T : Any>(
-    private val matcher: Expr<T>
+class CaseWhen<S : Any>(
+    private val case: Case<S>,
+    private val expr: Expr<S>
 ) {
-    infix fun <R : Any> then(expr: Expr<R>): CaseWhenThen<T, R> =
-        CaseWhenThen(matcher, expr)
+    private class Then<S : Any, T : Any>(
+        val lhs: CaseWhen<S>,
+        val expr: Expr<T>
+    ): WhenableCase<S, T> {
+        override fun BuiltCaseExpr<*>.buildIntoCase(): CaseBuilder {
+            whens.addFirst(CaseWhenThen(lhs.expr, expr))
 
-    inline infix fun <reified R : Any> then(expr: R): CaseWhenThen<T, R> =
-        then(value(expr))
+            return lhs.case
+        }
+    }
+
+    infix fun <T : Any> then(expr: Expr<T>): WhenableCase<S, T> = Then(this, expr)
 }

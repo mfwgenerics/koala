@@ -137,12 +137,12 @@ fun SqlTextBuilder.compileExpr(
         is SubqueryExpr<*> -> {
             impl.subquery(false, expr.buildQuery())
         }
-        is CaseExpr<*, *> -> parenthesize(emitParens) {
+        is BuiltCaseExpr<*> -> parenthesize(emitParens) {
             addSql("CASE ")
 
-            if (!expr.isGeneralCase) compileExpr(expr.onExpr, true, impl)
+            expr.onExpr?.let { compileExpr(it, true, impl) }
 
-            expr.cases.forEach { whenThen ->
+            expr.whens.forEach { whenThen ->
                 addSql("\nWHEN ")
                 compileExpr(whenThen.whenExpr, false, impl)
                 addSql(" THEN ")
