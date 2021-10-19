@@ -25,7 +25,7 @@ sealed class UnmappedDataType<T : Any>(
             val suffix = precision?.let { "($precision)" }?:""
             "TIMESTAMP$suffix WITHOUT TIME ZONE"
         }
-        is DECIMAL -> "DECIMAL(${length},${precision})"
+        is DECIMAL -> "DECIMAL(${precision},${scale})"
         DOUBLE -> "DOUBLE"
         FLOAT -> "FLOAT"
         is TIMESTAMP -> {
@@ -137,16 +137,16 @@ class VARBINARY(
 }
 
 class DECIMAL(
-    val length: Int,
-    val precision: Int
+    val precision: Int,
+    val scale: Int
 ): UnmappedDataType<BigDecimal>(
     BigDecimal::class
 ) {
     override fun equals(other: Any?): Boolean = other is DECIMAL
-        && length == other.length
         && precision == other.precision
+        && scale == other.scale
 
-    override fun hashCode(): Int = length.hashCode() xor precision.hashCode()
+    override fun hashCode(): Int = precision.hashCode() xor scale.hashCode()
 }
 
 class RAW<T : Any>(

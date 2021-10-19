@@ -31,8 +31,8 @@ class MysqlSchemaDiff(
                 || (dataType.precision != null
                 && info.decimalDigits != dataType.precision)
             is DECIMAL -> { info.tag != Types.DECIMAL
-                || info.columnSize != dataType.length
-                || info.decimalDigits != dataType.precision
+                || info.columnSize != dataType.precision
+                || info.decimalDigits != dataType.scale
             }
             DATE -> info.tag != Types.DATE
             is TIMESTAMP -> info.tag != Types.TIMESTAMP
