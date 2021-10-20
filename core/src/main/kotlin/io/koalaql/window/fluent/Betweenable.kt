@@ -2,8 +2,8 @@ package io.koalaql.window.fluent
 
 import io.koalaql.window.FrameRangeMarker
 import io.koalaql.window.Window
-import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
+import io.koalaql.window.built.WindowBuilder
 
 interface Betweenable<T>: WindowBuilder {
     private class RangedBetweenable<T>(

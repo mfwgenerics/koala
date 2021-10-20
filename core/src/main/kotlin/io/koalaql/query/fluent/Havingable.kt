@@ -2,8 +2,8 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
 import io.koalaql.expr.Expr
-import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 
 interface Havingable: Windowable {
     private class Having(

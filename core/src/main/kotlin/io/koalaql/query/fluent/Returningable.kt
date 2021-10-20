@@ -1,11 +1,11 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.expr.Reference
-import io.koalaql.query.Inserted
 import io.koalaql.query.GeneratesKeys
-import io.koalaql.query.built.InsertBuilder
+import io.koalaql.query.Inserted
 import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltInsert
+import io.koalaql.query.built.InsertBuilder
 
 interface Returningable: Inserted {
     private class InsertedGeneratesKeys(

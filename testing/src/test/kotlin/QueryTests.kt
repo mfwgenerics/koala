@@ -1,9 +1,5 @@
 import io.koalaql.DataConnection
-import io.koalaql.ddl.FLOAT
-import io.koalaql.ddl.INTEGER
-import io.koalaql.ddl.TEXT
-import io.koalaql.ddl.VARCHAR
-import io.koalaql.ddl.Table
+import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Reference
 import io.koalaql.jdbc.performWith
@@ -632,7 +628,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     row[shopsAlias[ShopTable.name]],
                     row[purchases2[PurchaseTable.product]],
                     row[purchases2[PurchaseTable.price]],
-                    row[ShopTable.name],
+                    row.getOrNull(ShopTable.name),
                 )
             }
             .toList()

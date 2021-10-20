@@ -1,5 +1,6 @@
 package io.koalaql.ddl
 
+import io.koalaql.ddl.built.BuiltColumnDef
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.BuiltNamedIndex
 import io.koalaql.ddl.fluent.ColumnDefinition
@@ -29,11 +30,7 @@ abstract class Table protected constructor(
         check(usedNames.add(name)) { "field name $name is already in use" }
     }
 
-    protected fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumn<T> {
-        takeName(name)
-
-        val column = TableColumn(this, name, def)
-
+    private fun internalAddColumn(column: TableColumn<*>) {
         column.builtDef.markedAsKey?.let {
             when (it) {
                 IndexType.PRIMARY -> primaryKey(keys(column))
@@ -43,11 +40,33 @@ abstract class Table protected constructor(
         }
 
         internalColumns.add(column)
+    }
+
+    protected fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumnNotNull<T> {
+        takeName(name)
+
+        val builtDef = BuiltColumnDef.from(def)
+
+        val column = TableColumnNotNull<T>(this, name, builtDef)
+
+        internalAddColumn(column)
 
         return column
     }
 
-    protected fun <T : Any> column(name: String, def: DataType<*, T>): TableColumn<T> =
+    protected fun <T : Any> column(name: String, def: ColumnDefinition.Nullable<T>): TableColumn<T> {
+        takeName(name)
+
+        val builtDef = BuiltColumnDef.from(def)
+
+        val column = TableColumn<T>(this, name, builtDef)
+
+        internalAddColumn(column)
+
+        return column
+    }
+
+    protected fun <T : Any> column(name: String, def: DataType<*, T>): TableColumnNotNull<T> =
         column(name, BaseColumnType(def))
 
     var primaryKey: BuiltNamedIndex? = null

@@ -2,8 +2,8 @@ package io.koalaql.test.table
 
 import io.koalaql.ddl.BOOLEAN
 import io.koalaql.ddl.INTEGER
-import io.koalaql.ddl.VARCHAR
 import io.koalaql.ddl.Table
+import io.koalaql.ddl.VARCHAR
 
 object UserVenueTable: Table("UserVenue") {
     val user = column("user", VARCHAR(128).reference(UserTable.id))

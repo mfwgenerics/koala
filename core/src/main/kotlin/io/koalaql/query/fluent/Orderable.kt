@@ -1,8 +1,8 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.expr.Ordinal
-import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 
 interface Orderable: Offsetable {
     private class OrderBy(

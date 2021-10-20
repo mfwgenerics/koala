@@ -1,8 +1,8 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.query.LockMode
-import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 
 interface Lockable: Selectable {
     private class LockQuery(

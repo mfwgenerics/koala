@@ -1,10 +1,6 @@
 package io.koalaql.test.table
 
-import io.koalaql.ddl.TIMESTAMP
-import io.koalaql.ddl.INTEGER
-import io.koalaql.ddl.TEXT
-import io.koalaql.ddl.VARCHAR
-import io.koalaql.ddl.Table
+import io.koalaql.ddl.*
 import io.koalaql.dsl.currentTimestamp
 
 object ReviewTable: Table("Review") {

@@ -76,7 +76,7 @@ class VenueService(
                     closed = row[VenueTable.closedPermanently],
                     rating = row[VenueTable.rating],
                     type = row[VenueTable.type],
-                    visits = row[visits],
+                    visits = row.getValue(visits),
                     reviews = reviewsByVenue[row[VenueTable.id]].orEmpty()
                 )
             }

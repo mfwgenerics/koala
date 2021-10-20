@@ -1,8 +1,8 @@
 package io.koalaql.window.fluent
 
 import io.koalaql.expr.Ordinal
-import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
+import io.koalaql.window.built.WindowBuilder
 
 interface WindowOrderable: Rowable {
     private class OrderBy(

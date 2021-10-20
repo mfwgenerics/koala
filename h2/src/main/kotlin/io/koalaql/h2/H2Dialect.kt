@@ -1,9 +1,9 @@
 package io.koalaql.h2
 
-import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.ddl.IndexType
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue

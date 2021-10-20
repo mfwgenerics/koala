@@ -1,6 +1,9 @@
 package io.koalaql.jdbc
 
-import io.koalaql.*
+import io.koalaql.DeclareStrategy
+import io.koalaql.Isolation
+import io.koalaql.JdbcSchemaDetection
+import io.koalaql.SchemaDataSource
 import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaChange

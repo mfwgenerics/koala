@@ -1,8 +1,8 @@
 package io.koalaql.window
 
 import io.koalaql.IdentifierName
-import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
+import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.fluent.Partitionable
 
 class WindowLabel(

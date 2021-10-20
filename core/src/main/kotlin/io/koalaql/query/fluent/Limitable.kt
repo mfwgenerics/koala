@@ -1,7 +1,7 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.built.QueryBodyBuilder
 import io.koalaql.query.built.BuiltQueryBody
+import io.koalaql.query.built.QueryBodyBuilder
 
 interface Limitable: Lockable {
     private class Limit(

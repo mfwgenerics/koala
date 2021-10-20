@@ -1,5 +1,5 @@
-import io.koalaql.IdentifierName
 import io.koalaql.DataConnection
+import io.koalaql.IdentifierName
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Name
@@ -142,7 +142,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
                 .single()
 
             assertNull(row.getOrNull(name))
-            assert(row[wasNull])
+            assert(row.getValue(wasNull))
         }
     }
 }

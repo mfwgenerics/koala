@@ -1,7 +1,7 @@
 package io.koalaql.ddl.fluent
 
-import io.koalaql.ddl.built.ColumnDefBuilder
 import io.koalaql.ddl.built.BuiltColumnDef
+import io.koalaql.ddl.built.ColumnDefBuilder
 
 interface ColumnIncrementable<T : Any>: ColumnNullable<T> {
     private class AutoIncrement<T : Any>(

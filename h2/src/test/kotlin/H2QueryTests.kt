@@ -1,5 +1,4 @@
 import io.koalaql.h2.H2Database
-import io.koalaql.jdbc.GeneratedSqlException
 import io.koalaql.jdbc.JdbcDataSource
 import kotlin.test.Test
 

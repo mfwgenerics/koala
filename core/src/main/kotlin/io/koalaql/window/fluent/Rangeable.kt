@@ -2,8 +2,8 @@ package io.koalaql.window.fluent
 
 import io.koalaql.expr.Expr
 import io.koalaql.window.FrameClauseType
-import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.built.BuiltWindow
+import io.koalaql.window.built.WindowBuilder
 
 interface Rangeable: Rowable, WindowBuilder {
     private class RangeClauseWindow<T>(

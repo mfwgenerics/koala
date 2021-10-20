@@ -1,12 +1,12 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.expr.Expr
-import io.koalaql.query.RelationBuilder
 import io.koalaql.query.JoinType
-import io.koalaql.query.built.QueryBodyBuilder
+import io.koalaql.query.RelationBuilder
 import io.koalaql.query.built.BuiltJoin
 import io.koalaql.query.built.BuiltQueryBody
 import io.koalaql.query.built.BuiltRelation
+import io.koalaql.query.built.QueryBodyBuilder
 
 interface Joinable: Whereable {
     private class Join(

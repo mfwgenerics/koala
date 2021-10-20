@@ -2,9 +2,9 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.values
 import io.koalaql.query.Subqueryable
-import io.koalaql.query.built.InsertBuilder
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltSubquery
+import io.koalaql.query.built.InsertBuilder
 import io.koalaql.values.ValuesRow
 
 interface Withed: InsertBuilder, Joinable {

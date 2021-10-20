@@ -2,8 +2,6 @@ package io.koalaql.jdbc
 
 import io.koalaql.DataConnection
 import io.koalaql.DataSource
-import io.koalaql.Isolation
-import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.query.PerformableQuery
 import io.koalaql.query.PerformableStatement
 import io.koalaql.transact

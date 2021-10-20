@@ -1,7 +1,7 @@
 package io.koalaql.ddl
 
-import io.koalaql.ddl.built.ColumnDefBuilder
 import io.koalaql.ddl.built.BuiltColumnDef
+import io.koalaql.ddl.built.ColumnDefBuilder
 import io.koalaql.ddl.fluent.ColumnIncrementable
 
 interface ColumnType<T : Any>: ColumnIncrementable<T> {
