@@ -12,6 +12,7 @@ import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.sql.SqlText
+import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -90,7 +91,7 @@ class JdbcConnection(
         return prepareAndUpdate(ConnectionQueryType.UPDATE, sql)
     }
 
-    private fun query(queryable: Queryable): RowSequence {
+    private fun query(queryable: Queryable): RowSequence<ResultRow> {
         return when (val built = queryable.buildQuery()) {
             is BuiltGeneratesKeysInsert -> {
                 fun err(): Nothing = error("generatedKeys must expose a single auto-generated key")
@@ -156,7 +157,7 @@ class JdbcConnection(
         return prepareAndUpdate(ConnectionQueryType.DELETE, sql)
     }
 
-    override fun query(query: PerformableQuery): RowSequence = when (query) {
+    override fun query(query: PerformableQuery): RowSequence<ResultRow> = when (query) {
         is Queryable -> query(query)
     }
 

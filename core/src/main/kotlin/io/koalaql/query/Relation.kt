@@ -7,6 +7,7 @@ import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.query.built.BuiltValuesQuery
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
+import io.koalaql.values.ValuesRow
 
 sealed interface Relation: AliasableRelation {
     override fun as_(alias: Alias): Aliased = Aliased(this, alias)
@@ -31,9 +32,9 @@ class Subquery(
 
 class Values(
     override val columns: LabelList,
-    private val impl: () -> RowIterator
-): Relation, Subqueryable, RowSequence {
-    override fun rowIterator(): RowIterator = impl()
+    private val impl: () -> RowIterator<ValuesRow>
+): Relation, Subqueryable, RowSequence<ValuesRow> {
+    override fun rowIterator(): RowIterator<ValuesRow> = impl()
     override fun buildQuery(): BuiltSubquery = BuiltValuesQuery(this)
 }
 

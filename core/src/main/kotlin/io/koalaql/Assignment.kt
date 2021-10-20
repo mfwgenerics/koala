@@ -3,7 +3,6 @@ package io.koalaql
 import io.koalaql.expr.Expr
 import io.koalaql.expr.Literal
 import io.koalaql.expr.RelvarColumn
-import io.koalaql.values.RowWriter
 
 interface Assignment<T : Any> {
     val reference: RelvarColumn<T>
@@ -23,8 +22,4 @@ class LiteralAssignment<T : Any>(
         reference.type,
         value
     )
-
-    fun placeIntoRow(row: RowWriter) {
-        row.set(reference, value)
-    }
 }

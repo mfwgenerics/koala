@@ -433,7 +433,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileValues(query: BuiltValuesQuery) {
-            sql.compileValues(query)
+            sql.compileValues(query, compileExpr = { compileExpr(it, false) })
         }
 
         fun compileInsert(insert: BuiltInsert) {

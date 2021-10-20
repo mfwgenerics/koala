@@ -2,10 +2,10 @@ package io.koalaql.values
 
 import io.koalaql.query.LabelList
 
-class IteratorToRowIterator(
+class IteratorToValuesIterator(
     override val columns: LabelList,
     val iter: Iterator<ValuesRow>
-): RowIterator {
+): RowIterator<ValuesRow> {
     override lateinit var row: ValuesRow
 
     override fun next(): Boolean {

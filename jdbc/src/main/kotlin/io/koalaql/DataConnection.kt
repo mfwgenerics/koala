@@ -2,10 +2,11 @@ package io.koalaql
 
 import io.koalaql.query.PerformableQuery
 import io.koalaql.query.PerformableStatement
+import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 
 interface DataConnection: AutoCloseable {
-    fun query(query: PerformableQuery): RowSequence
+    fun query(query: PerformableQuery): RowSequence<ResultRow>
     fun statement(statement: PerformableStatement): Int
 
     fun commit()

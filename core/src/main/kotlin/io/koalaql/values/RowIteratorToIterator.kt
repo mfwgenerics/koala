@@ -1,17 +1,11 @@
 package io.koalaql.values
 
-import io.koalaql.expr.Reference
-import io.koalaql.query.LabelList
+class RowIteratorToIterator<T>(
+    private val rows: RowIterator<T>
+): Iterator<T> {
+    private object Initial
 
-class RowIteratorToIterator(
-    private val rows: RowIterator
-): Iterator<ValuesRow> {
-    private object Initial: ValuesRow() {
-        override val columns: LabelList get() = error("not implemented")
-        override fun <T : Any> getOrNull(reference: Reference<T>): T? { error("not implemented") }
-    }
-
-    private var currentRow: ValuesRow? = Initial
+    private var currentRow: Any? = Initial
 
     private fun fetch() {
         val hadNext = rows.next()
@@ -30,12 +24,13 @@ class RowIteratorToIterator(
         return currentRow != null
     }
 
-    override fun next(): ValuesRow {
+    override fun next(): T {
         val result = checkNotNull(currentRow)
             { "no next row" }
 
         fetch()
 
-        return result
+        @Suppress("unchecked_cast")
+        return result as T
     }
 }

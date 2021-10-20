@@ -1,6 +1,7 @@
 package io.koalaql.dsl
 
-import io.koalaql.LiteralAssignment
+import io.koalaql.Assignment
+import io.koalaql.expr.Expr
 import io.koalaql.expr.Reference
 import io.koalaql.query.InsertableLabelList
 import io.koalaql.query.LabelList
@@ -11,17 +12,17 @@ import io.koalaql.values.*
 inline fun <T> values(
     source: Sequence<T>,
     references: List<Reference<*>>,
-    crossinline writer: RowWriter.(T) -> Unit
+    crossinline writer: ValuesWriter.(T) -> Unit
 ): Values {
     val columns = LabelListOf(references)
 
     return Values(columns) {
         val iter = source.iterator()
 
-        object : RowIterator {
+        object : RowIterator<ValuesRow> {
             override val columns: LabelList get() = columns
 
-            override var row: PreLabeledRow = PreLabeledRow(columns)
+            override var row: PreLabeledValues = PreLabeledValues(columns)
 
             override fun next(): Boolean {
                 if (!iter.hasNext()) return false
@@ -34,7 +35,7 @@ inline fun <T> values(
 
             override fun takeRow(): ValuesRow {
                 val result = row
-                row = PreLabeledRow(columns)
+                row = PreLabeledValues(columns)
                 return result
             }
 
@@ -45,7 +46,7 @@ inline fun <T> values(
 
 inline fun <T> values(
     source: Sequence<T>,
-    crossinline build: RowWriter.(T) -> Unit
+    crossinline build: ValuesWriter.(T) -> Unit
 ): Values {
     val rows = arrayListOf<ValuesRow>()
 
@@ -54,10 +55,10 @@ inline fun <T> values(
 
     val labels = InsertableLabelList()
 
-    val writer = object : RowWriter {
-        private var values = arrayListOf<Any?>()
+    val writer = object : ValuesWriter {
+        private var values = arrayListOf<Expr<*>?>()
 
-        override fun <T : Any> set(reference: Reference<T>, value: T?) {
+        override fun <T : Any> set(reference: Reference<T>, value: Expr<T>) {
             labels.insert(reference)
 
             val ix = columnPositions.putIfAbsent(reference, columnPositions.size)
@@ -71,12 +72,12 @@ inline fun <T> values(
         }
 
         fun next() {
-            rows.add(BuiltRow(
+            rows.add(BuiltValues(
                 labels, /* it is deliberate that this continues to be mutated after BuiltRow is constructed */
                 values
             ))
 
-            val nextValues = ArrayList<Any?>(columnPositions.size)
+            val nextValues = ArrayList<Expr<*>?>(columnPositions.size)
             repeat(columnPositions.size) { nextValues.add(null) }
 
             values = nextValues
@@ -89,19 +90,19 @@ inline fun <T> values(
     }
 
     return Values(labels) {
-        IteratorToRowIterator(labels, rows.iterator())
+        IteratorToValuesIterator(labels, rows.iterator())
     }
 }
 
 inline fun <T> values(
     source: Iterable<T>,
     references: List<Reference<*>>,
-    crossinline writer: RowWriter.(T) -> Unit
+    crossinline writer: ValuesWriter.(T) -> Unit
 ): Values = values(source.asSequence(), references) { writer(it) }
 
 inline fun <T> values(
     source: Iterable<T>,
-    crossinline writer: RowWriter.(T) -> Unit
+    crossinline writer: ValuesWriter.(T) -> Unit
 ): Values = values(source.asSequence()) { writer(it) }
 
 fun values(
@@ -116,25 +117,26 @@ fun values(
     val columns = LabelListOf(labelSet.toList())
 
     return Values(columns) {
-        IteratorToRowIterator(columns, rows.iterator())
+        IteratorToValuesIterator(columns, rows.iterator())
     }
 }
 
 fun values(vararg rows: ValuesRow): Values = values(rows.asList())
 
-fun rowOf(assignments: List<LiteralAssignment<*>>): ValuesRow {
+private fun <T : Any> Assignment<T>.placeIntoRow(row: ValuesWriter) {
+    row[reference] = expr
+}
+
+fun rowOf(assignments: List<Assignment<*>>): ValuesRow {
     checkNotNull(assignments.isNotEmpty()) { "rowOf must contain at least one value" }
 
     /* could be done more efficiently (?) by building labels and row values together */
-    val row = PreLabeledRow(LabelListOf(assignments.map { it.reference }))
+    val row = PreLabeledValues(LabelListOf(assignments.map { it.reference }))
 
     assignments.forEach { it.placeIntoRow(row) }
 
     return row
 }
 
-fun rowOf(vararg assignments: LiteralAssignment<*>): ValuesRow =
+fun rowOf(vararg assignments: Assignment<*>): ValuesRow =
     rowOf(assignments.asList())
-
-fun rowOfNotNull(vararg assignments: LiteralAssignment<*>?): ValuesRow =
-    rowOf(assignments.mapNotNull { it })

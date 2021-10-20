@@ -536,10 +536,12 @@ class MysqlDialect(): SqlDialect {
         }
 
         fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
-            sql.compileValues(query) {
+            sql.compileValues(query,
+                compileExpr = { compileExpr(it, false) }
+            ) { row ->
                 if (!forInsert) sql.addSql("ROW ")
 
-                sql.compileRow(it)
+                sql.compileRow(row) { compileExpr(it, false) }
             }
         }
 

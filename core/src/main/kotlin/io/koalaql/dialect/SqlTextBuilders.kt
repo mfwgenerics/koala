@@ -8,8 +8,8 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.values.RowIterator
+import io.koalaql.values.ValuesRow
 import io.koalaql.window.*
-import kotlin.reflect.KClass
 
 fun SqlTextBuilder.selectClause(selected: List<SelectedExpr<*>>, compileSelect: (SelectedExpr<*>) -> Unit) {
     val selectPrefix = prefix("SELECT ", "\n, ")
@@ -253,15 +253,13 @@ fun SqlTextBuilder.compileQueryBody(
 }
 
 fun SqlTextBuilder.compileRow(
-    iter: RowIterator
+    iter: RowIterator<ValuesRow>,
+    compileExpr: (Expr<*>) -> Unit
 ) {
     addSql("(")
     prefix("", ", ").forEach(iter.columns) {
         @Suppress("unchecked_cast")
-        addLiteral(Literal(
-            it.type as KClass<Any>,
-            iter.row.getOrNull(it)
-        ))
+        compileExpr(iter.row[it])
     }
     addSql(")")
 }
@@ -277,7 +275,8 @@ fun SqlTextBuilder.compileValues(
 
         addSql(" LIMIT 0")
     },
-    compileRow: (RowIterator) -> Unit = { this.compileRow(it) }
+    compileExpr: (Expr<*>) -> Unit,
+    compileRow: (RowIterator<ValuesRow>) -> Unit = { this.compileRow(it, compileExpr) }
 ) {
     val values = query.values
 

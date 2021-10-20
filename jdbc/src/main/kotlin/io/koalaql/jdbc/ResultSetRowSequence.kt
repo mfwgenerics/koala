@@ -4,10 +4,10 @@ import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.event.QueryEventWriter
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
-import io.koalaql.values.PreLabeledRow
+import io.koalaql.values.PreLabeledResults
+import io.koalaql.values.ResultRow
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
-import io.koalaql.values.ValuesRow
 import java.sql.ResultSet
 
 class ResultSetRowSequence(
@@ -15,11 +15,11 @@ class ResultSetRowSequence(
     private val event: QueryEventWriter,
     private val typeMappings: JdbcTypeMappings,
     private val resultSet: ResultSet
-): RowSequence, RowIterator, ValuesRow() {
+): RowSequence<ResultRow>, RowIterator<ResultRow>, ResultRow() {
     private var alreadyIterated = false
     private var readCount = 0
 
-    override val row: ValuesRow get() = this
+    override val row: ResultRow get() = this
 
     override fun <T : Any> getOrNull(reference: Reference<T>): T? {
         val ix = 1 + (columns.positionOf(reference) ?: return null)
@@ -36,8 +36,8 @@ class ResultSetRowSequence(
         }
     }
 
-    override fun takeRow(): ValuesRow {
-        val result = PreLabeledRow(this@ResultSetRowSequence.columns)
+    override fun takeRow(): ResultRow {
+        val result = PreLabeledResults(this@ResultSetRowSequence.columns)
 
         columns.forEach {
             @Suppress("unchecked_cast")
@@ -52,9 +52,9 @@ class ResultSetRowSequence(
         resultSet.close()
     }
 
-    override fun rowIterator(): RowIterator {
+    override fun rowIterator(): RowIterator<ResultRow> {
         check(!alreadyIterated)
-            { "rowIterator() can only be called once" }
+        { "rowIterator() can only be called once" }
 
         alreadyIterated = true
 

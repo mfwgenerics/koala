@@ -52,7 +52,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     PurchaseTable.shop setTo groceriesId,
                     PurchaseTable.customer setTo janeId,
                     PurchaseTable.product setTo "Apple",
-                    PurchaseTable.price setTo 150,
+                    PurchaseTable.price setTo value(150) + 0,
                     PurchaseTable.discount setTo 20
                 ),
                 rowOf(

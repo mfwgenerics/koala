@@ -5,6 +5,7 @@ import io.koalaql.query.LabelList
 import io.koalaql.query.LabelListOf
 import io.koalaql.sql.Scope
 import io.koalaql.values.RowSequence
+import io.koalaql.values.ValuesRow
 import kotlin.reflect.KClass
 
 sealed interface BuiltQuery {
@@ -89,7 +90,7 @@ class BuiltSelectQuery(
 }
 
 data class BuiltValuesQuery(
-    val values: RowSequence
+    val values: RowSequence<ValuesRow>
 ): BuiltSubquery {
     override val columns: LabelList get() = values.columns
 

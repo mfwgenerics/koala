@@ -3,9 +3,9 @@ package io.koalaql.values
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
 
-class PreLabeledRow(
+class PreLabeledResults(
     override val columns: LabelList
-): ValuesRow(), RowWriter {
+): ResultRow() {
     private val values = arrayOfNulls<Any>(columns.size)
 
     fun clear() {
@@ -19,7 +19,7 @@ class PreLabeledRow(
         return values[ix] as T?
     }
 
-    override fun <T : Any> set(reference: Reference<T>, value: T?) {
+    fun <T : Any> set(reference: Reference<T>, value: T?) {
         val ix = checkNotNull(columns.positionOf(reference)) {
             "$reference not representable in $columns"
         }
