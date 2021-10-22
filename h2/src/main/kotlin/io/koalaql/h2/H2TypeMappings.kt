@@ -2,14 +2,24 @@ package io.koalaql.h2
 
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
-import org.h2.api.TimestampWithTimeZone
-import org.h2.util.TimeZoneProvider
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
+import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
+import java.time.format.DateTimeFormatterBuilder
 
 fun H2TypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()
+
+    val offsetDateTime = DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .append(ISO_LOCAL_DATE)
+        .appendLiteral(' ')
+        .append(ISO_LOCAL_TIME)
+        .appendOffset("+HH:mm", "")
+        .toFormatter()
 
     result.register(Instant::class, object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {
@@ -17,12 +27,7 @@ fun H2TypeMappings(): JdbcTypeMappings {
         }
 
         override fun readJdbc(rs: ResultSet, index: Int): Instant? {
-            val twtz = rs.getObject(index) as? TimestampWithTimeZone ?: return null
-
-            return Instant.ofEpochMilli(TimeZoneProvider
-                .ofOffset(twtz.timeZoneOffsetSeconds)
-                .getEpochSecondsFromLocal(twtz.ymd, twtz.nanosSinceMidnight)*1000 + twtz.nanosSinceMidnight/1000000 % 1000
-            )
+            return rs.getString(index)?.let { offsetDateTime.parse(it, ZonedDateTime::from).toInstant() }
         }
     })
 
