@@ -2,7 +2,6 @@ import io.koalaql.DataConnection
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Reference
-import io.koalaql.jdbc.performWith
 import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable

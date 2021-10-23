@@ -90,7 +90,7 @@ inline fun <T> values(
     }
 
     return Values(labels) {
-        IteratorToValuesIterator(labels, rows.iterator())
+        IteratorToRowIterator(labels, rows.iterator())
     }
 }
 
@@ -117,7 +117,7 @@ fun values(
     val columns = LabelListOf(labelSet.toList())
 
     return Values(columns) {
-        IteratorToValuesIterator(columns, rows.iterator())
+        IteratorToRowIterator(columns, rows.iterator())
     }
 }
 

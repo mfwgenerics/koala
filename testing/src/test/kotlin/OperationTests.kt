@@ -2,7 +2,6 @@ import io.koalaql.ddl.DOUBLE
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
-import io.koalaql.jdbc.performWith
 import io.koalaql.window.Window
 import io.koalaql.window.fluent.WindowOrderable
 import java.math.BigDecimal

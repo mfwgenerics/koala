@@ -21,7 +21,7 @@ class BuiltGeneratesKeysInsert(
     }
 }
 
-sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
+sealed interface BuiltSubquery: BuiltQuery, BuiltDml {
     val columns: LabelList
 
     override fun populateScope(scope: Scope)
@@ -30,7 +30,7 @@ sealed interface BuiltSubquery: BuiltQuery, BuiltStatement {
 class BuiltSelectQuery(
     val body: BuiltQueryBody,
     val selected: List<SelectedExpr<*>>
-): BuiltSubquery, BuiltStatement {
+): BuiltSubquery, BuiltDml {
     constructor(
         body: BuiltQueryBody,
         references: List<SelectArgument>,

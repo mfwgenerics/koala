@@ -4,7 +4,6 @@ import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Name
 import io.koalaql.jdbc.JdbcDataSource
-import io.koalaql.jdbc.performWith
 import io.koalaql.test.data.DataTypeValuesMap
 import io.koalaql.test.data.DataTypeWithValues
 import io.koalaql.transact

@@ -656,7 +656,7 @@ class MysqlDialect(): SqlDialect {
         }
     }
 
-    override fun compile(statement: BuiltStatement): SqlText {
+    override fun compile(dml: BuiltDml): SqlText {
         val registry = NameRegistry()
         val scope = Scope(registry)
 
@@ -664,14 +664,14 @@ class MysqlDialect(): SqlDialect {
             scope = scope
         )
 
-        statement.populateScope(scope)
+        dml.populateScope(scope)
 
-        when (statement) {
-            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), statement)
-            is BuiltValuesQuery -> compilation.compileValues(statement, false)
-            is BuiltInsert -> compilation.compileInsert(statement)
-            is BuiltUpdate -> compilation.compileUpdate(statement)
-            is BuiltDelete -> compilation.compileDelete(statement)
+        when (dml) {
+            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), dml)
+            is BuiltValuesQuery -> compilation.compileValues(dml, false)
+            is BuiltInsert -> compilation.compileInsert(dml)
+            is BuiltUpdate -> compilation.compileUpdate(dml)
+            is BuiltDelete -> compilation.compileDelete(dml)
         }
 
         return compilation.sql.toSql()

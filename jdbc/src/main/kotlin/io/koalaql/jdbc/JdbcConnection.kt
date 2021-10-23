@@ -8,9 +8,7 @@ import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
 import io.koalaql.query.*
-import io.koalaql.query.built.BuiltGeneratesKeysInsert
-import io.koalaql.query.built.BuiltInsert
-import io.koalaql.query.built.BuiltSubquery
+import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
@@ -75,30 +73,26 @@ class JdbcConnection(
         }
     }
 
-    private fun execute(insert: Inserted): Int {
-        val built = BuiltInsert.from(insert)
-
-        val sql = dialect.compile(built)
+    private fun execute(insert: BuiltInsert): Int {
+        val sql = dialect.compile(insert)
 
         return prepareAndUpdate(ConnectionQueryType.INSERT, sql)
     }
 
-    private fun execute(updated: Updated): Int {
-        val built = updated.buildUpdate()
-
-        val sql = dialect.compile(built)
+    private fun execute(update: BuiltUpdate): Int {
+        val sql = dialect.compile(update)
 
         return prepareAndUpdate(ConnectionQueryType.UPDATE, sql)
     }
 
-    private fun query(queryable: Queryable): RowSequence<ResultRow> {
-        return when (val built = queryable.buildQuery()) {
+    override fun query(query: BuiltQuery): RowSequence<ResultRow> {
+        return when (query) {
             is BuiltGeneratesKeysInsert -> {
                 fun err(): Nothing = error("generatedKeys must expose a single auto-generated key")
 
-                val sql = dialect.compile(built.insert)
+                val sql = dialect.compile(query.insert)
 
-                val column = built.returning
+                val column = query.returning
                 if (column !is TableColumn) err()
 
                 if (!column.builtDef.autoIncrement) err()
@@ -116,7 +110,7 @@ class JdbcConnection(
                     event.finished(Result.success(rows))
 
                     ResultSetRowSequence(
-                        LabelListOf(listOf(built.returning)),
+                        LabelListOf(listOf(query.returning)),
                         event,
                         typeMappings,
                         generatedKeys
@@ -124,7 +118,7 @@ class JdbcConnection(
                 }
             }
             is BuiltSubquery -> {
-                val sql = dialect.compile(built)
+                val sql = dialect.compile(query)
 
                 prepareAndThen(sql) {
                     val event = events.perform(ConnectionQueryType.QUERY, sql)
@@ -139,7 +133,7 @@ class JdbcConnection(
                     event.finished(Result.success(null))
 
                     ResultSetRowSequence(
-                        built.columns,
+                        query.columns,
                         event,
                         typeMappings,
                         results
@@ -149,22 +143,16 @@ class JdbcConnection(
         }
     }
 
-    private fun execute(deleted: Deleted): Int {
-        val built = deleted.buildDelete()
-
+    private fun execute(built: BuiltDelete): Int {
         val sql = dialect.compile(built)
 
         return prepareAndUpdate(ConnectionQueryType.DELETE, sql)
     }
 
-    override fun query(query: PerformableQuery): RowSequence<ResultRow> = when (query) {
-        is Queryable -> query(query)
-    }
-
-    override fun statement(statement: PerformableStatement): Int = when (statement) {
-        is Inserted -> execute(statement)
-        is Updated -> execute(statement)
-        is Deleted -> execute(statement)
+    override fun statement(statement: BuiltStatement): Int = when (statement) {
+        is BuiltInsert -> execute(statement)
+        is BuiltUpdate -> execute(statement)
+        is BuiltDelete -> execute(statement)
     }
 
     override fun commit() {

@@ -2,11 +2,11 @@ package io.koalaql.values
 
 import io.koalaql.query.LabelList
 
-class IteratorToValuesIterator(
+class IteratorToRowIterator<T : Any>(
     override val columns: LabelList,
-    val iter: Iterator<ValuesRow>
-): RowIterator<ValuesRow> {
-    override lateinit var row: ValuesRow
+    val iter: Iterator<T>
+): RowIterator<T> {
+    override lateinit var row: T
 
     override fun next(): Boolean {
         if (!iter.hasNext()) return false
@@ -16,7 +16,7 @@ class IteratorToValuesIterator(
         return true
     }
 
-    override fun takeRow(): ValuesRow = row
+    override fun takeRow(): T = row
 
     override fun close() { }
 }

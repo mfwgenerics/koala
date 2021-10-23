@@ -2,7 +2,6 @@ package io.koalaql.test.service
 
 import io.koalaql.dsl.*
 import io.koalaql.jdbc.JdbcDataSource
-import io.koalaql.jdbc.performWith
 import io.koalaql.test.models.*
 import io.koalaql.test.table.ReviewTable
 import io.koalaql.test.table.UserTable

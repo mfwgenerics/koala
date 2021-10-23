@@ -535,7 +535,7 @@ class H2Dialect(
         }
     }
 
-    override fun compile(statement: BuiltStatement): SqlText {
+    override fun compile(dml: BuiltDml): SqlText {
         val registry = NameRegistry()
         val scope = Scope(registry)
 
@@ -543,14 +543,14 @@ class H2Dialect(
             scope = scope
         )
 
-        statement.populateScope(scope)
+        dml.populateScope(scope)
 
-        when (statement) {
-            is BuiltSelectQuery -> compilation.compileSelect(statement)
-            is BuiltValuesQuery -> compilation.compileValues(statement)
-            is BuiltInsert -> compilation.compileInsert(statement)
-            is BuiltUpdate -> compilation.compileUpdate(statement)
-            is BuiltDelete -> compilation.compileDelete(statement)
+        when (dml) {
+            is BuiltSelectQuery -> compilation.compileSelect(dml)
+            is BuiltValuesQuery -> compilation.compileValues(dml)
+            is BuiltInsert -> compilation.compileInsert(dml)
+            is BuiltUpdate -> compilation.compileUpdate(dml)
+            is BuiltDelete -> compilation.compileDelete(dml)
         }
 
         return compilation.sql.toSql()
