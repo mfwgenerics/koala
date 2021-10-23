@@ -311,10 +311,18 @@ fun SqlTextBuilder.compileOnConflict(
 
             addSql(" DO UPDATE SET")
 
+            check(onConflict.assignments.isNotEmpty()) {
+                "empty assignment list in DO UPDATE SET"
+            }
+
             compileAssignments(onConflict.assignments)
         }
         is OnDuplicateUpdate -> {
             addSql("\nON DUPLICATE KEY UPDATE")
+
+            check(onConflict.assignments.isNotEmpty()) {
+                "empty assignment list in ON DUPLICATE KEY UPDATE"
+            }
 
             compileAssignments(onConflict.assignments)
         }
