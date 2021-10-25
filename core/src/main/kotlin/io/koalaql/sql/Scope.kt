@@ -23,15 +23,15 @@ class Scope(
 
     private object Internal: Registered
 
-    private val ctes = hashMapOf<Cte, LabelList>()
+    private val ctes = hashMapOf<Cte, List<Reference<*>>>()
     private val external = hashMapOf<Reference<*>, String>()
     private val internal = hashMapOf<Reference<*>, Registered>()
 
-    fun cte(cte: Cte, labels: LabelList) {
+    fun cte(cte: Cte, labels: List<Reference<*>>) {
         ctes[cte] = labels
     }
 
-    fun cteColumns(cte: Cte): LabelList = checkNotNull(ctes[cte]?:enclosing?.cteColumns(cte))
+    fun cteColumns(cte: Cte): List<Reference<*>> = checkNotNull(ctes[cte]?:enclosing?.cteColumns(cte))
         { "missing cte $cte in scope $this" }
 
     fun external(name: Reference<*>, symbol: String? = null) {

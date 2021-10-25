@@ -3,6 +3,7 @@ package io.koalaql.query.built
 import io.koalaql.expr.*
 import io.koalaql.query.LabelList
 import io.koalaql.query.LabelListOf
+import io.koalaql.query.Values
 import io.koalaql.sql.Scope
 import io.koalaql.values.RowSequence
 import io.koalaql.values.ValuesRow
@@ -14,7 +15,7 @@ sealed interface BuiltQuery {
 
 class BuiltGeneratesKeysInsert(
     val insert: BuiltInsert,
-    val returning: Reference<*>
+    val returning: RelvarColumn<*>
 ): BuiltQuery {
     override fun populateScope(scope: Scope) {
 
@@ -22,7 +23,7 @@ class BuiltGeneratesKeysInsert(
 }
 
 sealed interface BuiltSubquery: BuiltQuery, BuiltDml {
-    val columns: LabelList
+    val columns: List<Reference<*>>
 
     override fun populateScope(scope: Scope)
 }
@@ -90,9 +91,9 @@ class BuiltSelectQuery(
 }
 
 data class BuiltValuesQuery(
-    val values: RowSequence<ValuesRow>
+    val values: Values
 ): BuiltSubquery {
-    override val columns: LabelList get() = values.columns
+    override val columns get() = values.columns
 
     override fun populateScope(scope: Scope) { }
 }

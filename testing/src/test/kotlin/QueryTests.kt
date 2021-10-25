@@ -17,9 +17,8 @@ abstract class QueryTests: ProvideTestDatabase {
                 rowOf(ShopTable.name setTo "Groceries"),
                 rowOf(ShopTable.name setTo "Stationery")
             ))
-            .generatingKeys(ShopTable.id)
+            .generatingKey(ShopTable.id)
             .performWith(cxn)
-            .map { it.getOrNull(ShopTable.id)!! }
             .toList()
 
         val hardwareId = shopIds[0]
@@ -37,9 +36,8 @@ abstract class QueryTests: ProvideTestDatabase {
                     CustomerTable.lastName setTo "Smith"
                 )
             ))
-            .generatingKeys(CustomerTable.id)
+            .generatingKey(CustomerTable.id)
             .performWith(cxn)
-            .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
 
         val janeId = customerIds[0]
@@ -783,7 +781,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    open fun `empty insert defaults to table columns`() = withCxn(MergeTest) { cxn, _ ->
+    open fun `empty insert no-ops`() = withCxn(MergeTest) { cxn, _ ->
         assertEquals(0, MergeTest
             .selectAll()
             .performWith(cxn)

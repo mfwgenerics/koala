@@ -217,7 +217,7 @@ class PostgresDialect: SqlDialect {
             sql.addSql(type.toRawSql())
         }
 
-        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {
+        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery): Boolean {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -227,15 +227,18 @@ class PostgresDialect: SqlDialect {
                 scope = innerScope
             )
 
-            when (query) {
-                is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
+            return when (query) {
+                is BuiltSelectQuery -> {
+                    compilation.compileSelect(outerSelect, query)
+                    return true
+                }
                 is BuiltValuesQuery -> compilation.compileValues(query)
             }
         }
 
         fun compileSubqueryExpr(subquery: BuiltSubquery) {
             sql.parenthesize {
-                compileQuery(emptyList(), subquery, false)
+                compileQuery(emptyList(), subquery)
             }
         }
 
@@ -262,7 +265,7 @@ class PostgresDialect: SqlDialect {
                         Compilation(
                             innerScope,
                             sql = sql
-                        ).compileQuery(emptyList(), baseRelation.of, false)
+                        ).compileQuery(emptyList(), baseRelation.of)
                     }
 
                     if (baseRelation.of is BuiltValuesQuery) {
@@ -377,7 +380,7 @@ class PostgresDialect: SqlDialect {
                     Compilation(
                         scope = innerScope,
                         sql = sql
-                    ).compileQuery(emptyList(), it.query, false)
+                    ).compileQuery(emptyList(), it.query)
 
                     sql.addSql(")")
                 }
@@ -432,11 +435,11 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery) {
-            sql.compileValues(query, compileExpr = { compileExpr(it, false) })
+        fun compileValues(query: BuiltValuesQuery): Boolean {
+            return sql.compileValues(query, compileExpr = { compileExpr(it, false) })
         }
 
-        fun compileInsert(insert: BuiltInsert) {
+        fun compileInsert(insert: BuiltInsert): Boolean {
             val relvar = insert.unwrapTable()
 
             compileWiths(insert.withType, insert.withs)
@@ -451,7 +454,7 @@ class PostgresDialect: SqlDialect {
 
             sql.addSql("\n")
 
-            compileQuery(emptyList(), insert.query, true)
+            val nonEmpty = compileQuery(emptyList(), insert.query)
 
             sql.compileOnConflict(insert.onConflict) { assignments ->
                 val innerScope = scope.innerScope()
@@ -468,6 +471,8 @@ class PostgresDialect: SqlDialect {
                     updateCtx.compileExpr(it.expr)
                 }
             }
+
+            return nonEmpty
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -580,7 +585,7 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    override fun compile(dml: BuiltDml): SqlText {
+    override fun compile(dml: BuiltDml): SqlText? {
         val registry = NameRegistry()
         val scope = Scope(registry)
 
@@ -590,14 +595,27 @@ class PostgresDialect: SqlDialect {
 
         dml.populateScope(scope)
 
-        when (dml) {
-            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), dml)
+        val nonEmpty = when (dml) {
+            is BuiltSelectQuery -> {
+                compilation.compileSelect(emptyList(), dml)
+                true
+            }
             is BuiltValuesQuery -> compilation.compileValues(dml)
             is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> compilation.compileUpdate(dml)
-            is BuiltDelete -> compilation.compileDelete(dml)
+            is BuiltUpdate -> {
+                compilation.compileUpdate(dml)
+                true
+            }
+            is BuiltDelete -> {
+                compilation.compileDelete(dml)
+                true
+            }
         }
 
-        return compilation.sql.toSql()
+        return if (nonEmpty) {
+            compilation.sql.toSql()
+        } else {
+            null
+        }
     }
 }

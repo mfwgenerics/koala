@@ -253,11 +253,12 @@ fun SqlTextBuilder.compileQueryBody(
 }
 
 fun SqlTextBuilder.compileRow(
+    columns: List<Reference<*>>,
     iter: RowIterator<ValuesRow>,
     compileExpr: (Expr<*>) -> Unit
 ) {
     addSql("(")
-    prefix("", ", ").forEach(iter.columns) {
+    prefix("", ", ").forEach(columns) {
         @Suppress("unchecked_cast")
         compileExpr(iter.row[it])
     }
@@ -266,32 +267,29 @@ fun SqlTextBuilder.compileRow(
 
 fun SqlTextBuilder.compileValues(
     query: BuiltValuesQuery,
-    emptyValues: (LabelList) -> Unit = {
-        check(it.isNotEmpty()) { "empty VALUES with no columns" }
-
-        prefix("SELECT ", ",").forEach(it) {
-            addSql("NULL")
-        }
-
-        addSql(" LIMIT 0")
-    },
     compileExpr: (Expr<*>) -> Unit,
-    compileRow: (RowIterator<ValuesRow>) -> Unit = { this.compileRow(it, compileExpr) }
-) {
+    compileRow: (List<Reference<*>>, RowIterator<ValuesRow>) -> Unit = { columns, it ->
+        this.compileRow(columns, it, compileExpr)
+    }
+): Boolean {
     val values = query.values
+
+    addSql("VALUES ")
 
     val iter = values.rowIterator()
 
-    if (iter.next()) {
-        val rowPrefix = prefix("VALUES ", "\n, ")
+    return if (iter.next()) {
+        val rowPrefix = prefix("", "\n, ")
 
         do {
             rowPrefix.next {
-                compileRow(iter)
+                compileRow(values.columns, iter)
             }
         } while (iter.next())
+
+        true
     } else {
-        emptyValues(values.columns)
+        false
     }
 }
 

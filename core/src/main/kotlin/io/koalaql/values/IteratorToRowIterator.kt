@@ -1,9 +1,6 @@
 package io.koalaql.values
 
-import io.koalaql.query.LabelList
-
 class IteratorToRowIterator<T : Any>(
-    override val columns: LabelList,
     val iter: Iterator<T>
 ): RowIterator<T> {
     override lateinit var row: T

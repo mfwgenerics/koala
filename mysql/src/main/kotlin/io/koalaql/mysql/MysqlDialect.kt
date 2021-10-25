@@ -303,7 +303,7 @@ class MysqlDialect(): SqlDialect {
             else -> rawSql()
         }
 
-        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean) {
+        fun compileQuery(outerSelect: List<SelectedExpr<*>>, query: BuiltSubquery, forInsert: Boolean): Boolean {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -313,8 +313,11 @@ class MysqlDialect(): SqlDialect {
                 scope = innerScope
             )
 
-            when (query) {
-                is BuiltSelectQuery -> compilation.compileSelect(outerSelect, query)
+            return when (query) {
+                is BuiltSelectQuery -> {
+                    compilation.compileSelect(outerSelect, query)
+                    true
+                }
                 is BuiltValuesQuery -> compilation.compileValues(query, forInsert)
             }
         }
@@ -451,7 +454,7 @@ class MysqlDialect(): SqlDialect {
             ).compileSelect(outerSelect, selectQuery)
         }
 
-        fun compileRelabels(labels: LabelList) {
+        fun compileRelabels(labels: List<Reference<*>>) {
             sql.parenthesize {
                 sql.prefix("", ", ").forEach(labels) {
                     sql.addIdentifier(scope.nameOf(it))
@@ -535,17 +538,17 @@ class MysqlDialect(): SqlDialect {
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery, forInsert: Boolean) {
-            sql.compileValues(query,
+        fun compileValues(query: BuiltValuesQuery, forInsert: Boolean): Boolean {
+            return sql.compileValues(query,
                 compileExpr = { compileExpr(it, false) }
-            ) { row ->
+            ) { columns, row ->
                 if (!forInsert) sql.addSql("ROW ")
 
-                sql.compileRow(row) { compileExpr(it, false) }
+                sql.compileRow(columns, row) { compileExpr(it, false) }
             }
         }
 
-        fun compileInsert(insert: BuiltInsert) {
+        fun compileInsert(insert: BuiltInsert): Boolean {
             compileWiths(insert.withType, insert.withs)
 
             if (insert.withs.isNotEmpty()) sql.addSql("\n")
@@ -556,7 +559,7 @@ class MysqlDialect(): SqlDialect {
 
             val relvar = insert.unwrapTable()
 
-            compileQuery(emptyList(), insert.query, true)
+            val nonEmpty = compileQuery(emptyList(), insert.query, true)
 
             sql.compileOnConflict(insert.onConflict) { assignments ->
                 val innerScope = scope.innerScope()
@@ -573,6 +576,8 @@ class MysqlDialect(): SqlDialect {
                     updateCtx.compileExpr(it.expr)
                 }
             }
+
+            return nonEmpty
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -656,7 +661,7 @@ class MysqlDialect(): SqlDialect {
         }
     }
 
-    override fun compile(dml: BuiltDml): SqlText {
+    override fun compile(dml: BuiltDml): SqlText? {
         val registry = NameRegistry()
         val scope = Scope(registry)
 
@@ -666,14 +671,27 @@ class MysqlDialect(): SqlDialect {
 
         dml.populateScope(scope)
 
-        when (dml) {
-            is BuiltSelectQuery -> compilation.compileSelect(emptyList(), dml)
+        val nonEmpty = when (dml) {
+            is BuiltSelectQuery -> {
+                compilation.compileSelect(emptyList(), dml)
+                true
+            }
             is BuiltValuesQuery -> compilation.compileValues(dml, false)
             is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> compilation.compileUpdate(dml)
-            is BuiltDelete -> compilation.compileDelete(dml)
+            is BuiltUpdate -> {
+                compilation.compileUpdate(dml)
+                true
+            }
+            is BuiltDelete -> {
+                compilation.compileDelete(dml)
+                true
+            }
         }
 
-        return compilation.sql.toSql()
+        return if (nonEmpty) {
+            compilation.sql.toSql()
+        } else {
+            null
+        }
     }
 }

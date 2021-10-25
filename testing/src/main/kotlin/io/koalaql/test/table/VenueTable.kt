@@ -5,11 +5,12 @@ import io.koalaql.dsl.currentTimestamp
 import io.koalaql.dsl.keys
 
 object VenueTable: Table("Venue") {
-    val id = column("id", INTEGER.autoIncrement().primaryKey())
     val created = column("create", TIMESTAMP.default(currentTimestamp()))
 
     val name = column("name", VARCHAR(128))
     val description = column("description", TEXT)
+
+    val id = column("id", INTEGER.autoIncrement().primaryKey())
 
     val closedPermanently = column("closed", BOOLEAN.default(false))
 

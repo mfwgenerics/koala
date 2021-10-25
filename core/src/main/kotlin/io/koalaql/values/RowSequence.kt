@@ -1,9 +1,9 @@
 package io.koalaql.values
 
-import io.koalaql.query.LabelList
+import io.koalaql.expr.Reference
 
 interface RowSequence<T>: Sequence<T> {
-    val columns: LabelList
+    val columns: List<Reference<*>>
 
     fun rowIterator(): RowIterator<T>
 

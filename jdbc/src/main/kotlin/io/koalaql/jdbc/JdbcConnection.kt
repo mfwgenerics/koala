@@ -7,13 +7,17 @@ import io.koalaql.ddl.TableColumn
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
+import io.koalaql.expr.Reference
+import io.koalaql.expr.RelvarColumn
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
+import io.koalaql.values.emptyRowSequence
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.sql.Statement
 
 class JdbcConnection(
@@ -74,23 +78,42 @@ class JdbcConnection(
     }
 
     private fun execute(insert: BuiltInsert): Int {
-        val sql = dialect.compile(insert)
+        val sql = dialect.compile(insert) ?: return 0
 
         return prepareAndUpdate(ConnectionQueryType.INSERT, sql)
     }
 
     private fun execute(update: BuiltUpdate): Int {
-        val sql = dialect.compile(update)
+        val sql = dialect.compile(update) ?: return 0
 
         return prepareAndUpdate(ConnectionQueryType.UPDATE, sql)
+    }
+
+    /*
+    JDBC's getGeneratedKeys is poorly standardized.
+    some drivers return all inserted columns for new rows by name
+    others return a single auto-generated key but under a generic name e.g. "GENERATED_KEY"
+    */
+    private fun positionOf(column: RelvarColumn<*>, rs: ResultSet): Int {
+        val md = rs.metaData
+        val generatedColumns = md.columnCount
+
+        if (generatedColumns == 1) return 0
+
+        repeat(md.columnCount) { ix ->
+            if (md.getColumnName(ix + 1) == column.symbol) return ix
+        }
+
+        error("unable to fetch generated key $column")
     }
 
     override fun query(query: BuiltQuery): RowSequence<ResultRow> {
         return when (query) {
             is BuiltGeneratesKeysInsert -> {
-                fun err(): Nothing = error("generatedKeys must expose a single auto-generated key")
+                fun err(): Nothing = error("must select a single auto-generated key")
 
                 val sql = dialect.compile(query.insert)
+                    ?: return emptyRowSequence(listOf(query.returning))
 
                 val column = query.returning
                 if (column !is TableColumn) err()
@@ -109,8 +132,17 @@ class JdbcConnection(
 
                     event.finished(Result.success(rows))
 
-                    ResultSetRowSequence(
-                        LabelListOf(listOf(query.returning)),
+                    val rs = generatedKeys
+
+                    val ix = positionOf(query.returning, rs)
+
+                    return ResultSetRowSequence(
+                        object : LabelList, List<Reference<*>> by listOf(query.returning) {
+                            override fun positionOf(reference: Reference<*>): Int? {
+                                if (reference == query.returning) return ix
+                                return null
+                            }
+                        },
                         event,
                         typeMappings,
                         generatedKeys
@@ -119,6 +151,7 @@ class JdbcConnection(
             }
             is BuiltSubquery -> {
                 val sql = dialect.compile(query)
+                    ?: return emptyRowSequence(query.columns)
 
                 prepareAndThen(sql) {
                     val event = events.perform(ConnectionQueryType.QUERY, sql)
@@ -133,7 +166,7 @@ class JdbcConnection(
                     event.finished(Result.success(null))
 
                     ResultSetRowSequence(
-                        query.columns,
+                        LabelListOf(query.columns),
                         event,
                         typeMappings,
                         results
@@ -144,7 +177,7 @@ class JdbcConnection(
     }
 
     private fun execute(built: BuiltDelete): Int {
-        val sql = dialect.compile(built)
+        val sql = dialect.compile(built) ?: return 0
 
         return prepareAndUpdate(ConnectionQueryType.DELETE, sql)
     }

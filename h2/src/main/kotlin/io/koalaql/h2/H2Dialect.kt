@@ -232,7 +232,7 @@ class H2Dialect(
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
             compileCastDataType(to)
 
-        fun compileQuery(query: BuiltSubquery, outerSelect: List<SelectedExpr<*>>? = null) {
+        fun compileQuery(query: BuiltSubquery, outerSelect: List<SelectedExpr<*>>? = null): Boolean {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -242,8 +242,11 @@ class H2Dialect(
                 scope = innerScope
             )
 
-            when (query) {
-                is BuiltSelectQuery -> compilation.compileSelect(query)
+            return when (query) {
+                is BuiltSelectQuery -> {
+                    compilation.compileSelect(query)
+                    true
+                }
                 is BuiltValuesQuery -> compilation.compileValues(query)
             }
         }
@@ -261,7 +264,7 @@ class H2Dialect(
             sql.compileExpr(expr, emitParens, this)
         }
 
-        fun compileRelabels(labels: LabelList) {
+        fun compileRelabels(labels: List<Reference<*>>) {
             sql.parenthesize {
                 sql.prefix("", ", ").forEach(labels) {
                     sql.addIdentifier(scope.nameOf(it))
@@ -427,11 +430,11 @@ class H2Dialect(
             }
         }
 
-        fun compileValues(query: BuiltValuesQuery) {
-            sql.compileValues(query, compileExpr = { compileExpr(it, false) })
+        fun compileValues(query: BuiltValuesQuery): Boolean {
+            return sql.compileValues(query, compileExpr = { compileExpr(it, false) })
         }
 
-        fun compileInsert(insert: BuiltInsert) {
+        fun compileInsert(insert: BuiltInsert): Boolean {
             compileWiths(insert.withType, insert.withs)
 
             if (insert.withs.isNotEmpty()) sql.addSql("\n")
@@ -442,7 +445,7 @@ class H2Dialect(
 
             val relvar = insert.unwrapTable()
 
-            compileQuery(insert.query)
+            val nonEmpty = compileQuery(insert.query)
 
             sql.compileOnConflict(insert.onConflict) { assignments ->
                 val innerScope = scope.innerScope()
@@ -459,6 +462,8 @@ class H2Dialect(
                     updateCtx.compileExpr(it.expr)
                 }
             }
+
+            return nonEmpty
         }
 
         fun compileUpdate(update: BuiltUpdate) {
@@ -535,7 +540,7 @@ class H2Dialect(
         }
     }
 
-    override fun compile(dml: BuiltDml): SqlText {
+    override fun compile(dml: BuiltDml): SqlText? {
         val registry = NameRegistry()
         val scope = Scope(registry)
 
@@ -545,14 +550,27 @@ class H2Dialect(
 
         dml.populateScope(scope)
 
-        when (dml) {
-            is BuiltSelectQuery -> compilation.compileSelect(dml)
+        val nonEmpty = when (dml) {
+            is BuiltSelectQuery -> {
+                compilation.compileSelect(dml)
+                true
+            }
             is BuiltValuesQuery -> compilation.compileValues(dml)
             is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> compilation.compileUpdate(dml)
-            is BuiltDelete -> compilation.compileDelete(dml)
+            is BuiltUpdate -> {
+                compilation.compileUpdate(dml)
+                true
+            }
+            is BuiltDelete -> {
+                compilation.compileDelete(dml)
+                true
+            }
         }
 
-        return compilation.sql.toSql()
+        return if (nonEmpty) {
+            compilation.sql.toSql()
+        } else {
+            null
+        }
     }
 }

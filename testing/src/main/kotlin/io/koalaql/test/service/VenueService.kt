@@ -25,9 +25,8 @@ class VenueService(
                 set(VenueTable.closedPermanently, it.closed)
                 set(VenueTable.type, it.type)
             })
-            .generatingKeys(VenueTable.id)
+            .generatingKey(VenueTable.id)
             .performWith(cxn)
-            .map { it.getOrNull(VenueTable.id)!! }
             .toList()
     }
 

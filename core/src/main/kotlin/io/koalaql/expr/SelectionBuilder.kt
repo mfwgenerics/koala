@@ -4,7 +4,7 @@ import io.koalaql.query.*
 import io.koalaql.query.built.BuiltRelation
 
 class SelectionBuilder(
-    private val with: Map<Cte, LabelList>
+    private val with: Map<Cte, List<Reference<*>>>
 ) {
     private val entries = linkedMapOf<Reference<*>, Expr<*>>()
 

@@ -1,10 +1,6 @@
 package io.koalaql.values
 
-import io.koalaql.query.LabelList
-
 interface RowIterator<T> {
-    val columns: LabelList
-
     /* current row. reference is valid until subsequent call to next */
     val row: T
 

@@ -1,11 +1,11 @@
 package io.koalaql.values
 
-import io.koalaql.query.LabelList
+import io.koalaql.expr.Reference
 
 class SequenceToRowSequence<T : Any>(
-    override val columns: LabelList,
+    override val columns: List<Reference<*>>,
     private val sequence: Sequence<T>
 ): RowSequence<T> {
     override fun rowIterator(): RowIterator<T> =
-        IteratorToRowIterator(columns, sequence.iterator())
+        IteratorToRowIterator(sequence.iterator())
 }

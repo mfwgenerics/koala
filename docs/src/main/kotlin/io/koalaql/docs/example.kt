@@ -63,9 +63,9 @@ fun quickExample() {
                 ShopTable.established setTo LocalDate.parse("1991-02-20")
             )
         ))
-        .generatingKeys(ShopTable.id)
+        .generatingKey(ShopTable.id)
         .performWith(db)
-        .single()[ShopTable.id]
+        .single()
 
     /*
     ### Select from the table
