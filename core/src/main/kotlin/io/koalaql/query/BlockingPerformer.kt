@@ -5,7 +5,7 @@ import io.koalaql.query.built.BuiltStatement
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 
-interface BlockingPerformer {
+interface BlockingPerformer: SqlPerformer {
     fun query(query: BuiltQuery): RowSequence<ResultRow>
     fun statement(statement: BuiltStatement): Int
 }

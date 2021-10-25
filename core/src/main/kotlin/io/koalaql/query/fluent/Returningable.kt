@@ -4,10 +4,10 @@ import io.koalaql.expr.RelvarColumn
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.GeneratingKey
 import io.koalaql.query.Inserted
-import io.koalaql.query.LabelList
 import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
+import io.koalaql.sql.SqlText
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
 
@@ -45,6 +45,8 @@ interface Returningable: Inserted {
                 }
             }
         }
+
+        override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
     }
 
     fun <T : Any> generatingKey(reference: RelvarColumn<T>): GeneratingKey<T> =

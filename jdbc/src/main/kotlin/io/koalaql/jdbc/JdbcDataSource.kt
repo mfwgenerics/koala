@@ -9,6 +9,8 @@ import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.query.built.BuiltDml
+import io.koalaql.sql.SqlText
 import java.sql.Connection
 
 class JdbcDataSource(
@@ -106,6 +108,8 @@ class JdbcDataSource(
             events
         )
     }
+
+    override fun generateSql(dml: BuiltDml): SqlText? = dialect.compile(dml)
 
     fun close() {
         provider.close()

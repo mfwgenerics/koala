@@ -28,9 +28,9 @@ class JdbcConnection(
 ): DataConnection {
     fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
         val result = if (generatedKeys) {
-            jdbc.prepareStatement(sql.sql, Statement.RETURN_GENERATED_KEYS)
+            jdbc.prepareStatement(sql.parameterizedSql, Statement.RETURN_GENERATED_KEYS)
         } else {
-            jdbc.prepareStatement(sql.sql)
+            jdbc.prepareStatement(sql.parameterizedSql)
         }
 
         sql.parameters.forEachIndexed { ix, literal ->
@@ -214,4 +214,6 @@ class JdbcConnection(
         events.closed()
         jdbc.close()
     }
+
+    override fun generateSql(dml: BuiltDml): SqlText? = dialect.compile(dml)
 }
