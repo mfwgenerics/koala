@@ -27,8 +27,6 @@ abstract class DocGenTask : DefaultTask() {
         var commentDepth = 0
         var last = NUL
 
-        var stripSpaces = true
-
         source.forEach { ch ->
             when {
                 last == '/' && ch == '*' -> {
@@ -37,7 +35,6 @@ abstract class DocGenTask : DefaultTask() {
                     }
                     commentDepth++
                     last = NUL
-                    stripSpaces = true
                 }
                 last == '*' && ch == '/' -> {
                     commentDepth--
@@ -51,12 +48,7 @@ abstract class DocGenTask : DefaultTask() {
                         texts.last().second.append(last)
                     }
 
-                    last = if (commentDepth > 0 && stripSpaces && ch == ' ') {
-                        NUL
-                    } else {
-                        stripSpaces = ch == '\n' || ch == '\r'
-                        ch
-                    }
+                    last = ch
                 }
             }
         }
