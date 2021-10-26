@@ -1,4 +1,4 @@
-name: Deploy staging
+name: Build and test
 on: [push, pull_request]
 jobs:
   build:
