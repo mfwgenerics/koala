@@ -5,8 +5,6 @@ import io.koalaql.query.LabelList
 import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
-import io.koalaql.values.RowSequence
-import io.koalaql.values.ValuesRow
 import kotlin.reflect.KClass
 
 sealed interface BuiltQuery {
@@ -15,7 +13,7 @@ sealed interface BuiltQuery {
 
 class BuiltGeneratesKeysInsert(
     val insert: BuiltInsert,
-    val returning: RelvarColumn<*>
+    val returning: Column<*>
 ): BuiltQuery {
     override fun populateScope(scope: Scope) {
 

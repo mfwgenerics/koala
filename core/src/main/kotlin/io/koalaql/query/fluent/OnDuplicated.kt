@@ -3,7 +3,7 @@ package io.koalaql.query.fluent
 import io.koalaql.Assignment
 import io.koalaql.ExprAssignment
 import io.koalaql.dsl.Excluded
-import io.koalaql.expr.RelvarColumn
+import io.koalaql.expr.Column
 
 interface OnDuplicated {
     fun update(assignments: List<Assignment<*>>): Returningable
@@ -12,14 +12,14 @@ interface OnDuplicated {
         update(assignments.asList())
 
     /* Syntax sugar for the common case of wanting to update from the inserted values */
-    fun set(assignments: List<RelvarColumn<*>>): Returningable =
+    fun set(assignments: List<Column<*>>): Returningable =
         update(assignments.map {
             @Suppress("unchecked_cast")
-            val cast = it as RelvarColumn<Any>
+            val cast = it as Column<Any>
 
             ExprAssignment(cast, Excluded[cast])
         })
 
-    fun set(vararg assignments: RelvarColumn<*>): Returningable =
+    fun set(vararg assignments: Column<*>): Returningable =
         set(assignments.asList())
 }

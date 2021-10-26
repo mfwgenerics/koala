@@ -108,7 +108,7 @@ class MysqlDialect(): SqlDialect {
         private fun compileDdlExpr(expr: Expr<*>) {
             when (expr) {
                 is Literal -> sql.addLiteral(expr)
-                is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
+                is Column<*> -> sql.addIdentifier(expr.symbol)
                 else -> compileExpr(expr, true)
             }
         }
@@ -178,7 +178,7 @@ class MysqlDialect(): SqlDialect {
             sql.parenthesize {
                 val comma = sql.prefix("\n", ",\n")
 
-                comma.forEach(table.columns) {
+                comma.forEach(table.columns.includingUnused()) {
                     compileColumnDef(sql, it)
                 }
 
@@ -350,7 +350,7 @@ class MysqlDialect(): SqlDialect {
 
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
-                is Relvar -> {
+                is TableRelation -> {
                     sql.addSql(baseRelation.tableName)
                     null
                 }

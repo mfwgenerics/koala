@@ -8,7 +8,7 @@ import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
 import io.koalaql.expr.Reference
-import io.koalaql.expr.RelvarColumn
+import io.koalaql.expr.Column
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
@@ -94,7 +94,7 @@ class JdbcConnection(
     some drivers return all inserted columns for new rows by name
     others return a single auto-generated key but under a generic name e.g. "GENERATED_KEY"
     */
-    private fun positionOf(column: RelvarColumn<*>, rs: ResultSet): Int {
+    private fun positionOf(column: Column<*>, rs: ResultSet): Int {
         val md = rs.metaData
         val generatedColumns = md.columnCount
 

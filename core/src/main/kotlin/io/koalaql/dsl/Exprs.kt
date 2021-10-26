@@ -134,8 +134,8 @@ infix fun Expr<String>.like(expr: String) = like(value(expr))
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
 
-infix fun <T : Any> RelvarColumn<T>.setTo(rhs: Expr<T>): Assignment<T> =
+infix fun <T : Any> Column<T>.setTo(rhs: Expr<T>): Assignment<T> =
     ExprAssignment(this, rhs)
 
-inline infix fun <reified T : Any> RelvarColumn<T>.setTo(rhs: T?): LiteralAssignment<T> =
+inline infix fun <reified T : Any> Column<T>.setTo(rhs: T?): LiteralAssignment<T> =
     LiteralAssignment(this, rhs)

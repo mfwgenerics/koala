@@ -1,19 +1,20 @@
 package io.koalaql.ddl
 
+import io.koalaql.TableColumnList
 import io.koalaql.ddl.built.BuiltColumnDef
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.BuiltNamedIndex
 import io.koalaql.ddl.fluent.ColumnDefinition
 import io.koalaql.dsl.keys
 import io.koalaql.expr.Expr
-import io.koalaql.expr.RelvarColumn
+import io.koalaql.expr.Column
 import io.koalaql.query.Alias
-import io.koalaql.query.Relvar
+import io.koalaql.query.TableRelation
 import io.koalaql.query.built.BuiltRelation
 
 abstract class Table protected constructor(
     override val tableName: String
-): Relvar {
+): TableRelation {
     private val alias = Alias()
 
     override fun BuiltRelation.buildIntoRelation() {
@@ -22,7 +23,12 @@ abstract class Table protected constructor(
     }
 
     private val internalColumns = arrayListOf<TableColumn<*>>()
-    override val columns: List<TableColumn<*>> get() = internalColumns
+    private val unusedColumns = arrayListOf<TableColumn<*>>()
+
+    override val columns: TableColumnList = TableColumnList(
+        internalColumns,
+        unusedColumns
+    )
 
     private val usedNames: HashSet<String> = hashSetOf()
 
@@ -30,7 +36,9 @@ abstract class Table protected constructor(
         check(usedNames.add(name)) { "field name $name is already in use" }
     }
 
-    private fun internalAddColumn(column: TableColumn<*>) {
+    private fun registerColumn(column: TableColumn<*>) {
+        takeName(column.symbol)
+
         column.builtDef.markedAsKey?.let {
             when (it) {
                 IndexType.PRIMARY -> primaryKey(keys(column))
@@ -38,36 +46,36 @@ abstract class Table protected constructor(
                 IndexType.INDEX -> index(keys(column))
             }
         }
+    }
 
+    private fun <T : TableColumn<*>> internalAddColumn(column: T): T {
+        registerColumn(column)
         internalColumns.add(column)
-    }
-
-    protected fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumnNotNull<T> {
-        takeName(name)
-
-        val builtDef = BuiltColumnDef.from(def)
-
-        val column = TableColumnNotNull<T>(this, name, builtDef)
-
-        internalAddColumn(column)
-
         return column
     }
 
-    protected fun <T : Any> column(name: String, def: ColumnDefinition.Nullable<T>): TableColumn<T> {
-        takeName(name)
-
-        val builtDef = BuiltColumnDef.from(def)
-
-        val column = TableColumn<T>(this, name, builtDef)
-
-        internalAddColumn(column)
-
-        return column
+    private fun internalAddUnused(column: TableColumn<*>) {
+        registerColumn(column)
+        unusedColumns.add(column)
     }
+
+    protected fun <T : Any> column(name: String, def: ColumnDefinition<T>): TableColumnNotNull<T> =
+        internalAddColumn(TableColumnNotNull(this, name, BuiltColumnDef.from(def)))
+
+    protected fun <T : Any> column(name: String, def: ColumnDefinition.Nullable<T>): TableColumn<T> =
+        internalAddColumn(TableColumn(this, name, BuiltColumnDef.from(def)))
 
     protected fun <T : Any> column(name: String, def: DataType<*, T>): TableColumnNotNull<T> =
         column(name, BaseColumnType(def))
+
+    protected fun <T : Any> unused(name: String, def: ColumnDefinition<T>) =
+        internalAddUnused(TableColumnNotNull<T>(this, name, BuiltColumnDef.from(def)))
+    
+    protected fun <T : Any> unused(name: String, def: ColumnDefinition.Nullable<T>) =
+        internalAddUnused(TableColumn<T>(this, name, BuiltColumnDef.from(def)))
+
+    protected fun <T : Any> unused(name: String, def: DataType<*, T>) =
+        unused(name, BaseColumnType(def))
 
     var primaryKey: BuiltNamedIndex? = null
         private set
@@ -78,7 +86,7 @@ abstract class Table protected constructor(
     private fun nameKeys(keys: KeyList): String = keys.keys.asSequence()
         .map {
             when (it) {
-                is RelvarColumn -> it.symbol
+                is Column -> it.symbol
                 else -> error("$it can not be named")
             }
         }

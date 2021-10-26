@@ -187,7 +187,7 @@ fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr
 
 fun SqlTextBuilder.compileInsertLine(
     insert: BuiltInsert,
-    table: Relvar = insert.unwrapTable(),
+    table: TableRelation = insert.unwrapTable(),
     compileName: () -> Unit = { addIdentifier(table.tableName) }
 ) {
     val columns = insert.query.columns

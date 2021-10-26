@@ -1,7 +1,7 @@
 package io.koalaql.query.built
 
 import io.koalaql.query.OnConflictOrDuplicateAction
-import io.koalaql.query.Relvar
+import io.koalaql.query.TableRelation
 import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
@@ -18,8 +18,8 @@ class BuiltInsert: BuiltStatement {
 
     lateinit var query: BuiltSubquery
 
-    fun unwrapTable(): Relvar = when (val relation = relation.relation) {
-        is Relvar -> relation
+    fun unwrapTable(): TableRelation = when (val relation = relation.relation) {
+        is TableRelation -> relation
         else -> error("can't insert into something that isn't a table")
     }
 

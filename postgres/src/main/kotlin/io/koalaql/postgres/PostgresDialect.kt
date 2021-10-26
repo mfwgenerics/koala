@@ -25,7 +25,7 @@ class PostgresDialect: SqlDialect {
     private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
         when (expr) {
             is Literal -> sql.addLiteral(expr)
-            is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
+            is Column<*> -> sql.addIdentifier(expr.symbol)
             else -> error("not implemented")
         }
     }
@@ -69,7 +69,7 @@ class PostgresDialect: SqlDialect {
         sql.parenthesize {
             val comma = sql.prefix("\n", ",\n")
 
-            comma.forEach(table.columns) {
+            comma.forEach(table.columns.includingUnused()) {
                 val def = it.builtDef
 
                 sql.addIdentifier(it.symbol)
@@ -252,7 +252,7 @@ class PostgresDialect: SqlDialect {
 
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
-                is Relvar -> {
+                is TableRelation -> {
                     sql.addIdentifier(baseRelation.tableName)
                     null
                 }
@@ -513,7 +513,7 @@ class PostgresDialect: SqlDialect {
             sql.addSql("EXCLUDED.")
 
             when (reference) {
-                is RelvarColumn<*> -> sql.addIdentifier(reference.symbol)
+                is Column<*> -> sql.addIdentifier(reference.symbol)
                 else -> compileReference(reference)
             }
         }

@@ -61,7 +61,9 @@ class MysqlSchemaDiff(
 
         val expectedColumnsByName = hashMapOf<String, TableColumn<*>>()
 
-        table.columns.associateByTo(expectedColumnsByName) { it.symbol }
+        table.columns
+            .includingUnused()
+            .associateByTo(expectedColumnsByName) { it.symbol }
 
         val columns = metadata.getColumns(dbName, null, tableName, null)
 

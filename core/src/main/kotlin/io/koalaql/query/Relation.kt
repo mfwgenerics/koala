@@ -1,7 +1,7 @@
 package io.koalaql.query
 
 import io.koalaql.IdentifierName
-import io.koalaql.expr.RelvarColumn
+import io.koalaql.expr.Column
 import io.koalaql.query.built.BuiltRelation
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.query.built.BuiltValuesQuery
@@ -20,10 +20,10 @@ sealed interface Relation: AliasableRelation {
 
 object EmptyRelation: Relation
 
-interface Relvar: Relation {
+interface TableRelation: Relation {
     val tableName: String
 
-    val columns: List<RelvarColumn<*>>
+    val columns: List<Column<*>>
 }
 
 class Subquery(

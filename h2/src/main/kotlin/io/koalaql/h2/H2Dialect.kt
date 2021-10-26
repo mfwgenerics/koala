@@ -46,7 +46,7 @@ class H2Dialect(
         private fun compileDefaultExpr(expr: Expr<*>) {
             when (expr) {
                 is Literal -> sql.addLiteral(expr)
-                is RelvarColumn<*> -> sql.addIdentifier(expr.symbol)
+                is Column<*> -> sql.addIdentifier(expr.symbol)
                 else -> compileExpr(expr)
             }
         }
@@ -103,7 +103,7 @@ class H2Dialect(
             sql.parenthesize {
                 val comma = sql.prefix("\n", ",\n")
 
-                comma.forEach(table.columns) {
+                comma.forEach(table.columns.includingUnused()) {
                     compileColumnDef(it)
                 }
 
@@ -274,7 +274,7 @@ class H2Dialect(
 
         fun compileRelation(relation: BuiltRelation) {
             val explicitLabels = when (val baseRelation = relation.relation) {
-                is Relvar -> {
+                is TableRelation -> {
                     sql.addIdentifier(baseRelation.tableName)
                     null
                 }

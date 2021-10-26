@@ -6,7 +6,9 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnDuplicated
-import io.koalaql.sql.GeneratedSqlException
+import io.koalaql.test.table.CustomerTable
+import io.koalaql.test.table.PurchaseTable
+import io.koalaql.test.table.ShopTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -140,39 +142,6 @@ abstract class QueryTests: ProvideTestDatabase {
             .joinToString("\n")
 
         assertEquals(expected, results)
-    }
-
-    object ShopTable: Table("Shop") {
-        val id = column("id", INTEGER.autoIncrement())
-
-        val name = column("name", VARCHAR(100))
-
-        init {
-            primaryKey(keys(id))
-        }
-    }
-
-    object CustomerTable: Table("Customer") {
-        val id = column("id", INTEGER.autoIncrement())
-
-        val firstName = column("firstName", VARCHAR(100))
-        val lastName = column("lastName", VARCHAR(100))
-
-        init {
-            primaryKey(keys(id))
-        }
-    }
-
-    object PurchaseTable: Table("Purchase") {
-        val id = column("id", INTEGER.autoIncrement().primaryKey())
-
-        val shop = column("shop", INTEGER.reference(ShopTable.id))
-        val customer = column("customer", INTEGER.reference(CustomerTable.id))
-
-        val product = column("product", VARCHAR(200))
-
-        val price = column("price", INTEGER)
-        val discount = column("discount", INTEGER.nullable())
     }
 
     private fun assertListOfListsEquals(expected: List<List<Any?>>, actual: List<List<Any?>>) {
@@ -849,5 +818,51 @@ abstract class QueryTests: ProvideTestDatabase {
                 .selectAll()
                 .generateSql(db)
         }
+    }
+
+    private object UnusedColumnAbsent: Table("UnusedColumnTable") {
+        val used = column("used", INTEGER)
+    }
+
+    private object UnusedColumnMarked: Table("UnusedColumnTable") {
+        val used = column("used", INTEGER)
+        val unused = unused("unused", INTEGER)
+    }
+
+    private object UnusedColumnUnmarked: Table("UnusedColumnTable") {
+        val used = column("used", INTEGER)
+        val unused = column("unused", INTEGER)
+    }
+
+    @Test
+    fun `unused column is created`() = withCxn(UnusedColumnMarked) { cxn, _ ->
+        UnusedColumnUnmarked
+            .insert(rowOf(
+                UnusedColumnUnmarked.used setTo 9,
+                UnusedColumnUnmarked.unused setTo 10
+            ))
+            .performWith(cxn)
+
+        val row = UnusedColumnUnmarked
+            .selectAll()
+            .performWith(cxn)
+            .single()
+
+        assertEquals(row[UnusedColumnUnmarked.used], 9)
+        assertEquals(row[UnusedColumnUnmarked.unused], 10)
+    }
+
+    @Test
+    fun `unused column is unused when no created`() = withCxn(UnusedColumnAbsent) { cxn, _ ->
+        UnusedColumnMarked
+            .insert(rowOf(UnusedColumnMarked.used setTo 9))
+            .performWith(cxn)
+
+        val row = UnusedColumnMarked
+            .selectAll()
+            .performWith(cxn)
+            .single()
+
+        assertEquals(row[UnusedColumnMarked.used], 9)
     }
 }

@@ -1,6 +1,6 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.expr.RelvarColumn
+import io.koalaql.expr.Column
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.GeneratingKey
 import io.koalaql.query.Inserted
@@ -14,7 +14,7 @@ import io.koalaql.values.RowSequence
 interface Returningable: Inserted {
     private class InsertedGeneratingKey<T : Any>(
         val inserted: InsertBuilder,
-        val returning: RelvarColumn<T>
+        val returning: Column<T>
     ): GeneratingKey<T> {
         override fun buildQuery(): BuiltGeneratesKeysInsert {
             val built = BuiltInsert.from(inserted)
@@ -49,6 +49,6 @@ interface Returningable: Inserted {
         override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
     }
 
-    fun <T : Any> generatingKey(reference: RelvarColumn<T>): GeneratingKey<T> =
+    fun <T : Any> generatingKey(reference: Column<T>): GeneratingKey<T> =
         InsertedGeneratingKey(this, reference)
 }
