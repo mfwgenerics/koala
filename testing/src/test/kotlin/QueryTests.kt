@@ -6,8 +6,10 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnDuplicated
+import io.koalaql.sql.GeneratedSqlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 abstract class QueryTests: ProvideTestDatabase {
     fun createAndPopulate(cxn: DataConnection) {
@@ -838,5 +840,14 @@ abstract class QueryTests: ProvideTestDatabase {
             .single()
 
         assertListEquals(listOf(true, true, false), result)
+    }
+
+    @Test
+    fun `empty values error`() = withDb { db ->
+        assertFails {
+            values<Nothing>(emptyList()) { }
+                .selectAll()
+                .generateSql(db)
+        }
     }
 }

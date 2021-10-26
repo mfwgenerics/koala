@@ -12,14 +12,15 @@ import io.koalaql.values.ValuesRow
 import io.koalaql.window.*
 
 fun SqlTextBuilder.selectClause(selected: List<SelectedExpr<*>>, compileSelect: (SelectedExpr<*>) -> Unit) {
-    val selectPrefix = prefix("SELECT ", "\n, ")
+    addSql("SELECT ")
 
-    (selected)
-        .forEach {
-            selectPrefix.next {
-                compileSelect(it)
-            }
+    if (selected.isNotEmpty()) {
+        prefix("", "\n, ").forEach(selected) {
+            compileSelect(it)
         }
+    } else {
+        addError("unable to generate empty select")
+    }
 }
 
 fun SqlTextBuilder.compileRangeMarker(direction: String, marker: FrameRangeMarker<*>, compileExpr: (Expr<*>) -> Unit) {
@@ -289,6 +290,8 @@ fun SqlTextBuilder.compileValues(
 
         true
     } else {
+        addError("couldn't generate empty values")
+
         false
     }
 }

@@ -7,6 +7,7 @@ class SqlTextBuilder(
 ) {
     private val contents = StringBuilder()
     private val params = arrayListOf<Literal<*>>()
+    private var errored = false
     
     fun addSql(sql: String) {
         contents.append(sql)
@@ -25,6 +26,11 @@ class SqlTextBuilder(
         addIdentifier(resolved.innerName)
     }
 
+    fun addError(error: String) {
+        errored = true
+        addSql("/* ERROR: $error */")
+    }
+
     fun addSql(sql: StandardSql) { addSql(sql.sql) }
 
     fun addLiteral(value: Literal<*>?) {
@@ -36,10 +42,14 @@ class SqlTextBuilder(
         }
     }
 
-    fun toSql(): SqlText = SqlText(
-        "$contents",
-        params
-    )
+    fun toSql(): SqlText {
+        if (errored) throw GeneratedSqlException("Unable to generate SQL. See incomplete SQL below:\n$contents")
+
+        return SqlText(
+            "$contents",
+            params
+        )
+    }
 
     fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {
         if (!emitParens) return block()

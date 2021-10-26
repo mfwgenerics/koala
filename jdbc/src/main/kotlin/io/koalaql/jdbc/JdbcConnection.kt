@@ -53,7 +53,7 @@ class JdbcConnection(
         return try {
             prepare(sql, generatedKeys).block()
         } catch (ex: Exception) {
-            throw GeneratedSqlException(sql, ex)
+            throw JdbcException(sql, ex)
         }
     }
 

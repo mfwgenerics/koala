@@ -1,4 +1,4 @@
-import io.koalaql.jdbc.GeneratedSqlException
+import io.koalaql.jdbc.JdbcException
 import kotlin.test.Test
 
 class MysqlQueryTests: QueryTests() {
@@ -15,6 +15,6 @@ class MysqlQueryTests: QueryTests() {
         try {
             super.`nulls first and last`()
             assert(false)
-        } catch (ignored: GeneratedSqlException) {  }
+        } catch (ignored: JdbcException) {  }
     }
 }

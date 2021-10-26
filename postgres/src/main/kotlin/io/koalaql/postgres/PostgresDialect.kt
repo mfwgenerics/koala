@@ -39,7 +39,7 @@ class PostgresDialect: SqlDialect {
             SMALLINT -> sql.addSql("SMALLSERIAL")
             INTEGER -> sql.addSql("SERIAL")
             BIGINT -> sql.addSql("BIGSERIAL")
-            else -> error("no serial type corresponds to $type")
+            else -> sql.addError("no serial type corresponds to $type")
         }
     }
 

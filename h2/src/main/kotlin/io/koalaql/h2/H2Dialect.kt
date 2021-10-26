@@ -146,7 +146,7 @@ class H2Dialect(
                         compileReference(reference)
                     }
                 }
-                null -> error("Excluded[] is not supported by this dialect")
+                null -> sql.addError("Excluded[] is not supported by this dialect")
             }
         }
 
