@@ -52,16 +52,16 @@ class H2QueryTests: QueryTests() {
         }
 
         val expectedSql = """
-            SELECT T7."create" "n0"
-            , T7."name" "n1"
-            , T7."description" "n2"
-            , T7."id" "n3"
-            , T7."closed" "n4"
-            , T7."type" "n5"
-            , T7."rating" "n6"
-            FROM "Venue" T7
-            WHERE T7."id" = ?
-            ORDER BY T7."type" ASC, T7."name" DESC NULLS LAST
+            SELECT T0."create" "c0"
+            , T0."name" "c1"
+            , T0."description" "c2"
+            , T0."id" "c3"
+            , T0."closed" "c4"
+            , T0."type" "c5"
+            , T0."rating" "c6"
+            FROM "Venue" T0
+            WHERE T0."id" = ?
+            ORDER BY T0."type" ASC, T0."name" DESC NULLS LAST
         """.trimIndent()
 
         val generated = table

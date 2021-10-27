@@ -7,31 +7,36 @@ import io.koalaql.window.WindowLabel
 
 class NameRegistry {
     private val registered = hashMapOf<Any, String>()
-    private var generated: Int = 0
 
-    private fun generate(prefix: String): String = "$prefix${generated++}"
+    private var tableN: Int = 0
+    private var columnsN: Int = 0
+    private var windowsN: Int = 0
+
+    private fun generateT(): String = "T${tableN++}"
+    private fun generatec(): String = "c${columnsN++}"
+    private fun generatew(): String = "w${windowsN++}"
 
     operator fun get(cte: Cte): String =
         registered.getOrPut(cte.identifier) { cte
             .identifier.asString
-            ?: generate("T")
+            ?: generateT()
         }
 
     operator fun get(name: Reference<*>): String =
         registered.getOrPut(name) { name
             .identifier?.asString
-            ?: generate("n")
+            ?: generatec()
         }
 
     operator fun get(label: WindowLabel): String =
         registered.getOrPut(label) { label
             .identifier.asString
-            ?: generate("w")
+            ?: generatew()
         }
 
     operator fun get(alias: Alias): String =
         registered.getOrPut(alias.identifier) { alias
             .identifier.asString
-            ?: generate("T")
+            ?: generateT()
         }
 }
