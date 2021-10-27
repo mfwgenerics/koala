@@ -418,8 +418,6 @@ class H2Dialect(
             }
 
             if (select.body.offset != 0) {
-                check(select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
-
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.body.offset))
             }
@@ -532,8 +530,6 @@ class H2Dialect(
             }
 
             if (select.query.offset != 0) {
-                check(select.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
-
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.query.offset))
             }

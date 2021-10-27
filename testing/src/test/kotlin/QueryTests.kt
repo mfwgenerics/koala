@@ -878,8 +878,6 @@ abstract class QueryTests: ProvideTestDatabase {
                 .performWith(cxn)
 
             assert(false)
-        } catch (ex: GeneratedSqlException) {
-            ex.printStackTrace()
-        }
+        } catch (ex: GeneratedSqlException) { }
     }
 }

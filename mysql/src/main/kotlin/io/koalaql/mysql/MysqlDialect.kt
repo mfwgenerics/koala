@@ -526,8 +526,6 @@ class MysqlDialect(): SqlDialect {
             }
 
             if (select.body.offset != 0) {
-                check(select.body.limit != null) { "MySQL does not support OFFSET without LIMIT" }
-
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(select.body.offset))
             }
@@ -653,8 +651,6 @@ class MysqlDialect(): SqlDialect {
             }
 
             if (delete.query.offset != 0) {
-                check(delete.query.limit != null) { "MySQL does not support OFFSET without LIMIT" }
-
                 sql.addSql(" OFFSET ")
                 sql.addLiteral(value(delete.query.offset))
             }
