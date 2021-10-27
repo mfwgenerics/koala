@@ -142,7 +142,9 @@ class PostgresDialect: SqlDialect {
         override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
     ): ExpressionCompiler {
         fun compileReference(name: Reference<*>) {
-            sql.addResolved(scope.resolve(name))
+            sql.withResult(scope.resolve(name)) {
+                sql.addResolved(it)
+            }
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) {
@@ -243,7 +245,9 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileSetLhs(expr: Reference<*>) {
-            sql.addIdentifier(scope.resolve(expr).innerName)
+            sql.withResult(scope.resolve(expr)) {
+                sql.addIdentifier(it.innerName)
+            }
         }
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {

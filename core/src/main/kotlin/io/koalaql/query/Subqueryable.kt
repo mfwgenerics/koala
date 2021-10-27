@@ -8,5 +8,5 @@ interface Subqueryable: Queryable {
     override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(buildQuery())
 
     fun subquery() = Subquery(buildQuery())
-    fun subquery(alias: Alias) = subquery().as_(alias)
+    fun subqueryAs(alias: Alias) = subquery().as_(alias)
 }

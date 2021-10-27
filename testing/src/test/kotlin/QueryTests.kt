@@ -6,6 +6,7 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnDuplicated
+import io.koalaql.sql.GeneratedSqlException
 import io.koalaql.test.table.CustomerTable
 import io.koalaql.test.table.PurchaseTable
 import io.koalaql.test.table.ShopTable
@@ -864,5 +865,21 @@ abstract class QueryTests: ProvideTestDatabase {
             .single()
 
         assertEquals(row[UnusedColumnMarked.used], 9)
+    }
+
+    @Test
+    fun `name not in scope throws generated sql exception`() = withCxn { cxn, _ ->
+        val name = name<Int>()
+
+        try {
+            CustomerTable
+                .innerJoin(ShopTable, ShopTable.id eq name)
+                .select(CustomerTable.firstName, name)
+                .performWith(cxn)
+
+            assert(false)
+        } catch (ex: GeneratedSqlException) {
+            ex.printStackTrace()
+        }
     }
 }

@@ -228,7 +228,9 @@ class MysqlDialect(): SqlDialect {
         }
 
         fun compileReference(name: Reference<*>) {
-            sql.addResolved(scope.resolve(name))
+            sql.withResult(scope.resolve(name)) {
+                sql.addResolved(it)
+            }
         }
 
         fun compileOrderBy(ordinals: List<Ordinal<*>>) = sql.compileOrderBy(ordinals) {

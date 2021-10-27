@@ -70,8 +70,9 @@ class Scope(
         }
     }
 
-    fun resolve(name: Reference<*>): Resolved = checkNotNull(resolveOrNull(name))
-        { "$name not in $this" }
+    fun resolve(name: Reference<*>): SqlResult<Resolved> = resolveOrNull(name)
+        ?.let { SqlResult.Value(it) }
+        ?: SqlResult.Error("$name not in scope")
 
     operator fun get(alias: Alias): String = names[alias]
     operator fun get(cte: Cte): String = names[cte]

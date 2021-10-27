@@ -135,7 +135,9 @@ class H2Dialect(
         }
 
         fun compileReference(name: Reference<*>) {
-            sql.addResolved(scope.resolve(name))
+            sql.withResult(scope.resolve(name)) {
+                sql.addResolved(it)
+            }
         }
 
         override fun excluded(reference: Reference<*>) {

@@ -51,6 +51,11 @@ class SqlTextBuilder(
         )
     }
 
+    inline fun <T> withResult(result: SqlResult<T>, block: (T) -> Unit) = when (result) {
+        is SqlResult.Error -> addError(result.message)
+        is SqlResult.Value -> block(result.value)
+    }
+
     fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {
         if (!emitParens) return block()
 
