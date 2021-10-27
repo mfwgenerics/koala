@@ -8,5 +8,5 @@ interface Updated: PerformableBlocking<Int> {
     fun buildUpdate(): BuiltUpdate
 
     override fun performWith(ds: BlockingPerformer): Int = ds.statement(buildUpdate())
-    override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(buildUpdate())
+    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(buildUpdate())
 }

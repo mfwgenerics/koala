@@ -7,5 +7,5 @@ import io.koalaql.sql.SqlText
 
 interface Inserted: PerformableBlocking<Int>, InsertBuilder {
     override fun performWith(ds: BlockingPerformer): Int = ds.statement(BuiltInsert.from(this))
-    override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(BuiltInsert.from(this))
+    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(BuiltInsert.from(this))
 }

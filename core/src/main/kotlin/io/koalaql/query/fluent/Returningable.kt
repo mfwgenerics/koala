@@ -4,6 +4,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.GeneratingKey
 import io.koalaql.query.Inserted
+import io.koalaql.query.SqlPerformer
 import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
@@ -46,7 +47,7 @@ interface Returningable: Inserted {
             }
         }
 
-        override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
+        override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
     }
 
     fun <T : Any> generatingKey(reference: Column<T>): GeneratingKey<T> =

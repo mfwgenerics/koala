@@ -8,5 +8,5 @@ interface Deleted: PerformableBlocking<Int> {
     fun buildDelete(): BuiltDelete
 
     override fun performWith(ds: BlockingPerformer): Int = ds.statement(buildDelete())
-    override fun generateSql(ds: BlockingPerformer): SqlText? = ds.generateSql(buildDelete())
+    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(buildDelete())
 }
