@@ -5,6 +5,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.built.BuiltRelation
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.query.built.BuiltValuesQuery
+import io.koalaql.values.ResultRow
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
 import io.koalaql.values.ValuesRow
@@ -33,9 +34,11 @@ class Subquery(
 class Values(
     override val columns: LabelList,
     private val impl: () -> RowIterator<ValuesRow>
-): Relation, Queryable, RowSequence<ValuesRow> {
+): Relation, Queryable<ResultRow>, RowSequence<ValuesRow> {
     override fun rowIterator(): RowIterator<ValuesRow> = impl()
     override fun buildQuery(): BuiltSubquery = BuiltValuesQuery(this)
+
+    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> = ds.query(buildQuery())
 }
 
 class Cte(

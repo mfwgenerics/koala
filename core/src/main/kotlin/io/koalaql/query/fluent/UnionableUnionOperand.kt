@@ -1,7 +1,7 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
+import io.koalaql.expr.SelectOperand
 import io.koalaql.expr.SelectedExpr
 import io.koalaql.query.built.*
 
@@ -42,9 +42,6 @@ interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
     override fun select(vararg references: SelectArgument): SelectedUnionOperand =
         SelectUnionableUnionOperand<Nothing>(this, references.asList())
 
-    override fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJustUnionOperand<T> =
+    override fun <T : Any> select(labeled: SelectOperand<T>): SelectedJustUnionOperand<T> =
         SelectUnionableUnionOperand(this, listOf(labeled))
-
-    override fun <T : Any> selectJust(reference: Reference<T>): SelectedJustUnionOperand<T> =
-        SelectUnionableUnionOperand(this, listOf(reference))
 }

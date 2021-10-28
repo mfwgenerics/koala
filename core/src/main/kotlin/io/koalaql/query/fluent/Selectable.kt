@@ -3,11 +3,13 @@ package io.koalaql.query.fluent
 import io.koalaql.Assignment
 import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
+import io.koalaql.expr.SelectOperand
 import io.koalaql.expr.SelectedExpr
 import io.koalaql.query.Deleted
 import io.koalaql.query.Queryable
 import io.koalaql.query.Updated
 import io.koalaql.query.built.*
+import io.koalaql.values.ResultRow
 
 interface Selectable: QueryBodyBuilder {
     private class Select<T : Any>(
@@ -25,20 +27,17 @@ interface Selectable: QueryBodyBuilder {
     private fun <T : Any> selectInternal(references: List<SelectArgument>, includeAll: Boolean): SelectedJust<T> =
         Select(this, references, includeAll)
 
-    fun selectAll(vararg references: SelectArgument): Queryable =
+    fun selectAll(vararg references: SelectArgument): Queryable<ResultRow> =
         selectInternal<Nothing>(references.asList(), true)
 
-    fun select(references: List<SelectArgument>): Queryable =
+    fun select(references: List<SelectArgument>): Queryable<ResultRow> =
         selectInternal<Nothing>(references, false)
 
-    fun select(vararg references: SelectArgument): Queryable =
+    fun select(vararg references: SelectArgument): Queryable<ResultRow> =
         select(references.asList())
 
-    fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJust<T> =
+    fun <T : Any> select(labeled: SelectOperand<T>): SelectedJust<T> =
         selectInternal(listOf(labeled), false)
-
-    fun <T : Any> selectJust(reference: Reference<T>): SelectedJust<T> =
-        selectInternal(listOf(reference), false)
 
     private class Update(
         val of: Selectable,

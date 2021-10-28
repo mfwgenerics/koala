@@ -4,7 +4,7 @@ import io.koalaql.IdentifierName
 import io.koalaql.query.Alias
 import kotlin.reflect.KClass
 
-sealed interface Reference<T : Any>: AsReference<T>, SelectArgument {
+sealed interface Reference<T : Any>: SelectOperand<T> {
     val type: KClass<T>
 
     val identifier: IdentifierName?

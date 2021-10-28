@@ -108,7 +108,7 @@ class VenueService(
                 .where(exists(deleted
                     .where(deleted[ReviewTable.venue] eq ReviewTable.venue)
                     .where(deleted[ReviewTable.user] eq ReviewTable.user)
-                    .selectJust(deleted[ReviewTable.venue])
+                    .select(deleted[ReviewTable.venue])
                 ))
                 .delete()
                 .performWith(cxn)
@@ -152,7 +152,7 @@ class VenueService(
                     val updateSubquery = updateCte
                         .where(UserVenueTable.user eq updateCte[UserVenueTable.user])
                         .where(UserVenueTable.venue eq updateCte[UserVenueTable.venue])
-                        .selectJust(updateCte[UserVenueTable.visited])
+                        .select(updateCte[UserVenueTable.visited])
 
                     UserVenueTable
                         .with(updateCte)

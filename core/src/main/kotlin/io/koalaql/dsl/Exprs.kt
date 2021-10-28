@@ -11,6 +11,7 @@ import io.koalaql.expr.fluent.WhenableCase
 import io.koalaql.query.Queryable
 import io.koalaql.query.fluent.SelectedJust
 import io.koalaql.sql.RawSqlBuilder
+import io.koalaql.values.ResultRow
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
@@ -45,8 +46,8 @@ fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationType.NOT(expr)
 fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationType.IS_NULL(this)
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(this)
 
-fun exists(query: Queryable): Expr<Boolean> = OperationType.EXISTS(SubqueryExpr.Wrap<Nothing>(query))
-fun notExists(query: Queryable): Expr<Boolean> = OperationType.NOT_EXISTS(SubqueryExpr.Wrap<Nothing>(query))
+fun exists(query: Queryable<ResultRow>): Expr<Boolean> = OperationType.EXISTS(SubqueryExpr.Wrap<Nothing>(query))
+fun notExists(query: Queryable<ResultRow>): Expr<Boolean> = OperationType.NOT_EXISTS(SubqueryExpr.Wrap<Nothing>(query))
 
 infix fun <T : Any> Expr<T>.inQuery(query: SelectedJust<T>): Expr<Boolean> =
     OperationType.IN(this, query)

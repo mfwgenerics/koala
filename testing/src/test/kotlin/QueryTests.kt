@@ -199,7 +199,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 CustomerTable.id eq PurchaseTable.customer
             )
             .where(PurchaseTable.id.isNull())
-            .selectJust(CustomerTable.firstName)
+            .select(CustomerTable.firstName)
             .performWith(cxn)
             .map { it.getOrNull(CustomerTable.firstName) }
             .single()
@@ -242,7 +242,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
                 .where(ShopTable.name eq "Hardware")
                 .where(CustomerTable.id eq PurchaseTable.customer)
-                .selectJust(PurchaseTable.id)
+                .select(PurchaseTable.id)
             ))
             .update(
                 CustomerTable.lastName setTo CustomerTable.firstName,
@@ -279,7 +279,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val (bobId, janeId) = CustomerTable
             .where(CustomerTable.firstName inValues listOf("Bob", "Jane"))
             .orderBy(CustomerTable.firstName)
-            .selectJust(CustomerTable.id)
+            .select(CustomerTable.id)
             .performWith(cxn)
             .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
@@ -301,14 +301,14 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val janesPurchasePrices = PurchaseTable
             .where(PurchaseTable.customer eq janeId)
-            .selectJust(PurchaseTable.price)
+            .select(PurchaseTable.price)
 
         val cheaperThanAll = PurchaseTable
             .where((PurchaseTable.customer eq bobId)
                 .and(PurchaseTable.price less all(janesPurchasePrices))
             )
             .orderBy(PurchaseTable.product)
-            .selectJust(PurchaseTable.product)
+            .select(PurchaseTable.product)
             .performWith(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
@@ -318,7 +318,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .and(PurchaseTable.price less any(janesPurchasePrices))
             )
             .orderBy(PurchaseTable.product)
-            .selectJust(PurchaseTable.product)
+            .select(PurchaseTable.product)
             .performWith(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
@@ -373,7 +373,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val count = name<Int>()
 
         val purchaseCount = PurchaseTable
-            .selectJust(count(value(1)) as_ count)
+            .select(count(value(1)) as_ count)
             .performWith(cxn)
             .single().getOrNull(count)!!
 
@@ -481,7 +481,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val valuesQuery = values((1..5).asSequence(), listOf(n0))
             { set(n0, it) }
-            .selectJust(sum(cast(n0, INTEGER)) as_ n3)
+            .select(sum(cast(n0, INTEGER)) as_ n3)
 
         val result = select(
                 value(12) as_ n0,
@@ -502,17 +502,17 @@ abstract class QueryTests: ProvideTestDatabase {
 
         PurchaseTable
             .with(cte as_ CustomerTable
-                .where(selectJust((CustomerTable.lastName eq "Smith") as_ name()))
+                .where(select((CustomerTable.lastName eq "Smith") as_ name()))
                 .selectAll()
             )
-            .where(PurchaseTable.customer inQuery cte.selectJust(CustomerTable.id))
+            .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
             .delete()
             .performWith(cxn)
 
         val name = name<Int>()
 
         val purchases = PurchaseTable
-            .selectJust(count(value(1)) as_ name)
+            .select(count(value(1)) as_ name)
             .performWith(cxn)
             .single().getOrNull(name)
 
