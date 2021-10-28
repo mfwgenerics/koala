@@ -1,6 +1,6 @@
 package io.koalaql.values
 
-interface RowIterator<T> {
+interface RowIterator<out T> {
     /* current row. reference is valid until subsequent call to next */
     val row: T
 

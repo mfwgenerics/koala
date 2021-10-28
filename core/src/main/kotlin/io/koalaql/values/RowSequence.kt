@@ -2,7 +2,7 @@ package io.koalaql.values
 
 import io.koalaql.expr.Reference
 
-interface RowSequence<T>: Sequence<T> {
+interface RowSequence<out T>: Sequence<T> {
     val columns: List<Reference<*>>
 
     fun rowIterator(): RowIterator<T>
