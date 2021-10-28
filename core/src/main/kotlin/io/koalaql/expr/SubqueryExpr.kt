@@ -1,13 +1,13 @@
 package io.koalaql.expr
 
-import io.koalaql.query.Subqueryable
+import io.koalaql.query.Queryable
 import io.koalaql.query.built.BuiltSubquery
 
-interface SubqueryExpr<T : Any>: Expr<T>, Subqueryable {
+interface SubqueryExpr<T : Any>: Expr<T>, Queryable {
     class Wrap<T : Any>(
-        private val subqueryable: Subqueryable
+        private val queryable: Queryable
     ): SubqueryExpr<T> {
         override fun buildQuery(): BuiltSubquery =
-            subqueryable.buildQuery()
+            queryable.buildQuery()
     }
 }

@@ -5,7 +5,7 @@ import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectedExpr
 import io.koalaql.query.Deleted
-import io.koalaql.query.Subqueryable
+import io.koalaql.query.Queryable
 import io.koalaql.query.Updated
 import io.koalaql.query.built.*
 
@@ -25,13 +25,13 @@ interface Selectable: QueryBodyBuilder {
     private fun <T : Any> selectInternal(references: List<SelectArgument>, includeAll: Boolean): SelectedJust<T> =
         Select(this, references, includeAll)
 
-    fun selectAll(vararg references: SelectArgument): Subqueryable =
+    fun selectAll(vararg references: SelectArgument): Queryable =
         selectInternal<Nothing>(references.asList(), true)
 
-    fun select(references: List<SelectArgument>): Subqueryable =
+    fun select(references: List<SelectArgument>): Queryable =
         selectInternal<Nothing>(references, false)
 
-    fun select(vararg references: SelectArgument): Subqueryable =
+    fun select(vararg references: SelectArgument): Queryable =
         select(references.asList())
 
     fun <T : Any> selectJust(labeled: SelectedExpr<T>): SelectedJust<T> =

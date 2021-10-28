@@ -33,7 +33,7 @@ class Subquery(
 class Values(
     override val columns: LabelList,
     private val impl: () -> RowIterator<ValuesRow>
-): Relation, Subqueryable, RowSequence<ValuesRow> {
+): Relation, Queryable, RowSequence<ValuesRow> {
     override fun rowIterator(): RowIterator<ValuesRow> = impl()
     override fun buildQuery(): BuiltSubquery = BuiltValuesQuery(this)
 }
