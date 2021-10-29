@@ -8,6 +8,23 @@ class SqlTextBuilder(
     private val contents = StringBuilder()
     private val params = arrayListOf<Literal<*>>()
     private var errored = false
+
+    private val abridgements = arrayListOf<Abridgement>()
+
+    private var abridgeFrom: Int = 0
+    private var abridgeDepth: Int = 0
+
+    fun beginAbridgement() {
+        if (abridgeDepth++ == 0) abridgeFrom = contents.length
+    }
+
+    fun endAbridgement(summary: String) {
+        if (--abridgeDepth == 0) abridgements.add(Abridgement(
+            abridgeFrom,
+            contents.length,
+            summary
+        ))
+    }
     
     fun addSql(sql: String) {
         contents.append(sql)
@@ -46,6 +63,7 @@ class SqlTextBuilder(
         if (errored) throw GeneratedSqlException("Unable to generate SQL. See incomplete SQL below:\n$contents")
 
         return SqlText(
+            abridgements,
             "$contents",
             params
         )

@@ -520,6 +520,38 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
+    fun `values clause is abridged`() = withDb { db ->
+        val abridged = ShopTable
+            .insert(values(1..10) {
+                this[ShopTable.id] = it
+                this[ShopTable.name] = "$it"
+            })
+            .generateSql(db)
+            ?.toAbridgedSql()
+            .orEmpty()
+
+        val valuesLine = abridged.lines().first { it.startsWith("VALUES") }.trim()
+
+        assertEquals("VALUES (?, ?) /* VALUES had 9 more rows here */", valuesLine)
+    }
+
+    @Test
+    fun `single values clause is not abridged`() = withDb { db ->
+        val abridged = ShopTable
+            .insert(values(1..1) {
+                this[ShopTable.id] = it
+                this[ShopTable.name] = "$it"
+            })
+            .generateSql(db)
+            ?.toAbridgedSql()
+            .orEmpty()
+
+        val valuesLine = abridged.lines().first { it.startsWith("VALUES") }.trim()
+
+        assertEquals("VALUES (?, ?)", valuesLine)
+    }
+
+    @Test
     fun `unioned tableless selects with out of order labels`() = withCxn { cxn, _ ->
         val n0 = name<Int>()
         val n1 = name<Float>()

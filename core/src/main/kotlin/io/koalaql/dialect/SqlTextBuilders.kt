@@ -278,15 +278,22 @@ fun SqlTextBuilder.compileValues(
     addSql("VALUES ")
 
     val iter = values.rowIterator()
+    var count = 0
 
     return if (iter.next()) {
         val rowPrefix = prefix("", "\n, ")
 
         do {
+            if (count == 1) beginAbridgement()
+
             rowPrefix.next {
                 compileRow(values.columns, iter)
             }
+
+            count++
         } while (iter.next())
+
+        if (count > 1) endAbridgement(" /* VALUES had ${count - 1} more rows here */")
 
         true
     } else {
