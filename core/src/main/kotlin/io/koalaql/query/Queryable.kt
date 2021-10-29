@@ -5,7 +5,7 @@ import io.koalaql.query.fluent.PerformableBlocking
 import io.koalaql.sql.SqlText
 import io.koalaql.values.RowSequence
 
-interface Queryable<T>: PerformableBlocking<RowSequence<T>> {
+interface Queryable<out T>: PerformableBlocking<RowSequence<T>> {
     fun buildQuery(): BuiltSubquery
     override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(buildQuery())
 

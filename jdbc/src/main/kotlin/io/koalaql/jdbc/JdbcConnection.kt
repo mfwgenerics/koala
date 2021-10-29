@@ -12,6 +12,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
+import io.koalaql.values.RawResultRow
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.emptyRowSequence
@@ -107,7 +108,7 @@ class JdbcConnection(
         error("unable to fetch generated key $column")
     }
 
-    override fun query(query: BuiltQuery): RowSequence<ResultRow> {
+    override fun query(query: BuiltQuery): RowSequence<RawResultRow> {
         return when (query) {
             is BuiltGeneratesKeysInsert -> {
                 fun err(): Nothing = error("must select a single auto-generated key")

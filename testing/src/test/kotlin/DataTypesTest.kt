@@ -107,7 +107,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
                     .orderBy(column)
                     .select(column)
                     .performWith(cxn)
-                    .map { it.getValue(column) }
+                    .map { it.first() }
                     .toList()
 
                 compareRows(rows, case)

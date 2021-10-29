@@ -5,6 +5,7 @@ import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltStatement
+import io.koalaql.values.RawResultRow
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.SequenceToRowSequence
@@ -15,7 +16,7 @@ interface DataSource: BlockingPerformer {
 
     fun connect(isolation: Isolation, events: ConnectionEventWriter = ConnectionEventWriter.Discard): DataConnection
 
-    override fun query(query: BuiltQuery): RowSequence<ResultRow> = transact {
+    override fun query(query: BuiltQuery): RowSequence<RawResultRow> = transact {
         val rows = it.query(query)
 
         SequenceToRowSequence(

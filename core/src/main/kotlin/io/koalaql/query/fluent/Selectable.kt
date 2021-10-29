@@ -1,43 +1,88 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
-import io.koalaql.expr.Reference
-import io.koalaql.expr.SelectArgument
-import io.koalaql.expr.SelectOperand
-import io.koalaql.expr.SelectedExpr
+import io.koalaql.expr.*
+import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.Deleted
 import io.koalaql.query.Queryable
 import io.koalaql.query.Updated
 import io.koalaql.query.built.*
 import io.koalaql.values.ResultRow
+import io.koalaql.values.RowSequence
 
 interface Selectable: QueryBodyBuilder {
-    private class Select<T : Any>(
+    private class Select(
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): SelectedJust<T> {
+    ): Queryable<ResultRow> {
         override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
             BuiltQueryBody.from(of),
             references,
             includeAll
         )
+
+        override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
+            ds.query(buildQuery())
     }
 
-    private fun <T : Any> selectInternal(references: List<SelectArgument>, includeAll: Boolean): SelectedJust<T> =
-        Select(this, references, includeAll)
+    private class SelectOne<A : Any>(
+        val of: Selectable,
+        val references: List<SelectArgument>
+    ): QueryableOfOne<A> {
+        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+            BuiltQueryBody.from(of),
+            references,
+            false
+        )
+    }
+
+    private class SelectTwo<A : Any, B : Any>(
+        val of: Selectable,
+        val references: List<SelectArgument>
+    ): QueryableOfTwo<A, B> {
+        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+            BuiltQueryBody.from(of),
+            references,
+            false
+        )
+    }
+
+    private class SelectThree<A : Any, B : Any, C : Any>(
+        val of: Selectable,
+        val references: List<SelectArgument>
+    ): QueryableOfThree<A, B, C> {
+        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+            BuiltQueryBody.from(of),
+            references,
+            false
+        )
+    }
 
     fun selectAll(vararg references: SelectArgument): Queryable<ResultRow> =
-        selectInternal<Nothing>(references.asList(), true)
+        Select(this, references.asList(), true)
 
     fun select(references: List<SelectArgument>): Queryable<ResultRow> =
-        selectInternal<Nothing>(references, false)
+        Select(this, references, false)
 
     fun select(vararg references: SelectArgument): Queryable<ResultRow> =
-        select(references.asList())
+        Select(this, references.asList(), false)
 
-    fun <T : Any> select(labeled: SelectOperand<T>): SelectedJust<T> =
-        selectInternal(listOf(labeled), false)
+    fun <A : Any> select(labeled: SelectOperand<A>): QueryableOfOne<A> =
+        SelectOne(this, listOf(labeled))
+
+    fun <A : Any, B : Any> select(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>
+    ): QueryableOfTwo<A, B> =
+        SelectTwo(this, listOf(first, second))
+
+    fun <A : Any, B : Any, C : Any> select(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>,
+        third: SelectOperand<C>
+    ): QueryableOfThree<A, B, C> =
+        SelectThree(this, listOf(first, second, third))
 
     private class Update(
         val of: Selectable,

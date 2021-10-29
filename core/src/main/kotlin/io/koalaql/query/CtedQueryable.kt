@@ -1,10 +1,8 @@
 package io.koalaql.query
 
-import io.koalaql.values.ResultRow
-
 class CtedQueryable(
     val cte: Cte,
-    val queryable: Queryable<ResultRow>
+    val queryable: Queryable<*>
 ): WithOperand, AliasableRelation by cte {
     override fun buildCtedQueryable(): CtedQueryable = this
 }

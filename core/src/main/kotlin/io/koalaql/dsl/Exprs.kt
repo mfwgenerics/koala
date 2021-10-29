@@ -9,7 +9,6 @@ import io.koalaql.expr.fluent.ElseableCase
 import io.koalaql.expr.fluent.ThenableCase
 import io.koalaql.expr.fluent.WhenableCase
 import io.koalaql.query.Queryable
-import io.koalaql.query.fluent.SelectedJust
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.values.ResultRow
 
@@ -46,12 +45,12 @@ fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationType.NOT(expr)
 fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationType.IS_NULL(this)
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(this)
 
-fun exists(query: Queryable<ResultRow>): Expr<Boolean> = OperationType.EXISTS(SubqueryExpr.Wrap<Nothing>(query))
-fun notExists(query: Queryable<ResultRow>): Expr<Boolean> = OperationType.NOT_EXISTS(SubqueryExpr.Wrap<Nothing>(query))
+fun exists(query: Queryable<*>): Expr<Boolean> = OperationType.EXISTS(QueryableOfOne.Wrap<Nothing>(query))
+fun notExists(query: Queryable<*>): Expr<Boolean> = OperationType.NOT_EXISTS(QueryableOfOne.Wrap<Nothing>(query))
 
-infix fun <T : Any> Expr<T>.inQuery(query: SelectedJust<T>): Expr<Boolean> =
+infix fun <T : Any> Expr<T>.inQuery(query: QueryableOfOne<T>): Expr<Boolean> =
     OperationType.IN(this, query)
-infix fun <T : Any> Expr<T>.notInQuery(query: SelectedJust<T>): Expr<Boolean> =
+infix fun <T : Any> Expr<T>.notInQuery(query: QueryableOfOne<T>): Expr<Boolean> =
     OperationType.NOT_IN(this, query)
 
 infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
@@ -77,10 +76,10 @@ fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
 inline fun <reified T : Any> value(value: T?): Literal<T> =
     Literal(T::class, value)
 
-fun <T : Any> all(subquery: SelectedJust<T>): ComparisonOperand<T> =
+fun <T : Any> all(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ALL, subquery.buildQuery())
 
-fun <T : Any> any(subquery: SelectedJust<T>): ComparisonOperand<T> =
+fun <T : Any> any(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ANY, subquery.buildQuery())
 
 operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =

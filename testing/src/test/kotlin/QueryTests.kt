@@ -880,4 +880,66 @@ abstract class QueryTests: ProvideTestDatabase {
             assert(false)
         } catch (ex: GeneratedSqlException) { }
     }
+
+    @Test
+    fun `typed result rows`() = withExampleData { cxn ->
+        val whered = PurchaseTable
+            .where(PurchaseTable.product eq "Pear")
+
+        val limited = whered.limit(1) // duplicate cases for non UnionOperand versions
+
+        assertEquals("Pear", whered
+            .select(PurchaseTable.product)
+            .performWith(cxn)
+            .single()
+            .first()
+        )
+
+        val (idp10, product) = whered
+            .select(PurchaseTable.id + 10 as_ name(), PurchaseTable.product)
+            .performWith(cxn)
+            .single()
+
+        assertEquals(idp10, 12)
+        assertEquals("Pear", product)
+
+        val (p0, p1, p2) = whered
+            .select(PurchaseTable.product, 0 as_ name(), case(PurchaseTable.product)
+                .when_("Pear")
+                .then("pear")
+                .end() as_ name())
+            .performWith(cxn)
+            .single()
+
+        assertEquals(p0, "Pear")
+        assertEquals(p1, 0)
+        assertEquals(p2, "pear")
+
+        assertEquals("Pear", limited
+            .select(PurchaseTable.product)
+            .performWith(cxn)
+            .single()
+            .first()
+        )
+
+        val (idp102, product2) = limited
+            .select(PurchaseTable.id + 10 as_ name(), PurchaseTable.product)
+            .performWith(cxn)
+            .single()
+
+        assertEquals(idp102, 12)
+        assertEquals("Pear", product2)
+
+        val (p02, p12, p22) = limited
+            .select(PurchaseTable.product, 0 as_ name(), case(PurchaseTable.product)
+                .when_("Pear")
+                .then("pear")
+                .end() as_ name())
+            .performWith(cxn)
+            .single()
+
+        assertEquals(p02, "Pear")
+        assertEquals(p12, 0)
+        assertEquals(p22, "pear")
+    }
 }

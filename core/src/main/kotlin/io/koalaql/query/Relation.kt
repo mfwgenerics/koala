@@ -38,7 +38,8 @@ class Values(
     override fun rowIterator(): RowIterator<ValuesRow> = impl()
     override fun buildQuery(): BuiltSubquery = BuiltValuesQuery(this)
 
-    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> = ds.query(buildQuery())
+    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
+        ds.query(buildQuery())
 }
 
 class Cte(

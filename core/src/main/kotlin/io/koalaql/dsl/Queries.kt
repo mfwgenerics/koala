@@ -3,11 +3,11 @@ package io.koalaql.dsl
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectOperand
 import io.koalaql.query.Tableless
-import io.koalaql.query.fluent.SelectedJustUnionOperand
-import io.koalaql.query.fluent.SelectedUnionOperand
+import io.koalaql.query.fluent.QueryableOfOneUnionOperand
+import io.koalaql.query.fluent.QueryableUnionOperand
 
-fun select(vararg references: SelectArgument): SelectedUnionOperand =
+fun select(vararg references: SelectArgument): QueryableUnionOperand =
     Tableless.select(*references)
 
-fun <T : Any> select(labeled: SelectOperand<T>): SelectedJustUnionOperand<T> =
+fun <T : Any> select(labeled: SelectOperand<T>): QueryableOfOneUnionOperand<T> =
     Tableless.select(labeled)

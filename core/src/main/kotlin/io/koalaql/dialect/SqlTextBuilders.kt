@@ -135,7 +135,7 @@ fun SqlTextBuilder.compileExpr(
                 impl.reference(false, reference)
             }
         }
-        is SubqueryExpr<*> -> {
+        is QueryableOfOne<*> -> {
             impl.subquery(false, expr.buildQuery())
         }
         is BuiltCaseExpr<*> -> parenthesize(emitParens) {

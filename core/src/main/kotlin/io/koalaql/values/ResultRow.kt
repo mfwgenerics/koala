@@ -5,10 +5,10 @@ import io.koalaql.expr.AsReference
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
 
-abstract class ResultRow {
-    abstract val columns: LabelList
+interface ResultRow {
+    val columns: LabelList
 
-    abstract fun <T : Any> getOrNull(reference: Reference<T>): T?
+    fun <T : Any> getOrNull(reference: Reference<T>): T?
 
     fun <T : Any> getOrNull(reference: AsReference<T>): T? =
         getOrNull(reference.asReference())
@@ -25,6 +25,5 @@ abstract class ResultRow {
     operator fun <T : Any> get(reference: AsReference<T>): T? = getOrNull(reference)
     operator fun <T : Any> get(column: TableColumnNotNull<T>): T = getValue(column)
 
-    override fun toString(): String =
-        columns.asSequence().map { "$it=${getOrNull(it)}" }.joinToString()
+    override fun toString(): String
 }

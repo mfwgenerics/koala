@@ -48,7 +48,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
         val timeExpr = currentTimestamp() as_ name()
 
         val currentTimeByDb = select(timeExpr)
-            .performWith(db).single().getValue(timeExpr)
+            .performWith(db).single().first()
 
         assert(Duration.between(currentTimeByDb, Instant.now()).toMinutes().absoluteValue < 5)
     }
