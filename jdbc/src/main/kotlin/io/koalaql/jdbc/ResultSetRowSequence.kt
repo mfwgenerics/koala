@@ -9,6 +9,7 @@ import java.sql.ResultSet
 
 class ResultSetRowSequence(
     override val columns: LabelList,
+    private val offset: Int,
     private val event: QueryEventWriter,
     private val typeMappings: JdbcTypeMappings,
     private val resultSet: ResultSet
@@ -20,21 +21,20 @@ class ResultSetRowSequence(
     private var alreadyIterated = false
     private var readCount = 0
 
+    private val columnMappings = columns.map { typeMappings.mappingFor(it.type) }
+
     override val row: RawResultRow get() = this
 
+    @Suppress("unchecked_cast")
     override fun <T : Any> getOrNull(reference: Reference<T>): T? {
-        val ix = 1 + (columns.positionOf(reference) ?: return null)
+        val ix = columns.positionOf(reference) ?: return null
 
         /* should we lookup mappingFor in advance? */
-        return typeMappings.mappingFor(reference.type).readJdbc(resultSet, ix)
+        return columnMappings[ix].readJdbc(resultSet, ix + offset) as T?
     }
 
     @Suppress("unchecked_cast")
-    override fun get(ix: Int): Any? {
-        val reference = columns[ix] as Reference<Any>
-
-        return typeMappings.mappingFor(reference.type).readJdbc(resultSet, ix + 1)
-    }
+    override fun get(ix: Int): Any? = columnMappings[ix].readJdbc(resultSet, ix + offset)
 
     override fun next(): Boolean {
         return if (resultSet.next()) {

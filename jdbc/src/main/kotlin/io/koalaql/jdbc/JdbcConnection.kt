@@ -99,10 +99,10 @@ class JdbcConnection(
         val md = rs.metaData
         val generatedColumns = md.columnCount
 
-        if (generatedColumns == 1) return 0
+        if (generatedColumns == 1) return 1
 
         repeat(md.columnCount) { ix ->
-            if (md.getColumnName(ix + 1) == column.symbol) return ix
+            if (md.getColumnName(ix + 1) == column.symbol) return ix + 1
         }
 
         error("unable to fetch generated key $column")
@@ -138,12 +138,8 @@ class JdbcConnection(
                     val ix = positionOf(query.returning, rs)
 
                     return ResultSetRowSequence(
-                        object : LabelList, List<Reference<*>> by listOf(query.returning) {
-                            override fun positionOf(reference: Reference<*>): Int? {
-                                if (reference == query.returning) return ix
-                                return null
-                            }
-                        },
+                        LabelListOf(listOf(query.returning)),
+                        offset = ix,
                         event,
                         typeMappings,
                         generatedKeys
@@ -168,6 +164,7 @@ class JdbcConnection(
 
                     ResultSetRowSequence(
                         LabelListOf(query.columns),
+                        offset = 1,
                         event,
                         typeMappings,
                         results

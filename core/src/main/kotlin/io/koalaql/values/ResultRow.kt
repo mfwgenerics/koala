@@ -3,10 +3,9 @@ package io.koalaql.values
 import io.koalaql.ddl.TableColumnNotNull
 import io.koalaql.expr.AsReference
 import io.koalaql.expr.Reference
-import io.koalaql.query.LabelList
 
 interface ResultRow {
-    val columns: LabelList
+    val columns: List<Reference<*>>
 
     fun <T : Any> getOrNull(reference: Reference<T>): T?
 
@@ -15,7 +14,7 @@ interface ResultRow {
 
     fun <T : Any> getValue(reference: AsReference<T>): T =
         checkNotNull(getOrNull(reference)) {
-            if (columns.positionOf(reference.asReference()) != null) {
+            if (columns.contains(reference.asReference())) {
                 "expected non-null $reference. did you mean to use getOrNull?"
             } else {
                 "expected column $reference. is $reference missing from select?"
