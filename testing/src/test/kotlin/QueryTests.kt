@@ -7,80 +7,15 @@ import io.koalaql.query.Tableless
 import io.koalaql.query.fluent.OnConflictable
 import io.koalaql.query.fluent.OnDuplicated
 import io.koalaql.sql.GeneratedSqlException
-import io.koalaql.test.table.CustomerTable
-import io.koalaql.test.table.PurchaseTable
-import io.koalaql.test.table.ShopTable
+import io.koalaql.test.shops.CustomerTable
+import io.koalaql.test.shops.PurchaseTable
+import io.koalaql.test.shops.ShopTable
+import io.koalaql.test.shops.createAndPopulate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 abstract class QueryTests: ProvideTestDatabase {
-    fun createAndPopulate(cxn: DataConnection) {
-        val shopIds = ShopTable
-            .insert(values(
-                rowOf(ShopTable.name setTo "Hardware"),
-                rowOf(ShopTable.name setTo "Groceries"),
-                rowOf(ShopTable.name setTo "Stationery")
-            ))
-            .generatingKey(ShopTable.id)
-            .performWith(cxn)
-            .toList()
-
-        val hardwareId = shopIds[0]
-        val groceriesId = shopIds[1]
-        val stationeryId = shopIds[2]
-
-        val customerIds = CustomerTable
-            .insert(values(
-                rowOf(
-                    CustomerTable.firstName setTo "Jane",
-                    CustomerTable.lastName setTo "Doe"
-                ),
-                rowOf(
-                    CustomerTable.firstName setTo "Bob",
-                    CustomerTable.lastName setTo "Smith"
-                )
-            ))
-            .generatingKey(CustomerTable.id)
-            .performWith(cxn)
-            .toList()
-
-        val janeId = customerIds[0]
-        val bobId = customerIds[1]
-
-        val inserted = PurchaseTable
-            .insert(values(
-                rowOf(
-                    PurchaseTable.shop setTo groceriesId,
-                    PurchaseTable.customer setTo janeId,
-                    PurchaseTable.product setTo "Apple",
-                    PurchaseTable.price setTo value(150) + 0,
-                    PurchaseTable.discount setTo 20
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo groceriesId,
-                    PurchaseTable.customer setTo bobId,
-                    PurchaseTable.product setTo "Pear",
-                    PurchaseTable.price setTo 200
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo hardwareId,
-                    PurchaseTable.customer setTo janeId,
-                    PurchaseTable.product setTo "Hammer",
-                    PurchaseTable.price setTo 8000
-                ),
-                rowOf(
-                    PurchaseTable.shop setTo stationeryId,
-                    PurchaseTable.customer setTo bobId,
-                    PurchaseTable.product setTo "Pen",
-                    PurchaseTable.price setTo 500
-                ),
-            ))
-            .performWith(cxn)
-
-        assertEquals(4, inserted)
-    }
-
     fun withExampleData(block: (DataConnection) -> Unit) = withCxn(
         ShopTable, CustomerTable, PurchaseTable
     ) { cxn, _ ->

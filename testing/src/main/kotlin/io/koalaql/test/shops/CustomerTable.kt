@@ -1,4 +1,4 @@
-package io.koalaql.test.table
+package io.koalaql.test.shops
 
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
