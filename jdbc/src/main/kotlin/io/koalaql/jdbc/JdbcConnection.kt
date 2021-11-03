@@ -7,13 +7,11 @@ import io.koalaql.ddl.TableColumn
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
-import io.koalaql.expr.Reference
 import io.koalaql.expr.Column
-import io.koalaql.query.*
+import io.koalaql.query.LabelListOf
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
 import io.koalaql.values.RawResultRow
-import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.emptyRowSequence
 import java.sql.Connection

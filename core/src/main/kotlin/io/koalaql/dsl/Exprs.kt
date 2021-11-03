@@ -10,7 +10,6 @@ import io.koalaql.expr.fluent.ThenableCase
 import io.koalaql.expr.fluent.WhenableCase
 import io.koalaql.query.Queryable
 import io.koalaql.sql.RawSqlBuilder
-import io.koalaql.values.ResultRow
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)

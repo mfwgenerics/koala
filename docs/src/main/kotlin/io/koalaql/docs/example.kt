@@ -21,7 +21,7 @@ custom_edit_url: https://github.com/mfwgenerics/koala/blob/examples/docs/src/mai
 sidebar_position: 2
 ---
 
-### Define the example table
+### Define a table
 */
 
 object ShopTable: Table("Shop") {
@@ -37,8 +37,8 @@ fun quickExample() {
     /* SHOW */
 
     /*
-    ### Connect to the database
-    We'll use H2 in this example
+    ### Connect to your database
+    We use H2 in this example
     */
     val db = H2DataSource(
         provider = {
@@ -48,13 +48,13 @@ fun quickExample() {
 
     /*
     ### Declare the table
-    This should be done once after the database has been constructed
+    This should be done for all tables at startup
     */
     db.declareTables(ShopTable)
 
     /*
     ### Insert into the table
-    We can read back the auto-generated id from the database
+    We also read back the auto-generated id from the database
     */
     val id = ShopTable
         .insert(values(

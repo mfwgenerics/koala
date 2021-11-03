@@ -2,15 +2,13 @@ package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
 import io.koalaql.expr.*
-import io.koalaql.query.BlockingPerformer
-import io.koalaql.query.Deleted
-import io.koalaql.query.Queryable
-import io.koalaql.query.Updated
+import io.koalaql.query.*
 import io.koalaql.query.built.*
+import io.koalaql.sql.SqlText
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 
-interface Selectable: QueryBodyBuilder {
+interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRow>> {
     private class Select(
         val of: Selectable,
         val references: List<SelectArgument>,
@@ -61,6 +59,12 @@ interface Selectable: QueryBodyBuilder {
 
     fun selectAll(vararg references: SelectArgument): Queryable<ResultRow> =
         Select(this, references.asList(), true)
+
+    override fun generateSql(ds: SqlPerformer): SqlText? =
+        selectAll().generateSql(ds)
+
+    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
+        selectAll().performWith(ds)
 
     fun select(references: List<SelectArgument>): Queryable<ResultRow> =
         Select(this, references, false)

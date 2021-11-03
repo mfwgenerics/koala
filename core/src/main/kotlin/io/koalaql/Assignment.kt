@@ -1,8 +1,8 @@
 package io.koalaql
 
+import io.koalaql.expr.Column
 import io.koalaql.expr.Expr
 import io.koalaql.expr.Literal
-import io.koalaql.expr.Column
 
 interface Assignment<T : Any> {
     val reference: Column<T>

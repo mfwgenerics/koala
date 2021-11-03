@@ -6,7 +6,6 @@ import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltStatement
 import io.koalaql.values.RawResultRow
-import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.SequenceToRowSequence
 

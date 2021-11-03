@@ -5,6 +5,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.built.BuiltRelation
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.query.built.BuiltValuesQuery
+import io.koalaql.sql.SqlText
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
@@ -40,6 +41,9 @@ class Values(
 
     override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
         ds.query(buildQuery())
+
+    override fun generateSql(ds: SqlPerformer): SqlText? =
+        ds.generateSql(buildQuery())
 }
 
 class Cte(

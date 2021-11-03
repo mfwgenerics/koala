@@ -6,8 +6,8 @@ import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.BuiltNamedIndex
 import io.koalaql.ddl.fluent.ColumnDefinition
 import io.koalaql.dsl.keys
-import io.koalaql.expr.Expr
 import io.koalaql.expr.Column
+import io.koalaql.expr.Expr
 import io.koalaql.query.Alias
 import io.koalaql.query.TableRelation
 import io.koalaql.query.built.BuiltRelation

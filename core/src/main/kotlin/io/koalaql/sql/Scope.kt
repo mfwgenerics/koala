@@ -3,7 +3,6 @@ package io.koalaql.sql
 import io.koalaql.expr.Reference
 import io.koalaql.query.Alias
 import io.koalaql.query.Cte
-import io.koalaql.query.LabelList
 import io.koalaql.window.WindowLabel
 
 /* TODO restrict names to identifier characters */

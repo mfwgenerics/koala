@@ -2,7 +2,6 @@ package io.koalaql.dsl
 
 import io.koalaql.IdentifierName
 import io.koalaql.query.*
-import io.koalaql.values.ResultRow
 
 fun cte(identifier: String? = null): Cte =
     Cte(IdentifierName(identifier))

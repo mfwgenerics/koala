@@ -4,7 +4,6 @@ import io.koalaql.Assignment
 import io.koalaql.expr.Expr
 import io.koalaql.expr.Reference
 import io.koalaql.query.InsertableLabelList
-import io.koalaql.query.LabelList
 import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.values.*
