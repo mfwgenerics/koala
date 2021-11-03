@@ -7,7 +7,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 
 abstract class DocGenTask : DefaultTask() {
-    private val oldPrefix = "${project.projectDir.absolutePath}/src/main/kotlin/io/koalaql/docs"
+    private val oldPrefix = "${project.projectDir.absolutePath}/src/test/kotlin/io/koalaql/docs"
 
     private fun File.outputPath(): String {
         val newPrefix = "${project.projectDir.absolutePath}/site/docs"

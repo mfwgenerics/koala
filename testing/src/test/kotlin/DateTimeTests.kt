@@ -45,7 +45,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
 
     @Test
     fun `current timestamp is roughly the current time`() = withDb { db ->
-        val timeExpr = currentTimestamp() as_ name()
+        val timeExpr = currentTimestamp() as_ label()
 
         val currentTimeByDb = select(timeExpr)
             .performWith(db).single().first()

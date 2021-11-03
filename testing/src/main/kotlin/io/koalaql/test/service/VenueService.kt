@@ -32,7 +32,7 @@ class VenueService(
 
     fun fetchVenues(ids: List<Int>? = null): List<Venue> {
         return db.transact { cxn ->
-            val visits = name<Int>()
+            val visits = label<Int>()
             val visitCte = cte()
 
             val rows = VenueTable

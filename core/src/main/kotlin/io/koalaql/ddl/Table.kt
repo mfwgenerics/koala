@@ -165,7 +165,7 @@ abstract class Table protected constructor(
         fun <T : Any> DataType<*, T>.default(expr: Expr<T>) = BaseColumnType(this).default(expr)
         fun <T : Any> DataType<*, T>.default(value: T?) = BaseColumnType(this).default(value)
 
-        fun <T : Any> DataType<*, T>.reference(column: TableColumn<T>) = BaseColumnType(this).reference(column)
+        fun <T : Any> DataType<*, T>.foreignKey(column: TableColumn<T>) = BaseColumnType(this).foreignKey(column)
 
         fun <T : Any> DataType<*, T>.primaryKey() = BaseColumnType(this).primaryKey()
         fun <T : Any> DataType<*, T>.uniqueKey() = BaseColumnType(this).uniqueKey()

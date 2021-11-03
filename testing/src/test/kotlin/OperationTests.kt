@@ -25,28 +25,28 @@ abstract class OperationTests : ProvideTestDatabase {
 
         val row = NumberTestTable
             .select(
-                avg(NumberTestTable.value) as_ name(),
-                avg(distinct(NumberTestTable.value)) as_ name(),
-                cast(count(NumberTestTable.value), DOUBLE) as_ name(),
-                cast(count(distinct(NumberTestTable.value)), DOUBLE) as_ name(),
-                max(NumberTestTable.value) as_ name(),
-                max(distinct(NumberTestTable.value)) as_ name(),
-                min(NumberTestTable.value) as_ name(),
-                min(distinct(NumberTestTable.value)) as_ name(),
-                stddevPop(NumberTestTable.value) as_ name(),
+                avg(NumberTestTable.value) as_ label(),
+                avg(distinct(NumberTestTable.value)) as_ label(),
+                cast(count(NumberTestTable.value), DOUBLE) as_ label(),
+                cast(count(distinct(NumberTestTable.value)), DOUBLE) as_ label(),
+                max(NumberTestTable.value) as_ label(),
+                max(distinct(NumberTestTable.value)) as_ label(),
+                min(NumberTestTable.value) as_ label(),
+                min(distinct(NumberTestTable.value)) as_ label(),
+                stddevPop(NumberTestTable.value) as_ label(),
                 if (REQUIRES_MYSQL_WORKAROUND) {
                     value(BigDecimal("0.816496580927726"))
                 } else {
                     stddevPop(distinct(NumberTestTable.value))
-                } as_ name(),
-                sum(NumberTestTable.value) as_ name(),
-                sum(distinct(NumberTestTable.value)) as_ name(),
-                varPop(NumberTestTable.value) as_ name(),
+                } as_ label(),
+                sum(NumberTestTable.value) as_ label(),
+                sum(distinct(NumberTestTable.value)) as_ label(),
+                varPop(NumberTestTable.value) as_ label(),
                 if (REQUIRES_MYSQL_WORKAROUND) {
                     value(BigDecimal("0.6666666666666666"))
                 } else {
                     varPop(distinct(NumberTestTable.value))
-                } as_ name()
+                } as_ label()
             )
             .performWith(cxn)
             .single()
@@ -138,22 +138,22 @@ abstract class OperationTests : ProvideTestDatabase {
                 )
                 .orderBy(WindowTestTable.value)
                 .select(listOfNotNull(
-                    rowNumber() over case.over as_ name(),
-                    rank() over orderedOver as_ name(),
-                    denseRank() over orderedOver as_ name(),
-                    percentRank() over orderedOver as_ name(),
-                    cumeDist() over orderedOver as_ name(),
-                    ntile(2) over orderedOver as_ name(),
-                    ntile(5) over orderedOver as_ name(),
-                    lag(WindowTestTable.value * 10) over orderedOver as_ name(),
-                    lag(WindowTestTable.value * 10, 2) over orderedOver as_ name(),
-                    lag(WindowTestTable.value * 10, 2, value(99)) over orderedOver as_ name(),
-                    lead(WindowTestTable.value * 10) over orderedOver as_ name(),
-                    lead(WindowTestTable.value * 10, 2) over orderedOver as_ name(),
-                    lead(WindowTestTable.value * 10, 2, value(99)) over orderedOver as_ name(),
-                    firstValue(-WindowTestTable.value) over orderedOver as_ name(),
-                    lastValue(-WindowTestTable.value) over orderedOver as_ name(),
-                    nthValue(-WindowTestTable.value, 2) over orderedOver as_ name()
+                    rowNumber() over case.over as_ label(),
+                    rank() over orderedOver as_ label(),
+                    denseRank() over orderedOver as_ label(),
+                    percentRank() over orderedOver as_ label(),
+                    cumeDist() over orderedOver as_ label(),
+                    ntile(2) over orderedOver as_ label(),
+                    ntile(5) over orderedOver as_ label(),
+                    lag(WindowTestTable.value * 10) over orderedOver as_ label(),
+                    lag(WindowTestTable.value * 10, 2) over orderedOver as_ label(),
+                    lag(WindowTestTable.value * 10, 2, value(99)) over orderedOver as_ label(),
+                    lead(WindowTestTable.value * 10) over orderedOver as_ label(),
+                    lead(WindowTestTable.value * 10, 2) over orderedOver as_ label(),
+                    lead(WindowTestTable.value * 10, 2, value(99)) over orderedOver as_ label(),
+                    firstValue(-WindowTestTable.value) over orderedOver as_ label(),
+                    lastValue(-WindowTestTable.value) over orderedOver as_ label(),
+                    nthValue(-WindowTestTable.value, 2) over orderedOver as_ label()
                 ))
                 .performWith(cxn)
                 .map { row -> row.columns.map {

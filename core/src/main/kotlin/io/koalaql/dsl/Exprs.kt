@@ -138,3 +138,6 @@ infix fun <T : Any> Column<T>.setTo(rhs: Expr<T>): Assignment<T> =
 
 inline infix fun <reified T : Any> Column<T>.setTo(rhs: T?): LiteralAssignment<T> =
     LiteralAssignment(this, rhs)
+
+fun lower(expr: Expr<String>): Expr<String> = OperationType.LOWER(expr)
+fun upper(expr: Expr<String>): Expr<String> = OperationType.UPPER(expr)

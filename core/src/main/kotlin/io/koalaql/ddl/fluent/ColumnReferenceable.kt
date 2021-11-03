@@ -30,6 +30,6 @@ interface ColumnReferenceable<T : Any>: ColumnDefinition<T> {
         }
     }
 
-    fun reference(column: TableColumn<T>): ColumnDefinition<T> =
+    fun foreignKey(column: TableColumn<T>): ColumnDefinition<T> =
         Referenced(this, column)
 }

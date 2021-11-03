@@ -7,8 +7,8 @@ import io.koalaql.ddl.VARCHAR
 object PurchaseTable: Table("Purchase") {
     val id = column("id", INTEGER.autoIncrement().primaryKey())
 
-    val shop = column("shop", INTEGER.reference(ShopTable.id))
-    val customer = column("customer", INTEGER.reference(CustomerTable.id))
+    val shop = column("shop", INTEGER.foreignKey(ShopTable.id))
+    val customer = column("customer", INTEGER.foreignKey(CustomerTable.id))
 
     val product = column("product", VARCHAR(200))
 

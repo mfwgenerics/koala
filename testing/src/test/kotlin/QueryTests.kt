@@ -25,7 +25,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `perform values directly`() = withCxn { cxn, _ ->
-        val number = name<Int>()
+        val number = label<Int>()
 
         val result = values((1..20).asSequence(), listOf(number))
             { set(number, it) }
@@ -37,7 +37,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `triangular numbers from values clause subquery`() = withCxn { cxn, _ ->
-        val number = name<Int>("number")
+        val number = label<Int>("number")
 
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
         val castNumber = cast(number, INTEGER)
@@ -45,7 +45,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val summed = sum(castNumber)
             .over(all()
                 .orderBy(castNumber)
-            ) as_ name("sumUnder")
+            ) as_ label("sumUnder")
 
         val alias = alias("A")
 
@@ -107,7 +107,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertListOfListsEquals(expectedPurchaseItems, actualPurchaseItems)
 
-        val total = name<Int>()
+        val total = label<Int>()
 
         val actualTotals = CustomerTable
             .innerJoin(PurchaseTable, CustomerTable.id eq PurchaseTable.customer)
@@ -305,7 +305,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `union all and count`() = withExampleData { cxn ->
-        val count = name<Int>()
+        val count = label<Int>()
 
         val purchaseCount = PurchaseTable
             .select(count(value(1)) as_ count)
@@ -364,11 +364,11 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `case expressions and raw expr`() = withExampleData { cxn ->
-        val n0 = name<String>()
-        val n1 = name<String>()
-        val n2 = name<String>()
-        val n3 = name<String>()
-        val n4 = name<Int>()
+        val n0 = label<String>()
+        val n1 = label<String>()
+        val n2 = label<String>()
+        val n3 = label<String>()
+        val n4 = label<Int>()
 
         val results = PurchaseTable
             .select(
@@ -410,9 +410,9 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `standalone coalesce and scalar query`() = withCxn { cxn, _ ->
-        val n0 = name<Int>("n0")
-        val n1 = name<String>("n1")
-        val n3 = name<Int>("n3")
+        val n0 = label<Int>("n0")
+        val n1 = label<String>("n1")
+        val n3 = label<Int>("n3")
 
         val valuesQuery = values((1..5).asSequence(), listOf(n0))
             { set(n0, it) }
@@ -437,14 +437,14 @@ abstract class QueryTests: ProvideTestDatabase {
 
         PurchaseTable
             .with(cte as_ CustomerTable
-                .where(select((CustomerTable.lastName eq "Smith") as_ name()))
+                .where(select((CustomerTable.lastName eq "Smith") as_ label()))
                 .selectAll()
             )
             .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
             .delete()
             .performWith(cxn)
 
-        val name = name<Int>()
+        val name = label<Int>()
 
         val purchases = PurchaseTable
             .select(count(value(1)) as_ name)
@@ -488,8 +488,8 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `unioned tableless selects with out of order labels`() = withCxn { cxn, _ ->
-        val n0 = name<Int>()
-        val n1 = name<Float>()
+        val n0 = label<Int>()
+        val n1 = label<Float>()
 
         /* cast is H2 workaround for standalone values */
         fun n0(n: Int) = cast(value(n), INTEGER) as_ n0
@@ -521,8 +521,8 @@ abstract class QueryTests: ProvideTestDatabase {
     open fun `factorial recursive CTE`() = withCxn { cxn, _ ->
         val fact = cte()
 
-        val index = name<Long>()
-        val value = name<Long>()
+        val index = label<Long>()
+        val value = label<Long>()
 
         val alias = Alias()
 
@@ -671,8 +671,8 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     open fun `nulls first and last`() = withCxn { cxn, _ ->
-        val column0 = name<Int>()
-        val column1 = name<Int>()
+        val column0 = label<Int>()
+        val column1 = label<Int>()
 
         val values = values(0..9) {
             this[column0] = it
@@ -702,9 +702,9 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     open fun `empty in and not in`() = withCxn { cxn, _ ->
-        val label0 = name<String>()
-        val label1 = name<Boolean>()
-        val label2 = name<Boolean>()
+        val label0 = label<String>()
+        val label1 = label<Boolean>()
+        val label2 = label<Boolean>()
 
         val result = select(cast(value("1"), TEXT) as_ label0)
             .subquery()
@@ -752,10 +752,10 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val results =
             select(
-                castInt(10) * 2 as_ name(),
-                castInt(10) + 2 as_ name(),
-                castInt(10) - 2 as_ name(),
-                castInt(10) % 7 as_ name(),
+                castInt(10) * 2 as_ label(),
+                castInt(10) + 2 as_ label(),
+                castInt(10) - 2 as_ label(),
+                castInt(10) % 7 as_ label(),
             )
             .performWith(cxn)
             .map { row -> row.columns.map { row.getValue(it) } }
@@ -768,9 +768,9 @@ abstract class QueryTests: ProvideTestDatabase {
     fun likes() = withCxn { cxn, _ ->
         val result =
             select(
-                (value("like") like "like") as_ name(),
-                (value("like") like "lik%") as_ name(),
-                (value("like") like "lik") as_ name()
+                (value("like") like "like") as_ label(),
+                (value("like") like "lik%") as_ label(),
+                (value("like") like "lik") as_ label()
             )
             .performWith(cxn)
             .map { row -> row.columns.map { row.getValue(it as Reference<Boolean>) } }
@@ -836,7 +836,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `name not in scope throws generated sql exception`() = withCxn { cxn, _ ->
-        val name = name<Int>()
+        val name = label<Int>()
 
         try {
             CustomerTable
@@ -863,7 +863,7 @@ abstract class QueryTests: ProvideTestDatabase {
         )
 
         val (idp10, product) = whered
-            .select(PurchaseTable.id + 10 as_ name(), PurchaseTable.product)
+            .select(PurchaseTable.id + 10 as_ label(), PurchaseTable.product)
             .performWith(cxn)
             .single()
 
@@ -871,10 +871,10 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals("Pear", product)
 
         val (p0, p1, p2) = whered
-            .select(PurchaseTable.product, 0 as_ name(), case(PurchaseTable.product)
+            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product)
                 .when_("Pear")
                 .then("pear")
-                .end() as_ name())
+                .end() as_ label())
             .performWith(cxn)
             .single()
 
@@ -890,7 +890,7 @@ abstract class QueryTests: ProvideTestDatabase {
         )
 
         val (idp102, product2) = limited
-            .select(PurchaseTable.id + 10 as_ name(), PurchaseTable.product)
+            .select(PurchaseTable.id + 10 as_ label(), PurchaseTable.product)
             .performWith(cxn)
             .single()
 
@@ -898,10 +898,10 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals("Pear", product2)
 
         val (p02, p12, p22) = limited
-            .select(PurchaseTable.product, 0 as_ name(), case(PurchaseTable.product)
+            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product)
                 .when_("Pear")
                 .then("pear")
-                .end() as_ name())
+                .end() as_ label())
             .performWith(cxn)
             .single()
 
