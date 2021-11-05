@@ -1,6 +1,7 @@
 package io.koalaql.dialect
 
 import io.koalaql.Assignment
+import io.koalaql.dsl.value
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatedExpr
 import io.koalaql.query.*
@@ -42,8 +43,10 @@ fun SqlTextBuilder.compileJoins(
         addSql(join.type.sql)
         addSql(" ")
         compileRelation(join.to)
-        addSql(" ON ")
-        compileExpr(join.on)
+        join.on?.let { on ->
+            addSql(" ON ")
+            compileExpr(on)
+        }
     }
 }
 
@@ -219,14 +222,7 @@ fun SqlTextBuilder.compileQueryBody(
     compileRelation: (BuiltRelation) -> Unit,
     compileWindows: (windows: List<LabeledWindow>) -> Unit,
     compileJoins: (List<BuiltJoin>) -> Unit = { joins ->
-        joins.asReversed().forEach { join ->
-            addSql("\n")
-            addSql(join.type.sql)
-            addSql(" ")
-            compileRelation(join.to)
-            addSql(" ON ")
-            compileExpr(join.on)
-        }
+        this.compileJoins(joins, compileRelation, compileExpr)
     },
     compileWhere: (Expr<*>) -> Unit = { where ->
         addSql("\nWHERE ")
@@ -240,6 +236,12 @@ fun SqlTextBuilder.compileQueryBody(
     compileHaving: (Expr<*>) -> Unit = {
         addSql("\nHAVING ")
         compileExpr(it)
+    },
+    compileSetOperation: (BuiltSetOperation) -> Unit = {
+        addError("unexpected ${it.type}")
+    },
+    compileOrderBy: (List<Ordinal<*>>) -> Unit = {
+        this.compileOrderBy(it, compileExpr)
     }
 ) {
     compileRelation(body.relation)
@@ -251,6 +253,30 @@ fun SqlTextBuilder.compileQueryBody(
     body.having?.let(compileHaving)
 
     if (body.windows.isNotEmpty()) compileWindows(body.windows)
+
+    body.setOperations.forEach { compileSetOperation(it) }
+
+    if (body.orderBy.isNotEmpty()) {
+        addSql("\n")
+        compileOrderBy(body.orderBy)
+    }
+
+    body.limit?.let {
+        addSql("\nLIMIT ")
+        addLiteral(value(it))
+    }
+
+    if (body.offset != 0) {
+        addSql(" OFFSET ")
+        addLiteral(value(body.offset))
+    }
+
+    body.locking?.let { locking ->
+        when (locking) {
+            LockMode.SHARE -> addSql("\nFOR SHARE")
+            LockMode.UPDATE -> addSql("\nFOR UPDATE")
+        }
+    }
 }
 
 fun SqlTextBuilder.compileRow(

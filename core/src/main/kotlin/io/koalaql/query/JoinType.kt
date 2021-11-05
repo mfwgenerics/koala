@@ -8,5 +8,6 @@ enum class JoinType(
     INNER("INNER JOIN"),
     LEFT("LEFT JOIN"),
     RIGHT("RIGHT JOIN"),
-    OUTER("FULL JOIN")
+    OUTER("FULL JOIN"),
+    CROSS("CROSS JOIN")
 }

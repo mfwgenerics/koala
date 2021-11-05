@@ -306,45 +306,6 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileQueryWhere(query: BuiltQueryBody) {
-            compileRelation(query.relation)
-
-            query.joins.asReversed().forEach { join ->
-                sql.addSql("\n")
-                sql.addSql(join.type.sql)
-                sql.addSql(" ")
-                compileRelation(join.to)
-                sql.addSql(" ON ")
-                compileExpr(join.on, false)
-            }
-
-            query.where?.let {
-                sql.addSql("\nWHERE ")
-                compileExpr(it, false)
-            }
-        }
-
-        fun compileSelectBody(body: BuiltQueryBody) {
-            compileQueryWhere(body)
-
-            sql.prefix("\nGROUP BY ", ", ").forEach(body.groupBy) {
-                compileExpr(it, false)
-            }
-
-            body.having?.let {
-                sql.addSql("\nHAVING ")
-                compileExpr(it, false)
-            }
-
-            sql.prefix("\nWINDOW ", "\n, ").forEach(body.windows) {
-                sql.addSql(scope.nameOf(it.label))
-                sql.addSql(" AS ")
-                sql.addSql("(")
-                compileWindow(BuiltWindow.from(it.window))
-                sql.addSql(")")
-            }
-        }
-
         fun compileSetOperation(
             outerSelect: List<SelectedExpr<*>>,
             operation: BuiltSetOperation
@@ -410,31 +371,13 @@ class PostgresDialect: SqlDialect {
 
             if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 
-            compileSelectBody(select.body)
-
-            select.body.setOperations.forEach {
-                compileSetOperation(select.selected, it)
-            }
-
-            if (select.body.orderBy.isNotEmpty()) sql.addSql("\n")
-            compileOrderBy(select.body.orderBy)
-
-            select.body.limit?.let {
-                sql.addSql("\nLIMIT ")
-                sql.addLiteral(value(it))
-            }
-
-            if (select.body.offset != 0) {
-                sql.addSql(" OFFSET ")
-                sql.addLiteral(value(select.body.offset))
-            }
-
-            select.body.locking?.let { locking ->
-                when (locking) {
-                    LockMode.SHARE -> sql.addSql("\nFOR SHARE")
-                    LockMode.UPDATE -> sql.addSql("\nFOR UPDATE")
-                }
-            }
+            sql.compileQueryBody(
+                select.body,
+                compileExpr = { compileExpr(it, false) },
+                compileRelation = { compileRelation(it) },
+                compileWindows = { windows -> compileWindows(windows) },
+                compileSetOperation = { compileSetOperation(select.selected, it) }
+            )
         }
 
         fun compileValues(query: BuiltValuesQuery): Boolean {
@@ -565,23 +508,6 @@ class PostgresDialect: SqlDialect {
                 compileRelation = { compileRelation(it) },
                 compileWindows = { windows -> compileWindows(windows) }
             )
-
-            check(delete.query.setOperations.isEmpty())
-
-            if (delete.query.orderBy.isNotEmpty()) sql.addSql("\n")
-            compileOrderBy(delete.query.orderBy)
-
-            delete.query.limit?.let {
-                sql.addSql("\nLIMIT ")
-                sql.addLiteral(value(it))
-            }
-
-            if (delete.query.offset != 0) {
-                sql.addSql(" OFFSET ")
-                sql.addLiteral(value(delete.query.offset))
-            }
-
-            check(delete.query.locking == null)
         }
     }
 

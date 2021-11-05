@@ -10,6 +10,9 @@ interface ConnectionEventWriter {
 
     fun closed()
 
+    operator fun plus(other: ConnectionEventWriter): ConnectionEventWriter =
+        CombinedConnectionEventWriter(this, other)
+
     object Discard : ConnectionEventWriter {
         override fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter =
             QueryEventWriter.Discard
@@ -18,5 +21,7 @@ interface ConnectionEventWriter {
         override fun rollbacked(failed: Throwable?) { }
 
         override fun closed() { }
+
+        override fun plus(other: ConnectionEventWriter): ConnectionEventWriter = other
     }
 }

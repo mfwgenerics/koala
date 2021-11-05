@@ -1,14 +1,12 @@
 package io.koalaql.jdbc
 
-import io.koalaql.DeclareStrategy
-import io.koalaql.Isolation
-import io.koalaql.JdbcSchemaDetection
-import io.koalaql.SchemaDataSource
+import io.koalaql.*
 import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.event.DataSourceEvent
 import io.koalaql.query.built.BuiltDml
 import io.koalaql.sql.SqlText
 import java.sql.Connection
@@ -18,7 +16,8 @@ class JdbcDataSource(
     val dialect: SqlDialect,
     val provider: JdbcProvider,
     val typeMappings: JdbcTypeMappings,
-    val declareBy: DeclareStrategy
+    val declareBy: DeclareStrategy,
+    val events: DataSourceEvent
 ): SchemaDataSource {
     override fun detectChanges(tables: List<Table>): SchemaChange = provider.connect().use { jdbc ->
         jdbc.autoCommit = true
@@ -29,9 +28,7 @@ class JdbcDataSource(
         schema.detectChanges(dbName, jdbc.metaData, tables)
     }
 
-    override fun changeSchema(changes: SchemaChange) {
-        val batches = dialect.ddl(changes)
-
+    private fun applyDdl(ddl: List<SqlText>) {
         provider.connect().use { jdbc ->
             jdbc.autoCommit = true
 
@@ -42,7 +39,7 @@ class JdbcDataSource(
                 ConnectionEventWriter.Discard
             )
 
-            batches.forEach {
+            ddl.forEach {
                 connection.prepareAndThen(it) {
                     use {
                         execute()
@@ -50,6 +47,12 @@ class JdbcDataSource(
                 }
             }
         }
+    }
+
+    override fun changeSchema(changes: SchemaChange) {
+        val ddl = dialect.ddl(changes)
+
+        applyDdl(ddl)
     }
 
     override fun declareTables(tables: List<Table>) {
@@ -60,8 +63,8 @@ class JdbcDataSource(
         }
 
         when (declareBy) {
-            DeclareStrategy.RegisterOnly -> return
-            DeclareStrategy.CreateIfNotExists -> {
+            DeclareOnly -> return
+            CreateIfNotExists -> {
                 val diff = SchemaChange()
 
                 tables.forEach {
@@ -70,17 +73,30 @@ class JdbcDataSource(
 
                 changeSchema(diff)
             }
-            DeclareStrategy.Change -> changeSchema(
-                detectChanges(tables)
-            )
-            DeclareStrategy.Expect -> {
-                val changes = detectChanges(tables)
+            is ReconcileTables -> {
+                val filtered = declareBy.filterChanges(
+                    detectChanges(tables)
+                )
 
-                val ddl = dialect.ddl(changes)
+                val ddl = ReconciledDdl(
+                    applied = dialect.ddl(filtered.applied),
+                    unexpected = dialect.ddl(filtered.unexpected),
+                    ignored = dialect.ddl(filtered.ignored)
+                )
 
-                check(ddl.isEmpty() && changes.isEmpty()) {
-                    "Schema differs from expectation. Differences:\n$changes\nDdl:\n$ddl"
+                val appliedEvent = events.changes(filtered, ddl)
+
+                check (ddl.unexpected.isEmpty()) {
+                    val ddlLines = ddl.unexpected
+                        .asSequence()
+                        .map { "$it".trim() }
+                        .joinToString("\n")
+
+                    "Unexpected DDL:\n$ddlLines"
                 }
+
+                applyDdl(ddl.applied)
+                appliedEvent.applied(ddl.applied)
             }
         }
     }
@@ -105,7 +121,7 @@ class JdbcDataSource(
             jdbc,
             dialect,
             typeMappings,
-            events
+            this.events.connect() + events
         )
     }
 

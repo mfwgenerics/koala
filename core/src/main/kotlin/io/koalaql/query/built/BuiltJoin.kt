@@ -7,7 +7,7 @@ import io.koalaql.sql.Scope
 data class BuiltJoin(
     val type: JoinType,
     val to: BuiltRelation,
-    val on: Expr<Boolean>
+    val on: Expr<Boolean>?
 ) {
     fun populateScope(scope: Scope) {
         to.populateScope(scope)

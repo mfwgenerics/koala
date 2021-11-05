@@ -1,6 +1,7 @@
-import io.koalaql.DeclareStrategy
+import io.koalaql.CreateIfNotExists
 import io.koalaql.JdbcSchemaDetection
 import io.koalaql.data.JdbcTypeMappings
+import io.koalaql.event.DataSourceEvent
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import io.koalaql.postgres.PostgresDialect
@@ -27,6 +28,7 @@ fun PgTestDatabase(db: String): JdbcDataSource {
             }
         },
         JdbcTypeMappings(),
-        DeclareStrategy.CreateIfNotExists
+        CreateIfNotExists,
+        DataSourceEvent.DISCARD
     )
 }

@@ -909,4 +909,42 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals(p12, 0)
         assertEquals(p22, "pear")
     }
+
+    class JoinOrderTable(name: String): Table(name)
+
+    @Test
+    fun `joins in correct order`() = withDb { db ->
+        val generated = JoinOrderTable("table0")
+            .innerJoin(JoinOrderTable("table1"), value(true))
+            .innerJoin(JoinOrderTable("table2"), value(true))
+            .select(value(true) as_ label())
+            .generateSql(db)
+            ?.parameterizedSql
+            .orEmpty()
+
+
+        println(generated)
+
+        assert(generated.indexOf("table0") < generated.indexOf("table1"))
+        assert(generated.indexOf("table1") < generated.indexOf("table2"))
+    }
+
+    @Test
+    fun `inner join without on`() = withDb { db ->
+        val someInt = label<Int>()
+
+        val values = values((1..3)) {
+            this[someInt] = it
+        }
+
+        val joined = values
+            .crossJoin(values.as_(alias()))
+            .orderBy(someInt)
+            .select(someInt)
+            .performWith(db)
+            .map { it.first() }
+            .toList()
+
+        assertListEquals((1..3).flatMap { listOf(it, it, it) }, joined)
+    }
 }

@@ -1,9 +1,12 @@
+import io.koalaql.CreateIfNotExists
 import io.koalaql.ddl.FLOAT
 import io.koalaql.test.data.DataTypeValuesMap
 import kotlin.test.Test
 
 class MysqlDataTypeTests: DataTypesTest() {
-    override fun connect(db: String) = MysqlTestDatabase(db)
+    override fun connect(db: String) = MysqlTestDatabase(db,
+        declareBy = CreateIfNotExists
+    )
 
     override fun compatibilityAdjustment(values: DataTypeValuesMap) {
         /*

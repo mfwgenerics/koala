@@ -7,9 +7,14 @@ interface QueryEventWriter {
     /* Called after `succeeded` once the results have been fully read. not guaranteed to be called */
     fun fullyRead(rows: Int)
 
+    operator fun plus(other: QueryEventWriter): QueryEventWriter =
+        CombinedQueryEventWriter(this, other)
+
     object Discard : QueryEventWriter {
         override fun finished(result: Result<Int?>) { }
 
         override fun fullyRead(rows: Int) { }
+
+        override fun plus(other: QueryEventWriter): QueryEventWriter = other
     }
 }

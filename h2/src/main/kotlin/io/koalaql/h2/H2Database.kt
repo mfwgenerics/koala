@@ -1,7 +1,9 @@
 package io.koalaql.h2
 
+import io.koalaql.CreateIfNotExists
 import io.koalaql.DeclareStrategy
 import io.koalaql.JdbcSchemaDetection
+import io.koalaql.event.DataSourceEvent
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
 import java.sql.Connection
@@ -9,14 +11,16 @@ import java.sql.DriverManager
 
 fun H2DataSource(
     provider: JdbcProvider,
-    declareStrategy: DeclareStrategy = DeclareStrategy.CreateIfNotExists,
-    dialect: H2Dialect = H2Dialect()
+    declareStrategy: DeclareStrategy = CreateIfNotExists,
+    dialect: H2Dialect = H2Dialect(),
+    events: DataSourceEvent = DataSourceEvent.DISCARD
 ): JdbcDataSource = JdbcDataSource(
     JdbcSchemaDetection.NotSupported,
     dialect,
     provider,
     H2TypeMappings(),
-    declareStrategy
+    declareStrategy,
+    events
 )
 
 fun H2Database(db: String, mode: H2CompatibilityMode? = null): JdbcDataSource {

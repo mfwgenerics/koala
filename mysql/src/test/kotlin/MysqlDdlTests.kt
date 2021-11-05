@@ -1,8 +1,26 @@
+import io.koalaql.*
 import io.koalaql.ddl.UnmappedDataType
 import kotlin.test.Test
 
 class MysqlDdlTests: DdlTests() {
-    override fun connect(db: String) = MysqlTestDatabase(db)
+    override fun connect(db: String) = MysqlTestDatabase(db,
+        declareBy = ReconcileTables(
+            create = ReconcileMode.APPLY,
+
+            columns = ReconcileColumns(
+                add = ReconcileMode.APPLY,
+                modify = ReconcileMode.APPLY,
+                drop = ReconcileMode.APPLY
+            ),
+
+            indexes = ReconcileIndexes(
+                add = ReconcileMode.APPLY,
+                drop = ReconcileMode.APPLY
+            ),
+
+            drop = ReconcileMode.APPLY
+        )
+    )
 
     override fun supportedColumnTypes(type: UnmappedDataType<*>): Boolean {
         return true

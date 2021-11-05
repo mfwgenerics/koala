@@ -402,25 +402,9 @@ class H2Dialect(
                 select.body,
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) }
+                compileWindows = { windows -> compileWindows(windows) },
+                compileSetOperation = { compileSetOperation(select.selected, it) }
             )
-
-            select.body.setOperations.forEach {
-                compileSetOperation(select.selected, it)
-            }
-
-            if (select.body.orderBy.isNotEmpty()) sql.addSql("\n")
-            compileOrderBy(select.body.orderBy)
-
-            select.body.limit?.let {
-                sql.addSql("\nLIMIT ")
-                sql.addLiteral(value(it))
-            }
-
-            if (select.body.offset != 0) {
-                sql.addSql(" OFFSET ")
-                sql.addLiteral(value(select.body.offset))
-            }
 
             select.body.locking?.let { locking ->
                 when (locking) {
@@ -513,28 +497,8 @@ class H2Dialect(
                 select.query,
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) },
-                compileJoins = { error("can't delete a join") },
-                compileGroupBy = { error("can't group by in a delete") },
-                compileHaving = { error("can't having in a delete") }
+                compileWindows = { windows -> compileWindows(windows) }
             )
-
-            check(select.query.setOperations.isEmpty())
-
-            if (select.query.orderBy.isNotEmpty()) sql.addSql("\n")
-            compileOrderBy(select.query.orderBy)
-
-            select.query.limit?.let {
-                sql.addSql("\nLIMIT ")
-                sql.addLiteral(value(it))
-            }
-
-            if (select.query.offset != 0) {
-                sql.addSql(" OFFSET ")
-                sql.addLiteral(value(select.query.offset))
-            }
-
-            check(select.query.locking == null)
         }
     }
 

@@ -13,7 +13,7 @@ interface Joinable: Whereable {
         val of: Joinable,
         val type: JoinType,
         val to: RelationBuilder,
-        val on: Expr<Boolean>
+        val on: Expr<Boolean>?
     ): Joinable {
         override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
             joins.add(BuiltJoin(
@@ -26,7 +26,7 @@ interface Joinable: Whereable {
         }
     }
 
-    fun join(type: JoinType, to: RelationBuilder, on: Expr<Boolean>): Joinable =
+    fun join(type: JoinType, to: RelationBuilder, on: Expr<Boolean>? = null): Joinable =
         Join(this, type, to, on)
 
     fun innerJoin(to: RelationBuilder, on: Expr<Boolean>): Joinable =
@@ -40,4 +40,7 @@ interface Joinable: Whereable {
 
     fun outerJoin(to: RelationBuilder, on: Expr<Boolean>) =
         join(JoinType.OUTER, to, on)
+
+    fun crossJoin(to: RelationBuilder) =
+        join(JoinType.CROSS, to)
 }

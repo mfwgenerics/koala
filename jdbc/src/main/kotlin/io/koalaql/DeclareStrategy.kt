@@ -1,12 +1,22 @@
 package io.koalaql
 
 sealed interface DeclareStrategy {
-    /* only registers type mappings and doesn't execute any ddl */
-    object RegisterOnly: DeclareStrategy
-    /* execute "create table if not exists" ddl */
-    object CreateIfNotExists: DeclareStrategy
-    /* use JDBC metadata to compute and apply a full diff. TODO parameterize */
-    object Change: DeclareStrategy
-    /* use JDBC metadata to error on differences from expected schema */
-    object Expect: DeclareStrategy
+    companion object {
+        val EXPECT = ReconcileTables(
+            create = ReconcileMode.EXPECT,
+
+            columns = ReconcileColumns(
+                add = ReconcileMode.EXPECT,
+                modify = ReconcileMode.EXPECT,
+                drop = ReconcileMode.EXPECT
+            ),
+
+            indexes = ReconcileIndexes(
+                add = ReconcileMode.EXPECT,
+                drop = ReconcileMode.EXPECT
+            ),
+
+            drop = ReconcileMode.EXPECT
+        )
+    }
 }
