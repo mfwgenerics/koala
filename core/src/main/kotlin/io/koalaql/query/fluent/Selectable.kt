@@ -1,12 +1,16 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
+import io.koalaql.dsl.as_
+import io.koalaql.dsl.label
 import io.koalaql.expr.*
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
+import io.koalaql.values.EmptyRow
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
+import io.koalaql.values.RowSequenceEmptyMask
 
 interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRow>> {
     private class Select(
@@ -22,6 +26,15 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
 
         override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
             ds.query(buildQuery())
+    }
+
+    private class EmptySelect(
+        private val selectOne: QueryableOfOne<Int>
+    ): Queryable<EmptyRow> {
+        override fun buildQuery(): BuiltSubquery = selectOne.buildQuery()
+
+        override fun performWith(ds: BlockingPerformer) =
+            RowSequenceEmptyMask(ds.query(buildQuery()))
     }
 
     private class SelectOne<A : Any>(
@@ -66,11 +79,14 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
     override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().performWith(ds)
 
-    fun select(references: List<SelectArgument>): Queryable<ResultRow> =
+    fun select(references: List<SelectArgument>): Queryable<ResultRow> = if (references.isEmpty()) {
+        EmptySelect(select(1 as_ label()))
+    } else {
         Select(this, references, false)
+    }
 
     fun select(vararg references: SelectArgument): Queryable<ResultRow> =
-        Select(this, references.asList(), false)
+        select(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): QueryableOfOne<A> =
         SelectOne(this, listOf(labeled))

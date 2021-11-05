@@ -37,6 +37,7 @@ fun ExampleDatabase(): ExampleData {
 
     return ExampleData(
         db = db,
-        hardwareStoreId = ids[0]
+        hardwareStoreId = ids[0],
+        groceryStoreId = ids[1]
     )
 }

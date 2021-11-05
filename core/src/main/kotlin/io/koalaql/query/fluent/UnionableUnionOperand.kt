@@ -1,10 +1,14 @@
 package io.koalaql.query.fluent
 
+import io.koalaql.dsl.as_
+import io.koalaql.dsl.label
 import io.koalaql.expr.*
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.built.*
+import io.koalaql.values.EmptyRow
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
+import io.koalaql.values.RowSequenceEmptyMask
 
 interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
     private class BuiltSelectedUnionOperand(
@@ -12,6 +16,19 @@ interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
     ): BuiltUnionOperand {
         override fun toSelectQuery(selected: List<SelectedExpr<*>>): BuiltSelectQuery =
             select.reorderToMatchUnion(selected)
+    }
+
+    private class EmptySelectUnionableUnionOperand(
+        val of: SelectUnionableUnionOperandOfOne<Int>
+    ): QueryableUnionOperand {
+        override fun buildQuery() = of.buildQuery()
+
+        override fun BuiltSetOperation.buildIntoSetOperation() {
+            body = BuiltSelectedUnionOperand(buildQuery())
+        }
+
+        override fun performWith(ds: BlockingPerformer): RowSequence<EmptyRow> =
+            RowSequenceEmptyMask(ds.query(buildQuery()))
     }
 
     private class SelectUnionableUnionOperand(
@@ -88,8 +105,15 @@ interface UnionableUnionOperand: Unionable, UnionOperand, QueryBodyBuilder {
         body = BuiltQueryUnionOperand(BuiltQueryBody.from(this@UnionableUnionOperand))
     }
 
+    override fun select(references: List<SelectArgument>): QueryableUnionOperand =
+        if (references.isEmpty()) {
+            EmptySelectUnionableUnionOperand(SelectUnionableUnionOperandOfOne(this, listOf(1 as_ label())))
+        } else {
+            SelectUnionableUnionOperand(this, references)
+        }
+
     override fun select(vararg references: SelectArgument): QueryableUnionOperand =
-        SelectUnionableUnionOperand(this, references.asList())
+        select(references.asList())
 
     override fun <T : Any> select(labeled: SelectOperand<T>): QueryableOfOneUnionOperand<T> =
         SelectUnionableUnionOperandOfOne(this, listOf(labeled))

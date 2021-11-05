@@ -2,14 +2,8 @@ package io.koalaql.docs.usage
 
 import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.ShopTable
-import io.koalaql.dsl.rowOf
-import io.koalaql.dsl.setTo
-import io.koalaql.dsl.values
-import io.koalaql.h2.H2DataSource
 import io.koalaql.transact
 import io.koalaql.values.ResultRow
-import java.sql.DriverManager
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

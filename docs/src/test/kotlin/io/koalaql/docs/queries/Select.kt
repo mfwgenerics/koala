@@ -136,4 +136,23 @@ class Select {
 
         /* HIDE */
     }
+
+    @Test
+    fun selectEmpty() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        val emptySelect = ShopTable
+            .where(ShopTable.id inValues listOf(hardwareStoreId, groceryStoreId))
+            .select()
+            .performWith(db)
+
+        assertEquals(0, emptySelect.columns.size)
+
+        val rowCount = emptySelect
+            .count()
+
+        assertEquals(2, rowCount)
+
+        /* HIDE */
+    }
 }

@@ -1,6 +1,9 @@
 package io.koalaql.docs
 
-import io.koalaql.ddl.*
+import io.koalaql.ddl.DATE
+import io.koalaql.ddl.INTEGER
+import io.koalaql.ddl.Table
+import io.koalaql.ddl.VARCHAR
 import io.koalaql.dsl.eq
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.setTo
