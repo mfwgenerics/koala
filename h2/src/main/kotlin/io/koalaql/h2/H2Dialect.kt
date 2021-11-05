@@ -450,39 +450,16 @@ class H2Dialect(
             return nonEmpty
         }
 
-        fun compileUpdate(update: BuiltUpdate) {
-            val query = update.query
-
-            compileWiths(query.withType, query.withs)
-
-            if (query.withs.isNotEmpty()) sql.addSql("\n")
-
-            sql.addSql("UPDATE ")
-
-            compileRelation(update.query.relation)
-
-            sql.addSql("\nSET ")
-
-            val updatePrefix = sql.prefix("", ", ")
-
-            check(query.joins.isEmpty()) {
-                "H2 does not support JOIN in update"
-            }
-
-            update.assignments
-                .forEach {
-                    updatePrefix.next {
-                        compileExpr(it.reference, false)
-                        sql.addSql(" = ")
-                        compileExpr(it.expr)
-                    }
-                }
-
-            query.where?.let {
-                sql.addSql("\nWHERE ")
-                compileExpr(it, false)
-            }
-        }
+        fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
+            compileWiths = { type, withs -> compileWiths(type, withs) },
+            compileRelation = { compileRelation(it) },
+            compileAssignment = {
+                compileExpr(it.reference, false)
+                sql.addSql(" = ")
+                compileExpr(it.expr)
+            },
+            compileExpr = { compileExpr(it, false) }
+        )
 
         fun compileDelete(select: BuiltDelete) {
             val withs = select.query.withs
@@ -519,10 +496,7 @@ class H2Dialect(
             }
             is BuiltValuesQuery -> compilation.compileValues(dml)
             is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> {
-                compilation.compileUpdate(dml)
-                true
-            }
+            is BuiltUpdate -> compilation.compileUpdate(dml)
             is BuiltDelete -> {
                 compilation.compileDelete(dml)
                 true

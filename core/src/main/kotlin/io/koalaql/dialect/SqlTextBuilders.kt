@@ -50,6 +50,49 @@ fun SqlTextBuilder.compileJoins(
     }
 }
 
+fun SqlTextBuilder.compileUpdate(
+    update: BuiltUpdate,
+    compileWiths: (WithType, List<BuiltWith>) -> Unit,
+    compileRelation: (BuiltRelation) -> Unit,
+    compileAssignment: (Assignment<*>) -> Unit,
+    compileExpr: (Expr<*>) -> Unit
+): Boolean {
+    val query = update.query
+
+    compileWiths(query.withType, query.withs)
+
+    if (query.withs.isNotEmpty()) addSql("\n")
+
+    addSql("UPDATE ")
+
+    compileRelation(update.query.relation)
+
+    addSql("\nSET ")
+
+    check(query.joins.isEmpty()) {
+        "H2 does not support JOIN in update"
+    }
+
+    val wasNonEmpty = if (update.assignments.isEmpty()) {
+        addError("empty assignment list")
+
+        false
+    } else {
+        prefix("", ", ").forEach(update.assignments) {
+            compileAssignment(it)
+        }
+
+        true
+    }
+
+    query.where?.let {
+        addSql("\nWHERE ")
+        compileExpr(it)
+    }
+
+    return wasNonEmpty
+}
+
 fun SqlTextBuilder.compileExpr(
     expr: QuasiExpr,
     emitParens: Boolean,

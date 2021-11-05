@@ -527,39 +527,16 @@ class MysqlDialect(): SqlDialect {
             return nonEmpty
         }
 
-        fun compileUpdate(update: BuiltUpdate) {
-            val query = update.query
-
-            compileWiths(query.withType, query.withs)
-
-            if (query.withs.isNotEmpty()) sql.addSql("\n")
-
-            sql.addSql("UPDATE ")
-
-            compileRelation(update.query.relation)
-
-            sql.addSql("\nSET ")
-
-            val updatePrefix = sql.prefix("", ", ")
-
-            check(query.joins.isEmpty()) {
-                "dialect does not support JOIN in update"
-            }
-
-            update.assignments
-                .forEach {
-                    updatePrefix.next {
-                        compileExpr(it.reference, false)
-                        sql.addSql(" = ")
-                        compileExpr(it.expr)
-                    }
-                }
-
-            query.where?.let {
-                sql.addSql("\nWHERE ")
-                compileExpr(it, false)
-            }
-        }
+        fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
+            compileWiths = { type, withs -> compileWiths(type, withs) },
+            compileRelation = { compileRelation(it) },
+            compileAssignment = {
+                compileExpr(it.reference, false)
+                sql.addSql(" = ")
+                compileExpr(it.expr)
+            },
+            compileExpr = { compileExpr(it, false) }
+        )
 
         fun compileWindows(windows: List<LabeledWindow>) {
             sql.prefix("\nWINDOW ", "\n, ").forEach(windows) {
@@ -606,10 +583,7 @@ class MysqlDialect(): SqlDialect {
             }
             is BuiltValuesQuery -> compilation.compileValues(dml, false)
             is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> {
-                compilation.compileUpdate(dml)
-                true
-            }
+            is BuiltUpdate -> compilation.compileUpdate(dml)
             is BuiltDelete -> {
                 compilation.compileDelete(dml)
                 true

@@ -922,9 +922,6 @@ abstract class QueryTests: ProvideTestDatabase {
             ?.parameterizedSql
             .orEmpty()
 
-
-        println(generated)
-
         assert(generated.indexOf("table0") < generated.indexOf("table1"))
         assert(generated.indexOf("table1") < generated.indexOf("table2"))
     }
@@ -946,5 +943,14 @@ abstract class QueryTests: ProvideTestDatabase {
             .toList()
 
         assertListEquals((1..3).flatMap { listOf(it, it, it) }, joined)
+    }
+
+    @Test
+    fun `empty update`() = withCxn { cxn, _ ->
+        val updated = ShopTable
+            .update()
+            .performWith(cxn)
+
+        assertEquals(0, updated)
     }
 }
