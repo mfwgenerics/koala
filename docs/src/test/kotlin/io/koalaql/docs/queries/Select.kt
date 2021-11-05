@@ -141,6 +141,10 @@ class Select {
     fun selectEmpty() = with(ExampleDatabase()) {
         /* SHOW */
 
+        /*
+        ### Empty selections
+         */
+
         val emptySelect = ShopTable
             .where(ShopTable.id inValues listOf(hardwareStoreId, groceryStoreId))
             .select()
@@ -152,6 +156,28 @@ class Select {
             .count()
 
         assertEquals(2, rowCount)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun selectAliased() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        /*
+        ### Aliases
+         */
+
+        val alias = alias()
+
+        val row = ShopTable
+            .innerJoin(ShopTable.as_(alias), alias[ShopTable.id] eq groceryStoreId)
+            .where(ShopTable.id eq hardwareStoreId)
+            .performWith(db)
+            .single()
+
+        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
 
         /* HIDE */
     }
