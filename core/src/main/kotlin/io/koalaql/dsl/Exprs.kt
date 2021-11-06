@@ -44,6 +44,8 @@ fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationType.NOT(expr)
 fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationType.IS_NULL(this)
 fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(this)
 
+fun <T : Any> null_(): Expr<T> = OperationType.NULL()
+
 fun exists(query: Queryable<*>): Expr<Boolean> = OperationType.EXISTS(QueryableOfOne.Wrap<Nothing>(query))
 fun notExists(query: Queryable<*>): Expr<Boolean> = OperationType.NOT_EXISTS(QueryableOfOne.Wrap<Nothing>(query))
 
@@ -133,10 +135,10 @@ infix fun Expr<String>.like(expr: String) = like(value(expr))
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
 
-infix fun <T : Any> Column<T>.setTo(rhs: Expr<T>): Assignment<T> =
+infix fun <T : Any> Reference<T>.setTo(rhs: Expr<T>): Assignment<T> =
     ExprAssignment(this, rhs)
 
-inline infix fun <reified T : Any> Column<T>.setTo(rhs: T?): LiteralAssignment<T> =
+inline infix fun <reified T : Any> Reference<T>.setTo(rhs: T?): LiteralAssignment<T> =
     LiteralAssignment(this, rhs)
 
 fun lower(expr: Expr<String>): Expr<String> = OperationType.LOWER(expr)

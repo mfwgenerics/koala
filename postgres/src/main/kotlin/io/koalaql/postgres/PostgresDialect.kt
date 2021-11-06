@@ -6,7 +6,6 @@ import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
-import io.koalaql.dsl.value
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.query.*
@@ -231,7 +230,7 @@ class PostgresDialect: SqlDialect {
 
             return when (query) {
                 is BuiltSelectQuery -> {
-                    compilation.compileSelect(outerSelect, query)
+                    compilation.compileSelect(query)
                     return true
                 }
                 is BuiltValuesQuery -> compilation.compileValues(query)
@@ -322,7 +321,15 @@ class PostgresDialect: SqlDialect {
                     selectQuery.populateScope(it)
                 },
                 sql
-            ).compileSelect(outerSelect, selectQuery)
+            ).compileSelect(selectQuery)
+        }
+
+        fun compileRelabels(labels: List<Reference<*>>) {
+            sql.parenthesize {
+                sql.prefix("", ", ").forEach(labels) {
+                    sql.addIdentifier(scope.nameOf(it))
+                }
+            }
         }
 
         fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
@@ -340,6 +347,12 @@ class PostgresDialect: SqlDialect {
                     it.query.populateScope(innerScope)
 
                     sql.addSql(scope[it.cte])
+
+                    when (val query = it.query) {
+                        is BuiltValuesQuery -> compileRelabels(query.columns)
+                        else -> { }
+                    }
+
                     sql.addSql(" AS (")
 
                     Compilation(
@@ -351,23 +364,18 @@ class PostgresDialect: SqlDialect {
                 }
         }
 
-        fun compileSelect(outerSelect: List<SelectedExpr<*>>, select: BuiltSelectQuery) {
+        fun compileSelect(select: BuiltSelectQuery) {
             val withs = select.body.withs
 
             compileWiths(select.body.withType, withs)
 
             if (withs.isNotEmpty()) sql.addSql("\n")
 
-            val selectPrefix = sql.prefix("SELECT ", "\n, ")
-
-            (select.selected.takeIf { it.isNotEmpty() }?:outerSelect)
-                .forEach {
-                    selectPrefix.next {
-                        compileExpr(it.expr, false)
-                        sql.addSql(" ")
-                        sql.addIdentifier(scope.nameOf(it.name))
-                    }
-                }
+            sql.selectClause(select.selected) {
+                compileExpr(it.expr, false)
+                sql.addSql(" ")
+                sql.addIdentifier(scope.nameOf(it.name))
+            }
 
             if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 
@@ -376,7 +384,9 @@ class PostgresDialect: SqlDialect {
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
                 compileWindows = { windows -> compileWindows(windows) },
-                compileSetOperation = { compileSetOperation(select.selected, it) }
+                compileSetOperation = { compileSetOperation(select.selected, it) },
+                selectedLabels = select.selected.asSequence().map { it.name }.toSet(),
+                compileOrderByLabel = { sql.addIdentifier(scope.nameOf(it)) }
             )
         }
 
@@ -411,7 +421,14 @@ class PostgresDialect: SqlDialect {
                 val updateCtx = Compilation(innerScope, sql)
 
                 sql.prefix(" ", "\n,").forEach(assignments) {
-                    sql.addIdentifier(it.reference.symbol)
+                    val ref = it.reference
+
+                    if (ref is Column<*>) {
+                        sql.addIdentifier(ref.symbol)
+                    } else {
+                        sql.addError("can't update a non-column reference")
+                    }
+
                     sql.addSql(" = ")
                     updateCtx.compileExpr(it.expr)
                 }
@@ -500,7 +517,7 @@ class PostgresDialect: SqlDialect {
 
         val nonEmpty = when (dml) {
             is BuiltSelectQuery -> {
-                compilation.compileSelect(emptyList(), dml)
+                compilation.compileSelect(dml)
                 true
             }
             is BuiltValuesQuery -> compilation.compileValues(dml)

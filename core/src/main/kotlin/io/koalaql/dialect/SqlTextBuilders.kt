@@ -145,6 +145,7 @@ fun SqlTextBuilder.compileExpr(
         is Literal<*> -> addLiteral(expr)
         is OperationExpr<*> -> {
             when (expr.type.fixity) {
+                OperationFixity.NAME -> addSql(expr.type.sql)
                 OperationFixity.PREFIX -> parenthesize(emitParens) {
                     addSql(expr.type.sql)
                     addSql(" ")
@@ -215,7 +216,10 @@ fun SqlTextBuilder.compileExpr(
     }
 }
 
-fun SqlTextBuilder.compileOrderBy(ordinals: List<Ordinal<*>>, compileExpr: (Expr<*>) -> Unit) {
+fun SqlTextBuilder.compileOrderBy(
+    ordinals: List<Ordinal<*>>,
+    compileExpr: (Expr<*>) -> Unit
+) {
     prefix("ORDER BY ", ", ").forEach(ordinals) {
         val orderKey = it.toOrderKey()
 
@@ -283,8 +287,16 @@ fun SqlTextBuilder.compileQueryBody(
     compileSetOperation: (BuiltSetOperation) -> Unit = {
         addError("unexpected ${it.type}")
     },
-    compileOrderBy: (List<Ordinal<*>>) -> Unit = {
-        this.compileOrderBy(it, compileExpr)
+    selectedLabels: Set<Reference<*>> = emptySet(),
+    compileOrderByLabel: (Reference<*>) -> Unit = { compileExpr(it) },
+    compileOrderBy: (List<Ordinal<*>>) -> Unit = { orderBys ->
+        this.compileOrderBy(orderBys) {
+            if (it is Reference<*> && it in selectedLabels) {
+                compileOrderByLabel(it)
+            } else {
+                compileExpr(it)
+            }
+        }
     }
 ) {
     compileRelation(body.relation)

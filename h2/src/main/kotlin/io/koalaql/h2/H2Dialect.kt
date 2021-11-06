@@ -403,7 +403,9 @@ class H2Dialect(
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
                 compileWindows = { windows -> compileWindows(windows) },
-                compileSetOperation = { compileSetOperation(select.selected, it) }
+                compileSetOperation = { compileSetOperation(select.selected, it) },
+                selectedLabels = select.selected.asSequence().map { it.name }.toSet(),
+                compileOrderByLabel = { sql.addIdentifier(scope.nameOf(it)) }
             )
 
             select.body.locking?.let { locking ->

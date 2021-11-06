@@ -1,5 +1,6 @@
 package io.koalaql.query.built
 
+import io.koalaql.dsl.null_
 import io.koalaql.expr.*
 import io.koalaql.query.LabelList
 import io.koalaql.query.LabelListOf
@@ -63,7 +64,7 @@ class BuiltSelectQuery(
             val corresponding = selectedByNames.remove(it.name)
 
             @Suppress("unchecked_cast")
-            corresponding ?: (SelectedExpr(Literal(it.name.type as KClass<Any>, null), it.name as Reference<Any>))
+            corresponding ?: (SelectedExpr(null_(), it.name as Reference<Any>))
         }
 
         check(selectedByNames.isEmpty()) {

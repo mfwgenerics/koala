@@ -61,7 +61,7 @@ class H2QueryTests: QueryTests() {
             , T0."rating" "c6"
             FROM "Venue" T0
             WHERE T0."id" = ?
-            ORDER BY T0."type" ASC, T0."name" DESC NULLS LAST
+            ORDER BY "c5" ASC, "c1" DESC NULLS LAST
         """.trimIndent()
 
         val generated = table

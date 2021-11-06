@@ -6,6 +6,8 @@ enum class OperationType(
     override val sql: String,
     val fixity: OperationFixity
 ): StandardSql {
+    NULL("NULL", OperationFixity.NAME),
+
     EQ("=", OperationFixity.INFIX),
     NEQ("!=", OperationFixity.INFIX),
     LT("<", OperationFixity.INFIX),
