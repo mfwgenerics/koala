@@ -1,6 +1,7 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.dsl.values
+import io.koalaql.query.Queryable
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.InsertBuilder
@@ -20,13 +21,13 @@ interface Withed: InsertBuilder, Joinable {
         }
     }
 
-    fun insert(queryable: QueryableUnionOperand<ResultRow>): OnConflictable =
+    fun insert(queryable: Queryable<ResultRow>): OnConflictable =
         Insert(false, this, BuiltQuery.from(queryable))
 
     fun insert(row: ValuesRow): OnConflictable =
         insert(values(row))
 
-    fun insertIgnore(queryable: QueryableUnionOperand<ResultRow>): OnConflictable =
+    fun insertIgnore(queryable: Queryable<ResultRow>): OnConflictable =
         Insert(true, this, BuiltQuery.from(queryable))
 
     fun insertIgnore(row: ValuesRow): OnConflictable =

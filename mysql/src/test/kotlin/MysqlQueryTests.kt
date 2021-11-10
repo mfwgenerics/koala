@@ -1,6 +1,7 @@
 import io.koalaql.CreateIfNotExists
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.values
+import io.koalaql.dsl.setTo
 import io.koalaql.jdbc.JdbcException
 import kotlin.test.Test
 

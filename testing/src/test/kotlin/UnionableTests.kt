@@ -118,4 +118,42 @@ abstract class UnionableTests: ProvideTestDatabase {
 
         assertListEquals(listOf(13, 15, 16), results)
     }
+
+    @Test
+    open fun `except and intersect`() = withCxn { cxn ->
+        val x = label<Int>()
+
+        val result = select(castInt(10) as_ x)
+            .union(select(11 as_ x))
+            .intersect(select(10 as_ x))
+            .union(select(12 as_ x))
+            .except(select(10 as_ x))
+            .perform(cxn)
+            .map { it.getValue(x) }
+            .single()
+
+        assertEquals(12, result)
+    }
+
+    private object UnionTestTable: Table("UnionTest") {
+        val x = column("x", INTEGER)
+        val y = column("y", INTEGER)
+    }
+
+    @Test
+    open fun `insert from a union`() = withCxn(UnionTestTable) { cxn ->
+        UnionTestTable
+            .insert(select(castInt(20) as_ UnionTestTable.x, castInt(-10) as_ UnionTestTable.y)
+                .union(select(30 as_ UnionTestTable.x, -20 as_ UnionTestTable.y))
+            )
+            .perform(cxn)
+
+        val rows = UnionTestTable
+            .select(UnionTestTable.x, UnionTestTable.y)
+            .perform(cxn)
+            .flatMap { listOf(it.first(), it.second()) }
+            .toList()
+
+        assertListEquals(listOf(20, -10, 30, -20), rows)
+    }
 }
