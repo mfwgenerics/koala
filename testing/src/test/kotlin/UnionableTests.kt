@@ -149,11 +149,18 @@ abstract class UnionableTests: ProvideTestDatabase {
             .perform(cxn)
 
         val rows = UnionTestTable
-            .select(UnionTestTable.x, UnionTestTable.y)
+            .unionAll(UnionTestTable)
+            .unionAll(select(1 as_ UnionTestTable.x))
             .perform(cxn)
-            .flatMap { listOf(it.first(), it.second()) }
+            .flatMap { listOf(
+                it.getOrNull(UnionTestTable.x),
+                it.getOrNull(UnionTestTable.y)
+            ) }
             .toList()
 
-        assertListEquals(listOf(20, -10, 30, -20), rows)
+        assertListEquals(
+            listOf(20, -10, 30, -20, 20, -10, 30, -20, 1, null),
+            rows
+        )
     }
 }

@@ -3,9 +3,9 @@ package io.koalaql.query
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectionBuilder
 import io.koalaql.query.built.*
-import io.koalaql.query.fluent.Withed
+import io.koalaql.query.fluent.Insertable
 
-interface RelationBuilder: Withed, SelectArgument {
+interface RelationBuilder: Insertable, SelectArgument {
     override fun SelectionBuilder.buildIntoSelection() {
         fromRelation(BuiltRelation.from(this@RelationBuilder))
     }

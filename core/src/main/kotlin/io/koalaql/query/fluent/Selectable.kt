@@ -9,7 +9,17 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
 import io.koalaql.values.*
 
-interface Selectable: BuildsIntoQueryBody, PerformableBlocking<RowSequence<ResultRow>> {
+interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
+    override fun BuiltQuery.buildInto(): QueryBuilder? =
+        with (selectAll()) { buildInto() }
+
+    override fun BuiltQuery.buildIntoQueryTail(type: SetOperationType, distinctness: Distinctness) {
+        with (selectAll()) { buildIntoQueryTail(type, distinctness) }
+    }
+
+    override fun with(type: WithType, queries: List<BuiltWith>): Queryable<ResultRow> =
+        selectAll().with(type, queries)
+
     private abstract class AnySelect<T>(
         val of: Selectable,
         val references: List<SelectArgument>,
@@ -97,9 +107,6 @@ interface Selectable: BuildsIntoQueryBody, PerformableBlocking<RowSequence<Resul
 
     fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         Select(this, references.asList(), true)
-
-    override fun generateSql(ds: SqlPerformer): SqlText? =
-        selectAll().generateSql(ds)
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().perform(ds)

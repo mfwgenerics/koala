@@ -8,10 +8,10 @@ import io.koalaql.query.built.InsertBuilder
 import io.koalaql.values.ResultRow
 import io.koalaql.values.ValuesRow
 
-interface Withed: InsertBuilder, Joinable {
+interface Insertable: InsertBuilder, Joinable {
     private class Insert(
         val ignore: Boolean,
-        val of: Withed,
+        val of: Insertable,
         val query: BuiltQuery
     ): OnConflictable {
         override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
