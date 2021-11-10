@@ -18,25 +18,25 @@ import kotlin.test.assertFails
 abstract class QueryTests: ProvideTestDatabase {
     fun withExampleData(block: (DataConnection) -> Unit) = withCxn(
         ShopTable, CustomerTable, PurchaseTable
-    ) { cxn, _ ->
+    ) { cxn ->
         createAndPopulate(cxn)
         block(cxn)
     }
 
     @Test
-    fun `perform values directly`() = withCxn { cxn, _ ->
+    fun `perform values directly`() = withCxn { cxn ->
         val number = label<Int>()
 
         val result = values((1..20).asSequence(), listOf(number))
             { set(number, it) }
-            .performWith(cxn)
+            .perform(cxn)
             .sumOf { it.getOrNull(number)!! }
 
         assertEquals(result, 210)
     }
 
     @Test
-    fun `triangular numbers from values clause subquery`() = withCxn { cxn, _ ->
+    fun `triangular numbers from values clause subquery`() = withCxn { cxn ->
         val number = label<Int>("number")
 
         /* need this cast to workaround H2 bug (? in VALUES aren't typed correctly) */
@@ -61,7 +61,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .as_(alias)
             .where(alias[summed] greater 9)
             .select(alias[number], alias[summed])
-            .performWith(cxn)
+            .perform(cxn)
             .map { row ->
                 "${row.getOrNull(alias[number])}, ${row.getOrNull(alias[summed])}"
             }
@@ -102,7 +102,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .innerJoin(PurchaseTable, CustomerTable.id eq PurchaseTable.customer)
             .orderBy(CustomerTable.firstName)
             .select(CustomerTable.firstName, PurchaseTable.product, PurchaseTable.price)
-            .performWith(cxn)
+            .perform(cxn)
             .map { row -> row.columns.map { row.getOrNull(it) } }
             .toList()
 
@@ -115,7 +115,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .groupBy(CustomerTable.id)
             .orderBy(total.desc())
             .select(CustomerTable.firstName, sum(PurchaseTable.price) as_ total)
-            .performWith(cxn)
+            .perform(cxn)
             .map { row -> row.columns.map { row.getOrNull(it) } }
             .toList()
 
@@ -136,7 +136,7 @@ abstract class QueryTests: ProvideTestDatabase {
             )
             .where(PurchaseTable.id.isNull())
             .select(CustomerTable.firstName)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getOrNull(CustomerTable.firstName) }
             .single()
 
@@ -164,7 +164,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .innerJoin(ShopTable, PurchaseTable.shop eq ShopTable.id)
             .orderBy(ShopTable.name)
             .select(ShopTable, PurchaseTable)
-            .performWith(cxn)
+            .perform(cxn)
             .map { listOf(it.getOrNull(ShopTable.name), it.getOrNull(PurchaseTable.product)) }
             .toList()
 
@@ -184,7 +184,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 CustomerTable.lastName setTo CustomerTable.firstName,
                 CustomerTable.firstName setTo "Bawb"
             )
-            .performWith(cxn)
+            .perform(cxn)
 
         assertEquals(1, updated)
 
@@ -192,7 +192,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .where(CustomerTable.firstName eq "Bawb")
             .where(CustomerTable.lastName eq "Bob")
             .select(CustomerTable)
-            .performWith(cxn)
+            .perform(cxn)
             .single()
     }
 
@@ -200,12 +200,12 @@ abstract class QueryTests: ProvideTestDatabase {
     fun `multi update`() = withExampleData { cxn ->
         val expected = PurchaseTable
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .count()
 
         val matched = PurchaseTable
             .update(PurchaseTable.product setTo "Pear")
-            .performWith(cxn)
+            .perform(cxn)
 
         assertEquals(expected, matched)
     }
@@ -216,7 +216,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .where(CustomerTable.firstName inValues listOf("Bob", "Jane"))
             .orderBy(CustomerTable.firstName)
             .select(CustomerTable.id)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getOrNull(CustomerTable.id)!! }
             .toList()
 
@@ -233,7 +233,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     PurchaseTable.discount
                 )
             )
-            .performWith(cxn)
+            .perform(cxn)
 
         val janesPurchasePrices = PurchaseTable
             .where(PurchaseTable.customer eq janeId)
@@ -245,7 +245,7 @@ abstract class QueryTests: ProvideTestDatabase {
             )
             .orderBy(PurchaseTable.product)
             .select(PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
 
@@ -255,7 +255,7 @@ abstract class QueryTests: ProvideTestDatabase {
             )
             .orderBy(PurchaseTable.product)
             .select(PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getOrNull(PurchaseTable.product) }
             .toList()
 
@@ -269,12 +269,6 @@ abstract class QueryTests: ProvideTestDatabase {
         val cte = cte()
 
         val rows = CustomerTable
-            .with(cte as_ PurchaseTable
-                .select(
-                    PurchaseTable,
-                    -PurchaseTable.price as_ PurchaseTable.price
-                )
-            )
             .innerJoin(cte, CustomerTable.id eq PurchaseTable.customer)
             .leftJoin(cte.as_(alias), (CustomerTable.id eq alias[PurchaseTable.customer])
                 .and(PurchaseTable.price less -600))
@@ -284,7 +278,13 @@ abstract class QueryTests: ProvideTestDatabase {
                 alias[PurchaseTable.id]
             )
             .select(cte, CustomerTable.firstName, cte.as_(alias))
-            .performWith(cxn)
+            .with(cte as_ PurchaseTable
+                .select(
+                    PurchaseTable,
+                    -PurchaseTable.price as_ PurchaseTable.price
+                )
+            )
+            .perform(cxn)
             .map { row ->
                 row.columns.map { row.getOrNull(it) }
             }
@@ -310,13 +310,13 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val purchaseCount = PurchaseTable
             .select(count(value(1)) as_ count)
-            .performWith(cxn)
+            .perform(cxn)
             .single().getOrNull(count)!!
 
         val doubleCount = PurchaseTable
             .selectAll()
             .unionAll(PurchaseTable.select(PurchaseTable))
-            .performWith(cxn)
+            .perform(cxn)
             .count()
 
         assert(purchaseCount == 4)
@@ -342,7 +342,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `inserting and selecting from mapped columns`() = withCxn(MappingsTable) { cxn, _ ->
+    fun `inserting and selecting from mapped columns`() = withCxn(MappingsTable) { cxn ->
         MappingsTable
             .insert(values(
                 rowOf(
@@ -351,11 +351,11 @@ abstract class QueryTests: ProvideTestDatabase {
                     MappingsTable.fruit setTo FruitEnum.BANANA
                 )
             ))
-            .performWith(cxn)
+            .perform(cxn)
 
         val result = MappingsTable
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assert(result.getOrNull(MappingsTable.number) == NumberEnum.TWO)
@@ -395,7 +395,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     sql("\nEND")
                 } as_ n4
             )
-            .performWith(cxn)
+            .perform(cxn)
             .map { listOf(it.getOrNull(n0), it.getOrNull(n1), it.getOrNull(n2), it.getOrNull(n3), it.getOrNull(n4)) }
             .toList()
 
@@ -410,7 +410,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `standalone coalesce and scalar query`() = withCxn { cxn, _ ->
+    fun `standalone coalesce and scalar query`() = withCxn { cxn ->
         val n0 = label<Int>("n0")
         val n1 = label<String>("n1")
         val n3 = label<Int>("n3")
@@ -425,7 +425,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 coalesce(value(null), value("String")) as_ n1,
                 valuesQuery as_ n3
             )
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assert(result.getOrNull(n0) == 12)
@@ -438,19 +438,19 @@ abstract class QueryTests: ProvideTestDatabase {
         val cte = cte()
 
         PurchaseTable
+            .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
+            .delete()
             .with(cte as_ CustomerTable
                 .where(select((CustomerTable.lastName eq "Smith") as_ label()))
                 .selectAll()
             )
-            .where(PurchaseTable.customer inQuery cte.select(CustomerTable.id))
-            .delete()
-            .performWith(cxn)
+            .perform(cxn)
 
         val name = label<Int>()
 
         val purchases = PurchaseTable
             .select(count(value(1)) as_ name)
-            .performWith(cxn)
+            .perform(cxn)
             .single().getOrNull(name)
 
         assert(purchases == 2)
@@ -489,7 +489,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `unioned tableless selects with out of order labels`() = withCxn { cxn, _ ->
+    fun `unioned tableless selects with out of order labels`() = withCxn { cxn ->
         val n0 = label<Int>()
         val n1 = label<Float>()
 
@@ -512,7 +512,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .unionAll(select(n0(30), n1(2.0f)))
             .union(select(n1(0.25f), n0(40)))
             .orderBy(n0)
-            .performWith(cxn)
+            .perform(cxn)
             .map { row -> listOf(row[n0], row[n1]) }
             .toList()
 
@@ -520,7 +520,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    open fun `factorial recursive CTE`() = withCxn { cxn, _ ->
+    open fun `factorial recursive CTE`() = withCxn { cxn ->
         val fact = cte()
 
         val index = label<Long>()
@@ -531,6 +531,7 @@ abstract class QueryTests: ProvideTestDatabase {
         val expected = listOf<Long>(1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880)
 
         val actual = fact.as_(alias)
+            .select(alias[index], alias[value])
             .withRecursive(fact as_ Tableless
                 .select(0L as_ index, 1L as_ value)
                 .unionAll(fact
@@ -538,8 +539,7 @@ abstract class QueryTests: ProvideTestDatabase {
                     .select(index + 1 as_ index, ((index + 1)*value) as_ value)
                 )
             )
-            .select(alias[index], alias[value])
-            .performWith(cxn)
+            .perform(cxn)
             .map { it[alias[value]] }
             .toList()
 
@@ -558,7 +558,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .leftJoin(ShopTable, ShopTable.id eq purchases2[PurchaseTable.shop])
             .orderBy(PurchaseTable.price, purchases2[PurchaseTable.price])
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .map { row ->
                 listOf(
                     row[PurchaseTable.product],
@@ -599,7 +599,7 @@ abstract class QueryTests: ProvideTestDatabase {
     open val requiresOnConflictKey get() = false
 
     @Test
-    open fun `on duplicate update with values`() = withCxn(MergeTest) { cxn, _ ->
+    open fun `on duplicate update with values`() = withCxn(MergeTest) { cxn ->
         fun OnConflictable.onConflict0(): OnDuplicated {
             return if (requiresOnConflictKey) {
                 onConflict(MergeTest.conflictKey)
@@ -613,7 +613,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .where(MergeTest.x eq x)
                 .where(MergeTest.y eq y)
                 .select(MergeTest.z, MergeTest.nz)
-                .performWith(cxn)
+                .perform(cxn)
                 .single()
 
             assertEquals(z, row.getValue(MergeTest.z))
@@ -628,7 +628,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.nz setTo -11
             ))
             .onConflict0().set(MergeTest.z, MergeTest.nz)
-            .performWith(cxn)
+            .perform(cxn)
 
         expectValueOf(4, 7, 11, -11)
 
@@ -640,7 +640,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.nz setTo -28
             ))
             .onConflict0().set(MergeTest.z, MergeTest.nz)
-            .performWith(cxn)
+            .perform(cxn)
 
         expectValueOf(4, 7, 28, -28)
 
@@ -652,7 +652,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.nz setTo 0
             ))
             .onConflict0().set(MergeTest.z)
-            .performWith(cxn)
+            .perform(cxn)
 
         expectValueOf(4, 7, 1, -28)
 
@@ -666,13 +666,13 @@ abstract class QueryTests: ProvideTestDatabase {
             .onConflict0().update(
                 MergeTest.z setTo MergeTest.z - Excluded[MergeTest.nz]
             )
-            .performWith(cxn)
+            .perform(cxn)
 
         expectValueOf(4, 7, -3, -28)
     }
 
     @Test
-    open fun `nulls first and last`() = withCxn { cxn, _ ->
+    open fun `nulls first and last`() = withCxn { cxn ->
         val column0 = label<Int>()
         val column1 = label<Int>()
 
@@ -685,7 +685,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .subquery()
             .orderBy(cast(column1, INTEGER).nullsFirst(), cast(column0, INTEGER))
             .select(column0)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getValue(column0) }
             .toList()
 
@@ -693,7 +693,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .subquery()
             .orderBy(cast(column1, INTEGER).nullsLast(), cast(column0, INTEGER))
             .select(column0)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getValue(column0) }
             .toList()
 
@@ -705,7 +705,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    open fun `empty in and not in`() = withCxn { cxn, _ ->
+    open fun `empty in and not in`() = withCxn { cxn ->
         val label0 = label<String>()
         val label1 = label<Boolean>()
         val label2 = label<Boolean>()
@@ -716,7 +716,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 label0 notInValues listOf() as_ label1,
                 label0 inValues listOf() as_ label2
             )
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assert(result.getValue(label1))
@@ -724,10 +724,10 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    open fun `empty insert no-ops`() = withCxn(MergeTest) { cxn, _ ->
+    open fun `empty insert no-ops`() = withCxn(MergeTest) { cxn ->
         assertEquals(0, MergeTest
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .count()
         )
 
@@ -741,17 +741,17 @@ abstract class QueryTests: ProvideTestDatabase {
                 MergeTest.z,
                 MergeTest.nz
             )) { })
-            .performWith(cxn)
+            .perform(cxn)
 
         assertEquals(0, MergeTest
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .count()
         )
     }
 
     @Test
-    fun `closed form arithmetic`() = withCxn { cxn, _ ->
+    fun `closed form arithmetic`() = withCxn { cxn ->
         fun castInt(value: Int) = cast(value(value), INTEGER)
 
         val results =
@@ -761,7 +761,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 castInt(10) - 2 as_ label(),
                 castInt(10) % 7 as_ label(),
             )
-            .performWith(cxn)
+            .perform(cxn)
             .map { row -> row.columns.map { row.getValue(it) } }
             .single()
 
@@ -769,14 +769,14 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun likes() = withCxn { cxn, _ ->
+    fun likes() = withCxn { cxn ->
         val result =
             select(
                 (value("like") like "like") as_ label(),
                 (value("like") like "lik%") as_ label(),
                 (value("like") like "lik") as_ label()
             )
-            .performWith(cxn)
+            .perform(cxn)
             .map { row -> row.columns.map { row.getValue(it as Reference<Boolean>) } }
             .single()
 
@@ -808,17 +808,17 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `unused column is created`() = withCxn(UnusedColumnMarked) { cxn, _ ->
+    fun `unused column is created`() = withCxn(UnusedColumnMarked) { cxn ->
         UnusedColumnUnmarked
             .insert(rowOf(
                 UnusedColumnUnmarked.used setTo 9,
                 UnusedColumnUnmarked.unused setTo 10
             ))
-            .performWith(cxn)
+            .perform(cxn)
 
         val row = UnusedColumnUnmarked
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(row[UnusedColumnUnmarked.used], 9)
@@ -826,28 +826,28 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `unused column is unused when no created`() = withCxn(UnusedColumnAbsent) { cxn, _ ->
+    fun `unused column is unused when no created`() = withCxn(UnusedColumnAbsent) { cxn ->
         UnusedColumnMarked
             .insert(rowOf(UnusedColumnMarked.used setTo 9))
-            .performWith(cxn)
+            .perform(cxn)
 
         val row = UnusedColumnMarked
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(row[UnusedColumnMarked.used], 9)
     }
 
     @Test
-    fun `name not in scope throws generated sql exception`() = withCxn { cxn, _ ->
+    fun `name not in scope throws generated sql exception`() = withCxn { cxn ->
         val name = label<Int>("missing")
 
         try {
             CustomerTable
                 .innerJoin(ShopTable, ShopTable.id eq name)
                 .select(CustomerTable.firstName, name)
-                .performWith(cxn)
+                .perform(cxn)
 
             assert(false)
         } catch (ex: GeneratedSqlException) { }
@@ -862,14 +862,14 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertEquals("Pear", whered
             .select(PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .single()
             .first()
         )
 
         val (idp10, product) = whered
             .select(PurchaseTable.id + 10 as_ label(), PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(idp10, 12)
@@ -880,7 +880,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .when_("Pear")
                 .then("pear")
                 .end() as_ label())
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(p0, "Pear")
@@ -889,14 +889,14 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertEquals("Pear", limited
             .select(PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .single()
             .first()
         )
 
         val (idp102, product2) = limited
             .select(PurchaseTable.id + 10 as_ label(), PurchaseTable.product)
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(idp102, 12)
@@ -907,7 +907,7 @@ abstract class QueryTests: ProvideTestDatabase {
                 .when_("Pear")
                 .then("pear")
                 .end() as_ label())
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         assertEquals(p02, "Pear")
@@ -944,7 +944,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .crossJoin(values.subqueryAs(alias()))
             .orderBy(someInt)
             .select(someInt)
-            .performWith(db)
+            .perform(db)
             .map { it.first() }
             .toList()
 
@@ -952,10 +952,10 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `empty update`() = withCxn { cxn, _ ->
+    fun `empty update`() = withCxn { cxn ->
         val updated = ShopTable
             .update()
-            .performWith(cxn)
+            .perform(cxn)
 
         assertEquals(0, updated)
     }

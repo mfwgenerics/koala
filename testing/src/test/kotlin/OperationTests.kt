@@ -16,12 +16,12 @@ abstract class OperationTests : ProvideTestDatabase {
     }
 
     @Test
-    open fun `simple aggregates`() = withCxn(NumberTestTable) { cxn, _ ->
+    open fun `simple aggregates`() = withCxn(NumberTestTable) { cxn ->
         NumberTestTable
             .insert(values(listOf(1.0, 1.0, 2.0, 3.0, null)) {
                 this[NumberTestTable.value] = it
             })
-            .performWith(cxn)
+            .perform(cxn)
 
         val row = NumberTestTable
             .select(
@@ -48,7 +48,7 @@ abstract class OperationTests : ProvideTestDatabase {
                     varPop(distinct(NumberTestTable.value))
                 } as_ label()
             )
-            .performWith(cxn)
+            .perform(cxn)
             .single()
 
         val expected = listOf(
@@ -92,12 +92,12 @@ abstract class OperationTests : ProvideTestDatabase {
     }
 
     @Test
-    open fun `window functions work`() = withCxn(WindowTestTable) { cxn, _ ->
+    open fun `window functions work`() = withCxn(WindowTestTable) { cxn ->
         WindowTestTable
             .insert(values(0..9) {
                 this[WindowTestTable.value] = it
             })
-            .performWith(cxn)
+            .perform(cxn)
 
         val w = window()
 
@@ -155,7 +155,7 @@ abstract class OperationTests : ProvideTestDatabase {
                     lastValue(-WindowTestTable.value) over orderedOver as_ label(),
                     nthValue(-WindowTestTable.value, 2) over orderedOver as_ label()
                 ))
-                .performWith(cxn)
+                .perform(cxn)
                 .map { row -> row.columns.map {
                     val result = row.getOrNull(it)
 

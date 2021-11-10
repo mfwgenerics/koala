@@ -34,7 +34,7 @@ class Results {
 
             val names = ShopTable
                 .selectAll()
-                .performWith(cxn)
+                .perform(cxn)
                 .map { row -> // this is Kotlin's Sequence.map
                     row[ShopTable.name]
                 }
@@ -60,7 +60,7 @@ class Results {
 
             val row: ResultRow = ShopTable
                 .selectAll()
-                .performWith(cxn)
+                .perform(cxn)
                 .first()
 
             val nonNull: String = row.getValue(ShopTable.name) // always expect non-null

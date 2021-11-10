@@ -2,8 +2,6 @@ package io.koalaql.h2
 
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
-import io.koalaql.dsl.label
-import io.koalaql.dsl.values
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant

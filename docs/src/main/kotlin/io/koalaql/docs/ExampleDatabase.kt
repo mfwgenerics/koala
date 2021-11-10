@@ -32,7 +32,7 @@ fun ExampleDatabase(): ExampleData {
             )
         ))
         .generatingKey(ShopTable.id)
-        .performWith(db)
+        .perform(db)
         .toList()
 
     return ExampleData(

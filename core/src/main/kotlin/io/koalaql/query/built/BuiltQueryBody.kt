@@ -4,16 +4,12 @@ import io.koalaql.expr.Expr
 import io.koalaql.expr.Ordinal
 import io.koalaql.query.LockMode
 import io.koalaql.query.ReversedList
-import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 import io.koalaql.window.LabeledWindow
 
 class BuiltQueryBody {
     lateinit var relation: BuiltRelation
-
-    var withType = WithType.NOT_RECURSIVE
-    var withs: List<BuiltWith> = emptyList()
 
     val joins: ReversedList<BuiltJoin> = ReversedList()
 
@@ -32,10 +28,6 @@ class BuiltQueryBody {
     var locking: LockMode? = null
 
     fun populateScope(scope: Scope) {
-        withs.forEach {
-            scope.cte(it.cte, it.query.columns)
-        }
-
         relation.populateScope(scope)
 
         joins.forEach { join ->
@@ -44,7 +36,7 @@ class BuiltQueryBody {
     }
 
     companion object {
-        fun from(builder: QueryBodyBuilder): BuiltQueryBody =
-            unfoldBuilder(builder, BuiltQueryBody()) { it.buildIntoQueryBody() }
+        fun from(builder: BuildsIntoQueryBody): BuiltQueryBody =
+            unfoldBuilder(builder, BuiltQueryBody()) { it.buildInto() }
     }
 }

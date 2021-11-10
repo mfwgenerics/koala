@@ -247,7 +247,7 @@ class H2Dialect(
         }
 
         // TODO remove this after WITH changes
-        private inline fun <T> scopedCtesIn(query: BuiltFullQuery, block: Compilation.() -> T): T {
+        private inline fun <T> scopedCtesIn(query: BuiltQuery, block: Compilation.() -> T): T {
             val innerScope = scope.innerScope()
 
             query.populateCtes(innerScope)
@@ -272,17 +272,17 @@ class H2Dialect(
             }
         }
 
-        fun compileQuery(query: BuiltFullQuery): Boolean {
+        fun compileQuery(query: BuiltQuery): Boolean {
             return compileFullQuery(query)
         }
 
-        fun compileSubqueryExpr(subquery: BuiltFullQuery) {
+        fun compileSubqueryExpr(subquery: BuiltQuery) {
             sql.parenthesize {
                 compileQuery(subquery)
             }
         }
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltFullQuery) =
+        override fun subquery(emitParens: Boolean, subquery: BuiltQuery) =
             compileSubqueryExpr(subquery)
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
@@ -336,27 +336,12 @@ class H2Dialect(
             }
         }
 
-        fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
-            sql
-                .prefix(
-                    when (withType) {
-                        WithType.RECURSIVE -> "WITH RECURSIVE "
-                        WithType.NOT_RECURSIVE -> "WITH "
-                    },
-                    "\n, "
-                )
-                .forEach(withs) {
-                    sql.addSql(scope[it.cte])
-
-                    if (it.query.columnsUnnamed()) compileRelabels(it.query.columns)
-
-                    sql.addSql(" AS (")
-
-                    compileQuery(it.query)
-
-                    sql.addSql(")")
-                }
-        }
+        fun compileWiths(withable: BuiltWithable) = sql.compileWiths(
+            withable,
+            compileCte = { sql.addSql(scope[it]) },
+            compileRelabels = { compileRelabels(it) },
+            compileQuery = { compileQuery(it) }
+        )
 
         fun compileWindows(windows: List<LabeledWindow>) {
             sql.prefix("\nWINDOW ", "\n, ").forEach(windows) {
@@ -368,10 +353,11 @@ class H2Dialect(
             }
         }
 
-        fun compileFullQuery(query: BuiltFullQuery): Boolean {
+        fun compileFullQuery(query: BuiltQuery): Boolean {
             return scopedCtesIn(query) {
                 sql.compileFullQuery(
                     query = query,
+                    compileWiths = { compileWiths(it) },
                     compileSubquery = { compileQuery(it) },
                     compileOrderBy = {
                         scopedIn(query) {
@@ -383,12 +369,6 @@ class H2Dialect(
         }
 
         fun compileSelect(select: BuiltSelectQuery) {
-            val withs = select.body.withs
-
-            compileWiths(select.body.withType, withs)
-
-            if (withs.isNotEmpty()) sql.addSql("\n")
-
             sql.selectClause(select.selected) {
                 compileExpr(it.expr, false)
                 sql.addSql(" ")
@@ -411,7 +391,6 @@ class H2Dialect(
 
         fun compileInsert(insert: BuiltInsert): Boolean = sql.compileInsert(
             insert,
-            compileWiths = { type, withs -> compileWiths(type, withs) },
             compileInsertLine = { sql.compileInsertLine(insert) },
             compileQuery = { compileQuery(it) },
             compileOnConflict = {
@@ -436,7 +415,7 @@ class H2Dialect(
         )
 
         fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
-            compileWiths = { type, withs -> compileWiths(type, withs) },
+            compileWiths = { compileWiths(it) },
             compileRelation = { compileRelation(it) },
             compileAssignment = {
                 compileExpr(it.reference, false)
@@ -446,28 +425,23 @@ class H2Dialect(
             compileExpr = { compileExpr(it, false) }
         )
 
-        fun compileDelete(select: BuiltDelete) {
-            val withs = select.query.withs
-
-            compileWiths(select.query.withType, withs)
-
-            if (withs.isNotEmpty()) sql.addSql("\n")
-
-            sql.addSql("\nDELETE FROM ")
-
-            sql.compileQueryBody(
-                select.query,
-                compileExpr = { compileExpr(it, false) },
-                compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) }
-            )
-        }
+        fun compileDelete(delete: BuiltDelete) = sql.compileDelete(delete,
+            compileWiths = { compileWiths(it) },
+            compileQueryBody = { query ->
+                sql.compileQueryBody(
+                    query,
+                    compileExpr = { compileExpr(it, false) },
+                    compileRelation = { compileRelation(it) },
+                    compileWindows = { windows -> compileWindows(windows) }
+                )
+            }
+        )
     }
 
     override fun compile(dml: BuiltDml): SqlText? {
         return with(Compilation(scope = Scope(NameRegistry()))) {
             val nonEmpty = when (dml) {
-                is BuiltFullQuery -> compileQuery(dml)
+                is BuiltQuery -> compileQuery(dml)
                 is BuiltInsert -> scopedIn(dml) { compileInsert(dml) }
                 is BuiltUpdate -> scopedIn(dml) { compileUpdate(dml) }
                 is BuiltDelete -> {

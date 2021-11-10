@@ -3,16 +3,16 @@ package io.koalaql.query
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectionBuilder
 import io.koalaql.query.built.*
-import io.koalaql.query.fluent.Withable
+import io.koalaql.query.fluent.Withed
 
-interface RelationBuilder: Withable, SelectArgument {
+interface RelationBuilder: Withed, SelectArgument {
     override fun SelectionBuilder.buildIntoSelection() {
         fromRelation(BuiltRelation.from(this@RelationBuilder))
     }
 
     fun BuiltRelation.buildIntoRelation()
 
-    override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
+    override fun BuiltQueryBody.buildInto(): BuildsIntoQueryBody? {
         relation = BuiltRelation.from(this@RelationBuilder)
         return null
     }

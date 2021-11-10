@@ -51,9 +51,10 @@ fun SqlTextBuilder.compileJoins(
 }
 
 fun SqlTextBuilder.compileFullQuery(
-    query: BuiltFullQuery,
+    query: BuiltQuery,
+    compileWiths: (BuiltWithable) -> Unit,
     compileSubquery: (BuiltUnionOperandQuery) -> Boolean,
-    compileSetOperation: (BuiltFullSetOperation) -> Unit = {
+    compileSetOperation: (BuiltSetOperation) -> Unit = {
         addSql("\n")
         addSql(it.type)
 
@@ -68,6 +69,8 @@ fun SqlTextBuilder.compileFullQuery(
     },
     compileOrderBy: (List<Ordinal<*>>) -> Unit
 ): Boolean {
+    compileWiths(query)
+
     val nonEmptyHead = compileSubquery(query.head)
 
     query.unioned.forEach(compileSetOperation)
@@ -83,7 +86,7 @@ fun SqlTextBuilder.compileFullQuery(
     }
 
     if (query.offset != 0) {
-        addSql("\n OFFSET ")
+        addSql("\nOFFSET ")
         addLiteral(value(query.offset))
     }
 
@@ -92,16 +95,16 @@ fun SqlTextBuilder.compileFullQuery(
 
 fun SqlTextBuilder.compileUpdate(
     update: BuiltUpdate,
-    compileWiths: (WithType, List<BuiltWith>) -> Unit,
+    compileWiths: (BuiltWithable) -> Unit,
     compileRelation: (BuiltRelation) -> Unit,
     compileAssignment: (Assignment<*>) -> Unit,
     compileExpr: (Expr<*>) -> Unit
 ): Boolean {
     val query = update.query
 
-    compileWiths(query.withType, query.withs)
+    compileWiths(update)
 
-    if (query.withs.isNotEmpty()) addSql("\n")
+    if (update.withs.isNotEmpty()) addSql("\n")
 
     addSql("UPDATE ")
 
@@ -222,13 +225,19 @@ fun SqlTextBuilder.compileExpr(
                 impl.reference(false, reference)
             }
         }
+        is SubqueryQuasiExpr -> {
+            impl.subquery(false, expr.query)
+        }
         is QueryableOfOne<*> -> {
-            impl.subquery(false, BuiltFullQuery.from(expr))
+            impl.subquery(false, BuiltQuery.from(expr))
         }
         is BuiltCaseExpr<*> -> parenthesize(emitParens) {
-            addSql("CASE ")
+            addSql("CASE")
 
-            expr.onExpr?.let { compileExpr(it, true, impl) }
+            expr.onExpr?.let {
+                addSql(" ")
+                compileExpr(it, true, impl)
+            }
 
             expr.whens.forEach { whenThen ->
                 addSql("\nWHEN ")
@@ -351,7 +360,7 @@ fun SqlTextBuilder.compileQueryBody(
     }
 
     if (body.offset != 0) {
-        addSql(" OFFSET ")
+        addSql("\nOFFSET ")
         addLiteral(value(body.offset))
     }
 
@@ -450,15 +459,10 @@ fun SqlTextBuilder.compileOnConflict(
 
 fun SqlTextBuilder.compileInsert(
     insert: BuiltInsert,
-    compileWiths: (WithType, List<BuiltWith>) -> Unit,
     compileInsertLine: (BuiltInsert) -> Unit,
-    compileQuery: (BuiltFullQuery) -> Boolean,
+    compileQuery: (BuiltQuery) -> Boolean,
     compileOnConflict: (OnConflictOrDuplicateAction) -> Unit
 ): Boolean {
-    compileWiths(insert.withType, insert.withs)
-
-    if (insert.withs.isNotEmpty()) addSql("\n")
-
     compileInsertLine(insert)
 
     addSql("\n")
@@ -468,4 +472,43 @@ fun SqlTextBuilder.compileInsert(
     insert.onConflict?.let(compileOnConflict)
 
     return nonEmpty
+}
+
+fun SqlTextBuilder.compileDelete(
+    delete: BuiltDelete,
+    compileWiths: (BuiltWithable) -> Unit,
+    compileQueryBody: (BuiltQueryBody) -> Unit
+) {
+    compileWiths(delete)
+
+    addSql("DELETE FROM ")
+
+    compileQueryBody(delete.query)
+}
+
+fun SqlTextBuilder.compileWiths(
+    withable: BuiltWithable,
+    compileCte: (Cte) -> Unit,
+    compileRelabels : (List<Reference<*>>) -> Unit,
+    compileQuery: (BuiltQuery) -> Boolean
+) {
+    val prefix = prefix(
+        when (withable.withType) {
+            WithType.RECURSIVE -> "WITH RECURSIVE "
+            WithType.NOT_RECURSIVE -> "WITH "
+        },
+        "\n, "
+    )
+
+    prefix.forEach(withable.withs) {
+        compileCte(it.cte)
+
+        if (it.query.columnsUnnamed()) compileRelabels(it.query.columns)
+
+        addSql(" AS (")
+
+        compileQuery(it.query)
+
+        addSql(")")
+    }
 }

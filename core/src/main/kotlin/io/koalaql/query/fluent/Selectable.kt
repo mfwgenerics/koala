@@ -9,7 +9,7 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
 import io.koalaql.values.*
 
-interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRow>> {
+interface Selectable: BuildsIntoQueryBody, PerformableBlocking<RowSequence<ResultRow>> {
     private abstract class AnySelect<T>(
         val of: Selectable,
         val references: List<SelectArgument>,
@@ -21,13 +21,13 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
             includeAll
         )
 
-        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder? {
+        override fun BuiltQuery.buildInto(): QueryBuilder? {
             head = buildQuery()
             return null
         }
 
-        override fun BuiltFullQuery.buildIntoFullQueryTail(type: SetOperationType, distinctness: Distinctness) {
-            unioned.add(BuiltFullSetOperation(
+        override fun BuiltQuery.buildIntoQueryTail(type: SetOperationType, distinctness: Distinctness) {
+            unioned.add(BuiltSetOperation(
                 type = type,
                 distinctness = distinctness,
                 body = buildQuery()
@@ -40,20 +40,44 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
         references: List<SelectArgument>,
         includeAll: Boolean
     ): AnySelect<ResultRow>(of, references, includeAll), QueryableUnionOperand<ResultRow> {
-        override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
-            ds.query(BuiltFullQuery.from(this))
+        override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
+            ds.query(BuiltQuery.from(this))
+
+        override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<ResultRow> {
+            override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
+                ds.query(BuiltQuery.from(this))
+
+            override fun BuiltQuery.buildInto(): QueryBuilder? {
+                withType = type
+                withs = queries
+
+                return this@Select
+            }
+        }
     }
 
     private class EmptySelect(
         private val selectOne: QueryableOfOne<Int>
     ): QueryableUnionOperand<EmptyRow> {
-        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder = selectOne
+        override fun BuiltQuery.buildInto(): QueryBuilder = selectOne
 
-        override fun BuiltFullQuery.buildIntoFullQueryTail(type: SetOperationType, distinctness: Distinctness) =
-            with (selectOne) { buildIntoFullQueryTail(type, distinctness) }
+        override fun BuiltQuery.buildIntoQueryTail(type: SetOperationType, distinctness: Distinctness) =
+            with (selectOne) { buildIntoQueryTail(type, distinctness) }
 
-        override fun performWith(ds: BlockingPerformer) =
-            RowSequenceEmptyMask(ds.query(BuiltFullQuery.from(this)))
+        override fun perform(ds: BlockingPerformer) =
+            RowSequenceEmptyMask(ds.query(BuiltQuery.from(this)))
+
+        override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<EmptyRow> {
+            override fun perform(ds: BlockingPerformer): RowSequence<EmptyRow> =
+                RowSequenceEmptyMask(ds.query(BuiltQuery.from(this)))
+
+            override fun BuiltQuery.buildInto(): QueryBuilder? {
+                withType = type
+                withs = queries
+
+                return this@EmptySelect
+            }
+        }
     }
 
     private class SelectOne<A : Any>(
@@ -77,8 +101,8 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
     override fun generateSql(ds: SqlPerformer): SqlText? =
         selectAll().generateSql(ds)
 
-    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
-        selectAll().performWith(ds)
+    override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
+        selectAll().perform(ds)
 
     fun select(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> = if (references.isEmpty()) {
         EmptySelect(select(1 as_ label()))
@@ -109,10 +133,12 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
         val of: Selectable,
         val assignments: List<Assignment<*>>
     ): Updated {
-        override fun buildUpdate() = BuiltUpdate(
-            BuiltQueryBody.from(of),
-            assignments
-        )
+        override fun BuiltUpdate.buildInto(): BuildsIntoUpdate? {
+            query = BuiltQueryBody.from(of)
+            assignments = this@Update.assignments
+
+            return null
+        }
     }
 
     fun update(assignments: List<Assignment<*>>): Updated =
@@ -124,7 +150,10 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
     private class Delete(
         val of: Selectable
     ): Deleted {
-        override fun buildDelete() = BuiltDelete(BuiltQueryBody.from(of))
+        override fun BuiltDelete.buildInto(): BuildsIntoDelete? {
+            query = BuiltQueryBody.from(of)
+            return null
+        }
     }
 
     fun delete(): Deleted = Delete(this)

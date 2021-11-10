@@ -218,10 +218,11 @@ class PostgresDialect: SqlDialect {
             sql.addSql(type.toRawSql())
         }
 
-        fun compileQuery(query: BuiltFullQuery): Boolean {
+        fun compileQuery(query: BuiltQuery): Boolean {
             return scopedCtesIn(query) {
                 sql.compileFullQuery(
                     query = query,
+                    compileWiths = { compileWiths(it) },
                     compileSubquery = { compileQuery(it) },
                     compileOrderBy = {
                         scopedIn(query) {
@@ -251,7 +252,7 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileSubqueryExpr(subquery: BuiltFullQuery) {
+        fun compileSubqueryExpr(subquery: BuiltQuery) {
             sql.parenthesize {
                 compileQuery(subquery)
             }
@@ -318,35 +319,14 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
-            sql
-                .prefix(
-                    when (withType) {
-                        WithType.RECURSIVE -> "WITH RECURSIVE "
-                        WithType.NOT_RECURSIVE -> "WITH "
-                    },
-                    "\n, "
-                )
-                .forEach(withs) {
-                    sql.addSql(scope[it.cte])
-
-                    if (it.query.columnsUnnamed()) compileRelabels(it.query.columns)
-
-                    sql.addSql(" AS (")
-
-                    compileQuery(it.query)
-
-                    sql.addSql(")")
-                }
-        }
+        fun compileWiths(withable: BuiltWithable) = sql.compileWiths(
+            withable,
+            compileCte = { sql.addSql(scope[it]) },
+            compileRelabels = { compileRelabels(it) },
+            compileQuery = { compileQuery(it) }
+        )
 
         fun compileSelect(select: BuiltSelectQuery) {
-            val withs = select.body.withs
-
-            compileWiths(select.body.withType, withs)
-
-            if (withs.isNotEmpty()) sql.addSql("\n")
-
             sql.selectClause(select.selected) {
                 compileExpr(it.expr, false)
                 sql.addSql(" ")
@@ -369,10 +349,6 @@ class PostgresDialect: SqlDialect {
 
         fun compileInsert(insert: BuiltInsert): Boolean {
             val relvar = insert.unwrapTable()
-
-            compileWiths(insert.withType, insert.withs)
-
-            if (insert.withs.isNotEmpty()) sql.addSql("\n")
 
             sql.compileInsertLine(insert) {
                 sql.addIdentifier(relvar.tableName)
@@ -411,7 +387,7 @@ class PostgresDialect: SqlDialect {
         }
 
         fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
-            compileWiths = { type, withs -> compileWiths(type, withs) },
+            compileWiths = { compileWiths(it) },
             compileRelation = { compileRelation(it) },
             compileAssignment = {
                 compileSetLhs(it.reference)
@@ -434,7 +410,7 @@ class PostgresDialect: SqlDialect {
             compileReference(value)
         }
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltFullQuery) {
+        override fun subquery(emitParens: Boolean, subquery: BuiltQuery) {
             compileSubqueryExpr(subquery)
         }
 
@@ -460,22 +436,17 @@ class PostgresDialect: SqlDialect {
             }
         }
 
-        fun compileDelete(delete: BuiltDelete) {
-            val withs = delete.query.withs
-
-            compileWiths(delete.query.withType, withs)
-
-            if (withs.isNotEmpty()) sql.addSql("\n")
-
-            sql.addSql("\nDELETE FROM ")
-
-            sql.compileQueryBody(
-                delete.query,
-                compileExpr = { compileExpr(it, false) },
-                compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) }
-            )
-        }
+        fun compileDelete(delete: BuiltDelete) = sql.compileDelete(delete,
+            compileWiths = { compileWiths(it) },
+            compileQueryBody = { query ->
+                sql.compileQueryBody(
+                    query,
+                    compileExpr = { compileExpr(it, false) },
+                    compileRelation = { compileRelation(it) },
+                    compileWindows = { compileWindows(it) }
+                )
+            }
+        )
 
         inline fun <T> scopedIn(query: PopulatesScope, block: Compilation.() -> T): T {
             val innerScope = scope.innerScope()
@@ -491,7 +462,7 @@ class PostgresDialect: SqlDialect {
         }
 
         // TODO remove this after WITH changes
-        private inline fun <T> scopedCtesIn(query: BuiltFullQuery, block: Compilation.() -> T): T {
+        private inline fun <T> scopedCtesIn(query: BuiltQuery, block: Compilation.() -> T): T {
             val innerScope = scope.innerScope()
 
             query.populateCtes(innerScope)
@@ -508,7 +479,7 @@ class PostgresDialect: SqlDialect {
     override fun compile(dml: BuiltDml): SqlText? {
         return with(Compilation(scope = Scope(NameRegistry()))) {
             val nonEmpty = when (dml) {
-                is BuiltFullQuery -> compileQuery(dml)
+                is BuiltQuery -> compileQuery(dml)
                 is BuiltInsert -> scopedIn(dml) { compileInsert(dml) }
                 is BuiltUpdate -> scopedIn(dml) { compileUpdate(dml) }
                 is BuiltDelete -> {

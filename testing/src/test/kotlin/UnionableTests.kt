@@ -10,13 +10,13 @@ abstract class UnionableTests: ProvideTestDatabase {
     private fun castInt(value: Int) = cast(value(value), INTEGER)
 
     @Test
-    fun `union all does not deduplicate`() = withDb { db ->
+    fun `union all does not deduplicate`() = withCxn { cxn ->
         val labelOne = label<Int>()
 
         val results = Tableless
             .select(castInt(1) as_ labelOne)
             .unionAll(select(castInt(1) as_ labelOne))
-            .performWith(db)
+            .perform(cxn)
             .map { it[labelOne] }
             .toList()
 
@@ -24,7 +24,7 @@ abstract class UnionableTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `sorted union`() = withDb { db ->
+    fun `sorted union`() = withCxn { cxn ->
         val x = label<Int>()
 
         val sorted = Tableless
@@ -32,7 +32,7 @@ abstract class UnionableTests: ProvideTestDatabase {
             .unionAll(select(castInt(1) as_ x))
             .unionAll(select(castInt(2) as_ x))
             .orderBy(x.desc())
-            .performWith(db)
+            .perform(cxn)
             .map { it[x] }
             .toList()
 
@@ -40,7 +40,7 @@ abstract class UnionableTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `union of labelled from cte`() = withDb { db ->
+    fun `union of labelled from cte`() = withCxn { cxn ->
         val x = label<Int>()
         val y = label<String>()
 
@@ -60,13 +60,13 @@ abstract class UnionableTests: ProvideTestDatabase {
         )
 
         val rows = cte
-            .with(cte)
             .where(x eq 9)
             .select(x, y)
             .union(cte.where(x eq 7).select(y))
             .union(cte.where(x eq 8).select(y))
             .orderBy(y)
-            .performWith(db)
+            .with(cte)
+            .perform(cxn)
             .map { row ->
                 row.columns.map { row[it] }
             }
@@ -80,7 +80,7 @@ abstract class UnionableTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `order of unions`() = withDb { db ->
+    fun `order of unions`() = withCxn { cxn ->
         val t0 = object : Table("table0") { }
         val t1 = object : Table("table1") { }
         val t2 = object : Table("table2") { }
@@ -89,7 +89,7 @@ abstract class UnionableTests: ProvideTestDatabase {
             .select()
             .union(t1.select())
             .union(t2.select())
-            .generateSql(db)
+            .generateSql(cxn)
             ?.parameterizedSql
             .orEmpty()
 
@@ -98,7 +98,7 @@ abstract class UnionableTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `ordered, limited and offset union`() = withDb { db ->
+    fun `ordered, limited and offset union`() = withCxn { cxn ->
         val x = label<Int>()
 
         val results = select(castInt(11) as_ x)
@@ -112,7 +112,7 @@ abstract class UnionableTests: ProvideTestDatabase {
             .orderBy(x)
             .offset(2)
             .limit(3)
-            .performWith(db)
+            .perform(cxn)
             .map { it.getValue(x) }
             .toList()
 

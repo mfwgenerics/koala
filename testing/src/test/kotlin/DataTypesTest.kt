@@ -43,7 +43,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
             .subquery()
             .orderBy(casted)
             .select(casted as_ label)
-            .performWith(cxn)
+            .perform(cxn)
             .map { it.getValue(label) }
             .toList()
 
@@ -85,7 +85,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     }
 
     @Test
-    fun `as values, cast to self and order by`() = withCxn { cxn, _ ->
+    fun `as values, cast to self and order by`() = withCxn { cxn ->
         examples().entries().forEach {
             selectData(cxn, it)
         }
@@ -102,12 +102,12 @@ abstract class DataTypesTest : ProvideTestDatabase {
                 .insert(values(case.values) {
                     this[column] = it
                 })
-                .performWith(cxn)
+                .perform(cxn)
 
                 val rows = this
                     .orderBy(column)
                     .select(column)
-                    .performWith(cxn)
+                    .perform(cxn)
                     .map { it.first() }
                     .toList()
 
@@ -130,7 +130,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     }
 
     @Test
-    fun `read and write null`() = withCxn { cxn, _ ->
+    fun `read and write null`() = withCxn { cxn ->
         examples().entries().forEach {
             val name = Label(it.type.type, IdentifierName())
             val wasNull = name.isNull() as_ label()
@@ -138,7 +138,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
             val row = values(listOf(1)) { this[name] = null }
                 .subquery()
                 .select(name, wasNull)
-                .performWith(cxn)
+                .perform(cxn)
                 .single()
 
             assertNull(row.getOrNull(name))

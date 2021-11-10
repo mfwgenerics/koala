@@ -4,7 +4,6 @@ import io.koalaql.IdentifierName
 import io.koalaql.expr.Column
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.QueryableUnionOperand
-import io.koalaql.sql.SqlText
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
@@ -28,7 +27,7 @@ interface TableRelation: Relation {
 }
 
 class Subquery(
-    val of: BuiltFullQuery
+    val of: BuiltQuery
 ): Relation
 
 class Values(
@@ -37,21 +36,33 @@ class Values(
 ): QueryableUnionOperand<ResultRow>, RowSequence<ValuesRow> {
     override fun rowIterator(): RowIterator<ValuesRow> = impl()
 
-    override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder? {
+    override fun BuiltQuery.buildInto(): QueryBuilder? {
         head = BuiltValuesQuery(this@Values)
         return null
     }
 
-    override fun BuiltFullQuery.buildIntoFullQueryTail(type: SetOperationType, distinctness: Distinctness) {
-        this.unioned.add(BuiltFullSetOperation(
+    override fun BuiltQuery.buildIntoQueryTail(type: SetOperationType, distinctness: Distinctness) {
+        this.unioned.add(BuiltSetOperation(
             type = type,
             distinctness = distinctness,
             body = BuiltValuesQuery(this@Values)
         ))
     }
 
-    override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
-        ds.query(BuiltFullQuery.from(this))
+    override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
+        ds.query(BuiltQuery.from(this))
+
+    override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<ResultRow> {
+        override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
+            ds.query(BuiltQuery.from(this))
+
+        override fun BuiltQuery.buildInto(): QueryBuilder {
+            withType = type
+            withs = queries
+
+            return this@Values
+        }
+    }
 }
 
 class Cte(

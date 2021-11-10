@@ -1,13 +1,24 @@
 package io.koalaql.query.built
 
 import io.koalaql.Assignment
+import io.koalaql.query.WithType
+import io.koalaql.query.fluent.BuildsIntoUpdate
 import io.koalaql.sql.Scope
+import io.koalaql.unfoldBuilder
 
-class BuiltUpdate(
-    val query: BuiltQueryBody,
-    val assignments: List<Assignment<*>>
-): BuiltStatement {
+class BuiltUpdate: BuiltStatement, BuiltWithable {
+    lateinit var query: BuiltQueryBody
+    var assignments: List<Assignment<*>> = emptyList()
+
+    override var withType = WithType.NOT_RECURSIVE
+    override var withs: List<BuiltWith> = emptyList()
+
     override fun populateScope(scope: Scope) {
         query.populateScope(scope)
+    }
+
+    companion object {
+        fun from(builder: BuildsIntoUpdate): BuiltUpdate =
+            unfoldBuilder(builder, BuiltUpdate()) { it.buildInto() }
     }
 }

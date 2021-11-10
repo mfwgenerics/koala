@@ -2,7 +2,6 @@ package io.koalaql.query.built
 
 import io.koalaql.query.OnConflictOrDuplicateAction
 import io.koalaql.query.TableRelation
-import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 
@@ -11,12 +10,9 @@ class BuiltInsert: BuiltStatement {
 
     var ignore: Boolean = false
 
-    var withType: WithType = WithType.NOT_RECURSIVE
-    var withs: List<BuiltWith> = emptyList()
-
     var onConflict: OnConflictOrDuplicateAction? = null
 
-    lateinit var query: BuiltFullQuery
+    lateinit var query: BuiltQuery
 
     fun unwrapTable(): TableRelation = when (val relation = relation.relation) {
         is TableRelation -> relation

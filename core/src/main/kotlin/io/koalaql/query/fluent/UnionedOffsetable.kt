@@ -1,14 +1,14 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.built.BuiltFullQuery
-import io.koalaql.query.built.FullQueryBuilder
+import io.koalaql.query.built.BuiltQuery
+import io.koalaql.query.built.QueryBuilder
 
 interface UnionedOffsetable: UnionedLimitable {
     private class Offset(
         val of: UnionedOffsetable,
         val rows: Int
     ): UnionedLimitable {
-        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder? {
+        override fun BuiltQuery.buildInto(): QueryBuilder? {
             offset = rows
             return of
         }

@@ -106,15 +106,15 @@ class JdbcConnection(
         error("unable to fetch generated key $column")
     }
 
-    override fun query(query: BuiltQuery): RowSequence<RawResultRow> {
-        return when (query) {
+    override fun query(queryable: BuiltQueryable): RowSequence<RawResultRow> {
+        return when (queryable) {
             is BuiltGeneratesKeysInsert -> {
                 fun err(): Nothing = error("must select a single auto-generated key")
 
-                val sql = dialect.compile(query.insert)
-                    ?: return emptyRowSequence(listOf(query.returning))
+                val sql = dialect.compile(queryable.insert)
+                    ?: return emptyRowSequence(listOf(queryable.returning))
 
-                val column = query.returning
+                val column = queryable.returning
                 if (column !is TableColumn) err()
 
                 if (!column.builtDef.autoIncrement) err()
@@ -133,10 +133,10 @@ class JdbcConnection(
 
                     val rs = generatedKeys
 
-                    val ix = positionOf(query.returning, rs)
+                    val ix = positionOf(queryable.returning, rs)
 
                     return ResultSetRowSequence(
-                        LabelListOf(listOf(query.returning)),
+                        LabelListOf(listOf(queryable.returning)),
                         offset = ix,
                         event,
                         typeMappings,
@@ -144,9 +144,9 @@ class JdbcConnection(
                     )
                 }
             }
-            is BuiltFullQuery -> {
-                val sql = dialect.compile(query)
-                    ?: return emptyRowSequence(query.columns)
+            is BuiltQuery -> {
+                val sql = dialect.compile(queryable)
+                    ?: return emptyRowSequence(queryable.columns)
 
                 prepareAndThen(sql) {
                     val event = events.perform(ConnectionQueryType.QUERY, sql)
@@ -161,7 +161,7 @@ class JdbcConnection(
                     event.finished(Result.success(null))
 
                     ResultSetRowSequence(
-                        LabelListOf(query.columns),
+                        LabelListOf(queryable.columns),
                         offset = 1,
                         event,
                         typeMappings,

@@ -1,14 +1,14 @@
 package io.koalaql.query.fluent
 
+import io.koalaql.query.built.BuildsIntoQueryBody
 import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.QueryBodyBuilder
 
 interface Limitable: Lockable {
     private class Limit(
         val of: Limitable,
         val rows: Int
     ): Lockable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder? {
+        override fun BuiltQueryBody.buildInto(): BuildsIntoQueryBody? {
             limit = rows
 
             return of

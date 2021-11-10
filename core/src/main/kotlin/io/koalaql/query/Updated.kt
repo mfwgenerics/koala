@@ -1,12 +1,14 @@
 package io.koalaql.query
 
-import io.koalaql.query.built.BuiltUpdate
-import io.koalaql.query.fluent.PerformableBlocking
-import io.koalaql.sql.SqlText
+import io.koalaql.query.built.BuiltWith
+import io.koalaql.query.fluent.BuildsIntoUpdate
+import io.koalaql.query.fluent.Withable
 
-interface Updated: PerformableBlocking<Int> {
-    fun buildUpdate(): BuiltUpdate
+interface Updated: BuildsIntoUpdate, Withable<BuildsIntoUpdate> {
+    override fun with(type: WithType, queries: List<BuiltWith>) = BuildsIntoUpdate {
+        withType = type
+        withs = queries
 
-    override fun performWith(ds: BlockingPerformer): Int = ds.statement(buildUpdate())
-    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(buildUpdate())
+        this@Updated
+    }
 }

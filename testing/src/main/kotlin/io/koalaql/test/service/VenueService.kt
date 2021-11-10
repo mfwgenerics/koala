@@ -26,7 +26,7 @@ class VenueService(
                 set(VenueTable.type, it.type)
             })
             .generatingKey(VenueTable.id)
-            .performWith(cxn)
+            .perform(cxn)
             .toList()
     }
 
@@ -36,11 +36,6 @@ class VenueService(
             val visitCte = cte()
 
             val rows = VenueTable
-                .with(visitCte as_ UserVenueTable
-                    .where(UserVenueTable.visited)
-                    .groupBy(UserVenueTable.venue)
-                    .select(UserVenueTable.venue, count(value(1)) as_ visits)
-                )
                 .leftJoin(visitCte, UserVenueTable.venue eq VenueTable.id)
                 .let {
                     if (ids != null) it.where(VenueTable.id inValues ids)
@@ -48,14 +43,19 @@ class VenueService(
                 }
                 .orderBy(VenueTable.id)
                 .select(VenueTable, coalesce(visits, value(0)) as_ visits)
-                .performWith(cxn)
+                .with(visitCte as_ UserVenueTable
+                    .where(UserVenueTable.visited)
+                    .groupBy(UserVenueTable.venue)
+                    .select(UserVenueTable.venue, count(value(1)) as_ visits)
+                )
+                .perform(cxn)
                 .toList()
 
             val reviewsByVenue = ReviewTable
                 .where(ReviewTable.venue inValues rows.map { it[VenueTable.id] })
                 .orderBy(ReviewTable.venue, ReviewTable.created.desc(), ReviewTable.user)
                 .selectAll()
-                .performWith(cxn)
+                .perform(cxn)
                 .groupBy({ it[ReviewTable.venue] }) { row ->
                     VenueReview(
                         user = row[ReviewTable.user],
@@ -92,7 +92,7 @@ class VenueService(
                         ReviewTable.contents setTo it.content
                     )
                 }))
-                .performWith(cxn)
+                .perform(cxn)
         }
     }
 
@@ -104,14 +104,14 @@ class VenueService(
             }
 
             ReviewTable
-                .with(deleted)
                 .where(exists(deleted
                     .where(deleted[ReviewTable.venue] eq ReviewTable.venue)
                     .where(deleted[ReviewTable.user] eq ReviewTable.user)
                     .select(deleted[ReviewTable.venue])
                 ))
                 .delete()
-                .performWith(cxn)
+                .with(deleted)
+                .perform(cxn)
         }
     }
 
@@ -133,12 +133,12 @@ class VenueService(
                 val valuesCte = alias() as_ values
 
                 val alreadyExist = UserVenueTable
-                    .with(valuesCte)
                     .innerJoin(valuesCte, (UserVenueTable.user eq valuesCte[UserVenueTable.user])
                         .and(UserVenueTable.venue eq valuesCte[UserVenueTable.venue])
                     )
                     .select(UserVenueTable.user, UserVenueTable.venue)
-                    .performWith(cxn)
+                    .with(valuesCte)
+                    .perform(cxn)
                     .map { Pair(it[UserVenueTable.user], it[UserVenueTable.venue]) }
                     .toSet()
 
@@ -155,10 +155,10 @@ class VenueService(
                         .select(updateCte[UserVenueTable.visited])
 
                     UserVenueTable
-                        .with(updateCte)
                         .where(exists(updateSubquery))
                         .update(UserVenueTable.visited setTo updateSubquery)
-                        .performWith(cxn)
+                        .with(updateCte)
+                        .perform(cxn)
                 }
 
                 if (needsInsert.isEmpty()) return
@@ -181,7 +181,7 @@ class VenueService(
                 OnConflictSupport.NONE -> insert
             }
 
-            withOnConflict.performWith(cxn)
+            withOnConflict.perform(cxn)
         }
     }
 
@@ -194,7 +194,7 @@ class VenueService(
             .whereOptionally(venues?.let { UserVenueTable.venue inValues venues })
             .where(UserVenueTable.visited)
             .select(UserVenueTable.user, UserVenueTable.venue)
-            .performWith(cxn)
+            .perform(cxn)
             .map {
                 UserVenueKey(
                     user = it[UserVenueTable.user],

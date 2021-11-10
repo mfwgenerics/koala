@@ -3,15 +3,19 @@ package io.koalaql.query.built
 import io.koalaql.expr.Ordinal
 import io.koalaql.expr.Reference
 import io.koalaql.query.ReversedList
+import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 
-class BuiltFullQuery: BuiltDml, BuiltQuery {
+class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
     val columns: List<Reference<*>> get() = head.columns
+
+    override var withType = WithType.NOT_RECURSIVE
+    override var withs: List<BuiltWith> = emptyList()
 
     lateinit var head: BuiltUnionOperandQuery
 
-    val unioned = ReversedList<BuiltFullSetOperation>()
+    val unioned = ReversedList<BuiltSetOperation>()
 
     var orderBy: List<Ordinal<*>> = emptyList()
 
@@ -25,13 +29,15 @@ class BuiltFullQuery: BuiltDml, BuiltQuery {
     }
 
     fun populateCtes(scope: Scope) {
-        // TODO get rid of this after moving to post-select CTEs
-        (head as? BuiltSelectQuery)?.body?.withs?.forEach {
+        withs.forEach {
             scope.cte(it.cte, it.query.columns)
         }
     }
 
-    fun fixUnionedSelects() {
+    fun finishBuild() {
+        head.computeColumns(withs)
+        unioned.forEach { it.body.computeColumns(withs) }
+
         if (unioned.isEmpty()) return
 
         val allReferences = linkedSetOf<Reference<*>>()
@@ -44,8 +50,8 @@ class BuiltFullQuery: BuiltDml, BuiltQuery {
     }
 
     companion object {
-        fun from(builder: FullQueryBuilder): BuiltFullQuery =
-            unfoldBuilder(builder, BuiltFullQuery()) { it.buildIntoFullQuery() }
-                .apply { fixUnionedSelects() }
+        fun from(builder: QueryBuilder): BuiltQuery =
+            unfoldBuilder(builder, BuiltQuery()) { it.buildInto() }
+                .apply { finishBuild() }
     }
 }

@@ -11,7 +11,7 @@ fun createAndPopulate(cxn: DataConnection) {
             rowOf(ShopTable.name setTo "Stationery")
         ))
         .generatingKey(ShopTable.id)
-        .performWith(cxn)
+        .perform(cxn)
         .toList()
 
     val hardwareId = shopIds[0]
@@ -30,7 +30,7 @@ fun createAndPopulate(cxn: DataConnection) {
             )
         ))
         .generatingKey(CustomerTable.id)
-        .performWith(cxn)
+        .perform(cxn)
         .toList()
 
     val janeId = customerIds[0]
@@ -64,7 +64,7 @@ fun createAndPopulate(cxn: DataConnection) {
                 PurchaseTable.price setTo 500
             ),
         ))
-        .performWith(cxn)
+        .perform(cxn)
 
     assert(4 == inserted)
 }

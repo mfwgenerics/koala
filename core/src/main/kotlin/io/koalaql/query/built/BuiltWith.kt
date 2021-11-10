@@ -4,5 +4,5 @@ import io.koalaql.query.Cte
 
 class BuiltWith(
     val cte: Cte,
-    val query: BuiltFullQuery
+    val query: BuiltQuery
 )

@@ -7,5 +7,5 @@ import io.koalaql.values.RowSequence
 interface GeneratingKey<T>: PerformableBlocking<RowSequence<T>> {
     fun buildQuery(): BuiltGeneratesKeysInsert
 
-    override fun performWith(ds: BlockingPerformer): RowSequence<T>
+    override fun perform(ds: BlockingPerformer): RowSequence<T>
 }

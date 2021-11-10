@@ -26,7 +26,7 @@ interface Returningable: Inserted {
             )
         }
 
-        override fun performWith(ds: BlockingPerformer): RowSequence<T> {
+        override fun perform(ds: BlockingPerformer): RowSequence<T> {
             val rows = ds.query(buildQuery())
 
             return object : RowSequence<T> {

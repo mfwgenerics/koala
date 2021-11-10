@@ -1,15 +1,15 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.expr.Expr
+import io.koalaql.query.built.BuildsIntoQueryBody
 import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.QueryBodyBuilder
 
-interface Groupable: Windowable, Orderable, QueryBodyBuilder {
+interface Groupable: Windowable {
     private class GroupBy(
         val of: Groupable,
         val on: List<Expr<*>>
     ): Havingable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
+        override fun BuiltQueryBody.buildInto(): BuildsIntoQueryBody {
             groupBy = on
             return of
         }

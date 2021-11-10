@@ -5,55 +5,56 @@ import io.koalaql.expr.*
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
 
-sealed interface BuiltQuery: PopulatesScope
+sealed interface BuiltQueryable: PopulatesScope
 
 class BuiltGeneratesKeysInsert(
     val insert: BuiltInsert,
     val returning: Column<*>
-): BuiltQuery {
+): BuiltQueryable {
     override fun populateScope(scope: Scope) {
 
     }
 }
-
 
 sealed interface BuiltUnionOperandQuery: PopulatesScope {
     val columns: List<Reference<*>>
 
     fun columnsUnnamed(): Boolean
 
+    fun computeColumns(withs: List<BuiltWith>)
+
     fun changeColumnsToFit(references: Iterable<Reference<*>>)
 }
 
-class BuiltSelectQuery private constructor(
+class BuiltSelectQuery(
     val body: BuiltQueryBody,
-    var selected: List<SelectedExpr<*>>
+    val selectArgs: List<SelectArgument>,
+    val includeAll: Boolean
 ): BuiltUnionOperandQuery {
-    constructor(
-        body: BuiltQueryBody,
-        references: List<SelectArgument>,
-        includeAll: Boolean = false
-    ): this(
-        body,
-        SelectionBuilder(body.withs.associateBy({ it.cte }) { it.query.columns })
+    lateinit var selected: List<SelectedExpr<*>>
+
+    override lateinit var columns: List<Reference<*>>
+
+    override fun columnsUnnamed(): Boolean = false
+
+    override fun computeColumns(withs: List<BuiltWith>) {
+        selected = SelectionBuilder(withs.associateBy({ it.cte }) { it.query.columns })
             .also { builder ->
                 if (includeAll) {
                     builder.fromRelation(body.relation)
                     body.joins.forEach { builder.fromRelation(it.to) }
                 }
 
-                references.forEach {
+                selectArgs.forEach {
                     with (it) {
                         builder.buildIntoSelection()
                     }
                 }
             }
             .toList()
-    )
 
-    override var columns: List<Reference<*>> = selected.map { it.name }
-
-    override fun columnsUnnamed(): Boolean = false
+        columns = selected.map { it.name }
+    }
 
     override fun populateScope(scope: Scope) {
         body.populateScope(scope)
@@ -80,6 +81,8 @@ data class BuiltValuesQuery(
     val values: Values
 ): BuiltUnionOperandQuery {
     override val columns get() = values.columns
+
+    override fun computeColumns(withs: List<BuiltWith>) { }
 
     override fun populateScope(scope: Scope) { }
 

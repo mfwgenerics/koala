@@ -2,7 +2,6 @@ package io.koalaql.docs.statements
 
 import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.ShopTable
-import io.koalaql.dsl.*
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -25,7 +24,7 @@ class Update {
 
         val updated = ShopTable
             .update()
-            .performWith(db)
+            .perform(db)
 
         assertEquals(0, updated)
 

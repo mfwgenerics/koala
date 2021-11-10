@@ -1,6 +1,9 @@
 package io.koalaql.expr
 
-import io.koalaql.query.*
+import io.koalaql.query.Cte
+import io.koalaql.query.EmptyRelation
+import io.koalaql.query.Subquery
+import io.koalaql.query.TableRelation
 import io.koalaql.query.built.BuiltRelation
 
 class SelectionBuilder(

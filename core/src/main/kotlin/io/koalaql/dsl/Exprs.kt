@@ -8,8 +8,7 @@ import io.koalaql.expr.*
 import io.koalaql.expr.fluent.ElseableCase
 import io.koalaql.expr.fluent.ThenableCase
 import io.koalaql.expr.fluent.WhenableCase
-import io.koalaql.query.Queryable
-import io.koalaql.query.built.BuiltFullQuery
+import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.sql.RawSqlBuilder
 
@@ -48,8 +47,10 @@ fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(thi
 
 fun <T : Any> null_(): Expr<T> = OperationType.NULL()
 
-fun exists(query: QueryableUnionOperand<*>): Expr<Boolean> = OperationType.EXISTS(QueryableOfOne.Wrap<Nothing>(query))
-fun notExists(query: QueryableUnionOperand<*>): Expr<Boolean> = OperationType.NOT_EXISTS(QueryableOfOne.Wrap<Nothing>(query))
+fun exists(query: QueryableUnionOperand<*>): Expr<Boolean> =
+    OperationType.EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
+fun notExists(query: QueryableUnionOperand<*>): Expr<Boolean> =
+    OperationType.NOT_EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
 
 infix fun <T : Any> Expr<T>.inQuery(query: QueryableOfOne<T>): Expr<Boolean> =
     OperationType.IN(this, query)
@@ -80,10 +81,10 @@ inline fun <reified T : Any> value(value: T?): Literal<T> =
     Literal(T::class, value)
 
 fun <T : Any> all(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
-    ComparedQuery(ComparedQueryType.ALL, BuiltFullQuery.from(subquery))
+    ComparedQuery(ComparedQueryType.ALL, BuiltQuery.from(subquery))
 
 fun <T : Any> any(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
-    ComparedQuery(ComparedQueryType.ANY, BuiltFullQuery.from(subquery))
+    ComparedQuery(ComparedQueryType.ANY, BuiltQuery.from(subquery))
 
 operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =
     OperationType.DIVIDE(this, rhs)

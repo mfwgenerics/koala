@@ -71,7 +71,7 @@ class Example {
                 )
             ))
             .generatingKey(ShopTable.id)
-            .performWith(db)
+            .perform(db)
             .single()
 
         /*
@@ -79,7 +79,7 @@ class Example {
          */
         val row = ShopTable
             .where(ShopTable.id eq id)
-            .performWith(db)
+            .perform(db)
             .single()
 
         assertEquals("Helen's Hardware Store", row[ShopTable.name])

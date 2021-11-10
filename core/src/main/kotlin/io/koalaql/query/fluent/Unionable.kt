@@ -1,20 +1,19 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.query.Distinctness
-import io.koalaql.query.Queryable
 import io.koalaql.query.SetOperationType
-import io.koalaql.query.built.BuiltFullQuery
-import io.koalaql.query.built.FullQueryBuilder
+import io.koalaql.query.built.BuiltQuery
+import io.koalaql.query.built.QueryBuilder
 
-interface Unionable<out T>: Queryable<T> {
+interface Unionable<out T>: WithableQueryable<T> {
     private class SetOperation(
         val of: Unionable<*>,
         val operand: QueryableUnionOperand<*>,
         val type: SetOperationType,
         val distinctness: Distinctness
     ): UnionedOrderable {
-        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder? {
-            with (operand) { buildIntoFullQueryTail(type, distinctness) }
+        override fun BuiltQuery.buildInto(): QueryBuilder? {
+            with (operand) { buildIntoQueryTail(type, distinctness) }
 
             return of
         }

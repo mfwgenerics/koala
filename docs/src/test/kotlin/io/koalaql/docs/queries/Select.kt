@@ -29,7 +29,7 @@ class Select {
         val selectAll = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .selectAll() // select all columns
-            .performWith(db)
+            .perform(db)
 
         val row = selectAll.single()
 
@@ -37,7 +37,7 @@ class Select {
 
         val implicitSelectAll = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
-            .performWith(db)
+            .perform(db)
 
         assertListEquals(selectAll.columns, implicitSelectAll.columns)
 
@@ -64,7 +64,7 @@ class Select {
         val row = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .select(ShopTable.name, ShopTable.address) // select a pair
-            .performWith(db)
+            .perform(db)
             .single()
 
         val (name, address) = row
@@ -90,7 +90,7 @@ class Select {
             .where(ShopTable.id eq hardwareStoreId)
             .orderBy(CustomerTable.name)
             .select(CustomerTable) // select only fields from CustomerTable
-            .performWith(db)
+            .perform(db)
             .map { row -> row[CustomerTable.name] }
             .toList()
 
@@ -110,7 +110,7 @@ class Select {
         val row = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .select(ShopTable, lower(ShopTable.name) as_ lowerName)
-            .performWith(db)
+            .perform(db)
             .single()
 
         assertEquals("helen's hardware store", row[lowerName])
@@ -128,7 +128,7 @@ class Select {
         val row = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .select(ShopTable, lowerName)
-            .performWith(db)
+            .perform(db)
             .single()
 
         assertEquals("helen's hardware store", row[lowerName])
@@ -148,7 +148,7 @@ class Select {
         val emptySelect = ShopTable
             .where(ShopTable.id inValues listOf(hardwareStoreId, groceryStoreId))
             .select()
-            .performWith(db)
+            .perform(db)
 
         assertEquals(0, emptySelect.columns.size)
 
@@ -173,7 +173,7 @@ class Select {
         val row = ShopTable
             .innerJoin(ShopTable.as_(alias), alias[ShopTable.id] eq groceryStoreId)
             .where(ShopTable.id eq hardwareStoreId)
-            .performWith(db)
+            .perform(db)
             .single()
 
         assertEquals("Helen's Hardware Store", row[ShopTable.name])

@@ -19,7 +19,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `test insert and order by big instants`() = withCxn(EventTable) { cxn, _ ->
+    fun `test insert and order by big instants`() = withCxn(EventTable) { cxn ->
         val instants = (1..20L).map {
             Instant.EPOCH.plusSeconds(it*619315217)
         }
@@ -30,12 +30,12 @@ abstract class DateTimeTests: ProvideTestDatabase {
             ) {
                 set(EventTable.at, it)
             })
-            .performWith(cxn)
+            .perform(cxn)
 
         EventTable
             .orderBy(EventTable.at.desc())
             .selectAll()
-            .performWith(cxn)
+            .perform(cxn)
             .forEachIndexed { ix, it ->
                 val t = it.getOrNull(EventTable.at)!!
 
@@ -48,7 +48,7 @@ abstract class DateTimeTests: ProvideTestDatabase {
         val timeExpr = currentTimestamp() as_ label()
 
         val currentTimeByDb = select(timeExpr)
-            .performWith(db).single().first()
+            .perform(db).single().first()
 
         assert(Duration.between(currentTimeByDb, Instant.now()).toMinutes().absoluteValue < 5)
     }

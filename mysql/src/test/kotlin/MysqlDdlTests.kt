@@ -1,4 +1,7 @@
-import io.koalaql.*
+import io.koalaql.ReconcileColumns
+import io.koalaql.ReconcileIndexes
+import io.koalaql.ReconcileMode
+import io.koalaql.ReconcileTables
 import io.koalaql.ddl.UnmappedDataType
 import kotlin.test.Test
 

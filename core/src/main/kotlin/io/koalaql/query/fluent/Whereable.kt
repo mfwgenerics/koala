@@ -2,15 +2,15 @@ package io.koalaql.query.fluent
 
 import io.koalaql.dsl.and
 import io.koalaql.expr.Expr
+import io.koalaql.query.built.BuildsIntoQueryBody
 import io.koalaql.query.built.BuiltQueryBody
-import io.koalaql.query.built.QueryBodyBuilder
 
 interface Whereable: Groupable {
     private class Where(
         val of: Whereable,
         val where: Expr<Boolean>
     ): Whereable {
-        override fun BuiltQueryBody.buildIntoQueryBody(): QueryBodyBuilder {
+        override fun BuiltQueryBody.buildInto(): BuildsIntoQueryBody {
             where = where?.and(this@Where.where)?:this@Where.where
             return of
         }
