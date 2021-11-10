@@ -3,9 +3,8 @@ package io.koalaql.query.built
 import io.koalaql.query.Distinctness
 import io.koalaql.query.SetOperationType
 
-class BuiltSetOperation(
+class BuiltFullSetOperation(
     val type: SetOperationType,
     val distinctness: Distinctness,
-) {
-    lateinit var body: BuiltUnionOperand
-}
+    val body: BuiltUnionOperandQuery
+)

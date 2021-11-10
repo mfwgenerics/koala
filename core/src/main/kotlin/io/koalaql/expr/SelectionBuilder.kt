@@ -13,7 +13,6 @@ class SelectionBuilder(
             is Cte -> with.getValue(relation)
             is TableRelation -> relation.columns
             is Subquery -> relation.of.columns
-            is Values -> relation.columns
             is EmptyRelation -> return
         }.asSequence()
 

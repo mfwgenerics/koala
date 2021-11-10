@@ -16,7 +16,7 @@ interface Withable: Withed {
             withs = queries.map {
                 BuiltWith(
                     it.cte,
-                    it.queryable.buildQuery()
+                    BuiltFullQuery.from(it.queryable)
                 )
             }
 
@@ -28,7 +28,7 @@ interface Withable: Withed {
             withs = queries.map {
                 BuiltWith(
                     it.cte,
-                    it.queryable.buildQuery()
+                    BuiltFullQuery.from(it.queryable)
                 )
             }
 

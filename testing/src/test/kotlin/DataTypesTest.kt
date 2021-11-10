@@ -40,6 +40,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
         val casted = cast(cast(label, values.type), values.type)
 
         val rows = values(values.values) { this[label] = it }
+            .subquery()
             .orderBy(casted)
             .select(casted as_ label)
             .performWith(cxn)

@@ -9,7 +9,6 @@ import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
-import io.koalaql.dsl.value
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.query.*
@@ -234,7 +233,7 @@ class H2Dialect(
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
             compileCastDataType(to)
 
-        fun compileQuery(query: BuiltSubquery, outerSelect: List<SelectedExpr<*>>? = null): Boolean {
+        inline fun <T> scopedIn(query: PopulatesScope, block: Compilation.() -> T): T {
             val innerScope = scope.innerScope()
 
             query.populateScope(innerScope)
@@ -244,22 +243,46 @@ class H2Dialect(
                 scope = innerScope
             )
 
+            return compilation.block()
+        }
+
+        // TODO remove this after WITH changes
+        private inline fun <T> scopedCtesIn(query: BuiltFullQuery, block: Compilation.() -> T): T {
+            val innerScope = scope.innerScope()
+
+            query.populateCtes(innerScope)
+
+            val compilation = Compilation(
+                sql = sql,
+                scope = innerScope
+            )
+
+            return compilation.block()
+        }
+
+        fun compileQuery(query: BuiltUnionOperandQuery): Boolean {
             return when (query) {
                 is BuiltSelectQuery -> {
-                    compilation.compileSelect(query)
+                    scopedIn(query) {
+                        compileSelect(query)
+                    }
                     true
                 }
-                is BuiltValuesQuery -> compilation.compileValues(query)
+                is BuiltValuesQuery -> compileValues(query)
             }
         }
 
-        fun compileSubqueryExpr(subquery: BuiltSubquery) {
+        fun compileQuery(query: BuiltFullQuery): Boolean {
+            return compileFullQuery(query)
+        }
+
+        fun compileSubqueryExpr(subquery: BuiltFullQuery) {
             sql.parenthesize {
-                compileQuery(subquery, null)
+                compileQuery(subquery)
             }
         }
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) =
+        override fun subquery(emitParens: Boolean, subquery: BuiltFullQuery) =
             compileSubqueryExpr(subquery)
 
         fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
@@ -286,23 +309,14 @@ class H2Dialect(
                     baseRelation.of.populateScope(innerScope)
 
                     sql.parenthesize {
-                        Compilation(
-                            innerScope,
-                            sql = sql
-                        ).compileQuery(baseRelation.of)
+                        compileQuery(baseRelation.of)
                     }
 
-                    if (baseRelation.of is BuiltValuesQuery) {
+                    if (baseRelation.of.columnsUnnamed()) {
                         baseRelation.of.columns
                     } else {
                         null
                     }
-                }
-                is Values -> {
-                    sql.parenthesize {
-                        compileValues(BuiltValuesQuery(baseRelation))
-                    }
-                    baseRelation.columns
                 }
                 is Cte -> {
                     sql.addSql(scope[baseRelation])
@@ -322,25 +336,6 @@ class H2Dialect(
             }
         }
 
-        fun compileSetOperation(
-            outerSelect: List<SelectedExpr<*>>,
-            operation: BuiltSetOperation
-        ) {
-            sql.addSql("\n")
-            sql.addSql(operation.type.sql)
-            if (operation.distinctness == Distinctness.ALL) sql.addSql(" ALL")
-            sql.addSql("\n")
-
-            val selectQuery = operation.body.toSelectQuery(outerSelect)
-
-            Compilation(
-                scope.innerScope().also {
-                    selectQuery.populateScope(it)
-                },
-                sql
-            ).compileSelect(selectQuery)
-        }
-
         fun compileWiths(withType: WithType, withs: List<BuiltWith>) {
             sql
                 .prefix(
@@ -351,23 +346,13 @@ class H2Dialect(
                     "\n, "
                 )
                 .forEach(withs) {
-                    val innerScope = scope.innerScope()
-
-                    it.query.populateScope(innerScope)
-
                     sql.addSql(scope[it.cte])
 
-                    when (val query = it.query) {
-                        is BuiltValuesQuery -> compileRelabels(query.columns)
-                        else -> { }
-                    }
+                    if (it.query.columnsUnnamed()) compileRelabels(it.query.columns)
 
                     sql.addSql(" AS (")
 
-                    Compilation(
-                        scope = innerScope,
-                        sql = sql
-                    ).compileQuery(it.query)
+                    compileQuery(it.query)
 
                     sql.addSql(")")
                 }
@@ -380,6 +365,20 @@ class H2Dialect(
                 sql.addSql("(")
                 compileWindow(BuiltWindow.from(it.window))
                 sql.addSql(")")
+            }
+        }
+
+        fun compileFullQuery(query: BuiltFullQuery): Boolean {
+            return scopedCtesIn(query) {
+                sql.compileFullQuery(
+                    query = query,
+                    compileSubquery = { compileQuery(it) },
+                    compileOrderBy = {
+                        scopedIn(query) {
+                            compileOrderBy(it)
+                        }
+                    }
+                )
             }
         }
 
@@ -402,55 +401,39 @@ class H2Dialect(
                 select.body,
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) },
-                compileSetOperation = { compileSetOperation(select.selected, it) },
-                selectedLabels = select.selected.asSequence().map { it.name }.toSet(),
-                compileOrderByLabel = { sql.addIdentifier(scope.nameOf(it)) }
+                compileWindows = { windows -> compileWindows(windows) }
             )
-
-            select.body.locking?.let { locking ->
-                when (locking) {
-                    LockMode.SHARE -> sql.addSql("\nFOR SHARE")
-                    LockMode.UPDATE -> sql.addSql("\nFOR UPDATE")
-                }
-            }
         }
 
         fun compileValues(query: BuiltValuesQuery): Boolean {
             return sql.compileValues(query, compileExpr = { compileExpr(it, false) })
         }
 
-        fun compileInsert(insert: BuiltInsert): Boolean {
-            compileWiths(insert.withType, insert.withs)
+        fun compileInsert(insert: BuiltInsert): Boolean = sql.compileInsert(
+            insert,
+            compileWiths = { type, withs -> compileWiths(type, withs) },
+            compileInsertLine = { sql.compileInsertLine(insert) },
+            compileQuery = { compileQuery(it) },
+            compileOnConflict = {
+                val relvar = insert.unwrapTable()
 
-            if (insert.withs.isNotEmpty()) sql.addSql("\n")
+                sql.compileOnConflict(it) { assignments ->
+                    val innerScope = scope.innerScope()
 
-            sql.compileInsertLine(insert)
+                    relvar.columns.forEach {
+                        innerScope.internal(it, it.symbol, null)
+                    }
 
-            sql.addSql("\n")
+                    val updateCtx = Compilation(innerScope, sql)
 
-            val relvar = insert.unwrapTable()
-
-            val nonEmpty = compileQuery(insert.query)
-
-            sql.compileOnConflict(insert.onConflict) { assignments ->
-                val innerScope = scope.innerScope()
-
-                relvar.columns.forEach {
-                    innerScope.internal(it, it.symbol, null)
-                }
-
-                val updateCtx = Compilation(innerScope, sql)
-
-                sql.prefix(" ", "\n,").forEach(assignments) {
-                    updateCtx.compileExpr(it.reference)
-                    sql.addSql(" = ")
-                    updateCtx.compileExpr(it.expr)
+                    sql.prefix(" ", "\n,").forEach(assignments) {
+                        updateCtx.compileExpr(it.reference)
+                        sql.addSql(" = ")
+                        updateCtx.compileExpr(it.expr)
+                    }
                 }
             }
-
-            return nonEmpty
-        }
+        )
 
         fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
             compileWiths = { type, withs -> compileWiths(type, withs) },
@@ -482,33 +465,22 @@ class H2Dialect(
     }
 
     override fun compile(dml: BuiltDml): SqlText? {
-        val registry = NameRegistry()
-        val scope = Scope(registry)
-
-        val compilation = Compilation(
-            scope = scope
-        )
-
-        dml.populateScope(scope)
-
-        val nonEmpty = when (dml) {
-            is BuiltSelectQuery -> {
-                compilation.compileSelect(dml)
-                true
+        return with(Compilation(scope = Scope(NameRegistry()))) {
+            val nonEmpty = when (dml) {
+                is BuiltFullQuery -> compileQuery(dml)
+                is BuiltInsert -> scopedIn(dml) { compileInsert(dml) }
+                is BuiltUpdate -> scopedIn(dml) { compileUpdate(dml) }
+                is BuiltDelete -> {
+                    scopedIn(dml) { compileDelete(dml) }
+                    true
+                }
             }
-            is BuiltValuesQuery -> compilation.compileValues(dml)
-            is BuiltInsert -> compilation.compileInsert(dml)
-            is BuiltUpdate -> compilation.compileUpdate(dml)
-            is BuiltDelete -> {
-                compilation.compileDelete(dml)
-                true
-            }
-        }
 
-        return if (nonEmpty) {
-            compilation.sql.toSql()
-        } else {
-            null
+            if (nonEmpty) {
+                sql.toSql()
+            } else {
+                null
+            }
         }
     }
 }

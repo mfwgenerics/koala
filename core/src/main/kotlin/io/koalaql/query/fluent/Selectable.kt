@@ -7,70 +7,71 @@ import io.koalaql.expr.*
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.SqlText
-import io.koalaql.values.EmptyRow
-import io.koalaql.values.ResultRow
-import io.koalaql.values.RowSequence
-import io.koalaql.values.RowSequenceEmptyMask
+import io.koalaql.values.*
 
 interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRow>> {
-    private class Select(
+    private abstract class AnySelect<T>(
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): Queryable<ResultRow> {
-        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
+    ): QueryableUnionOperand<T> {
+        fun buildQuery(): BuiltUnionOperandQuery = BuiltSelectQuery(
             BuiltQueryBody.from(of),
             references,
             includeAll
         )
 
+        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder? {
+            head = buildQuery()
+            return null
+        }
+
+        override fun BuiltFullQuery.buildIntoFullQueryTail(type: SetOperationType, distinctness: Distinctness) {
+            unioned.add(BuiltFullSetOperation(
+                type = type,
+                distinctness = distinctness,
+                body = buildQuery()
+            ))
+        }
+    }
+
+    private class Select(
+        of: Selectable,
+        references: List<SelectArgument>,
+        includeAll: Boolean
+    ): AnySelect<ResultRow>(of, references, includeAll), QueryableUnionOperand<ResultRow> {
         override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
-            ds.query(buildQuery())
+            ds.query(BuiltFullQuery.from(this))
     }
 
     private class EmptySelect(
         private val selectOne: QueryableOfOne<Int>
-    ): Queryable<EmptyRow> {
-        override fun buildQuery(): BuiltSubquery = selectOne.buildQuery()
+    ): QueryableUnionOperand<EmptyRow> {
+        override fun BuiltFullQuery.buildIntoFullQuery(): FullQueryBuilder = selectOne
+
+        override fun BuiltFullQuery.buildIntoFullQueryTail(type: SetOperationType, distinctness: Distinctness) =
+            with (selectOne) { buildIntoFullQueryTail(type, distinctness) }
 
         override fun performWith(ds: BlockingPerformer) =
-            RowSequenceEmptyMask(ds.query(buildQuery()))
+            RowSequenceEmptyMask(ds.query(BuiltFullQuery.from(this)))
     }
 
     private class SelectOne<A : Any>(
-        val of: Selectable,
-        val references: List<SelectArgument>
-    ): QueryableOfOne<A> {
-        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
-            BuiltQueryBody.from(of),
-            references,
-            false
-        )
-    }
+        of: Selectable,
+        references: List<SelectArgument>
+    ): AnySelect<RowWithOneColumn<A>>(of, references, false), QueryableOfOne<A>
 
     private class SelectTwo<A : Any, B : Any>(
-        val of: Selectable,
-        val references: List<SelectArgument>
-    ): QueryableOfTwo<A, B> {
-        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
-            BuiltQueryBody.from(of),
-            references,
-            false
-        )
-    }
+        of: Selectable,
+        references: List<SelectArgument>
+    ): AnySelect<RowWithTwoColumns<A, B>>(of, references, false), QueryableOfTwo<A, B>
 
     private class SelectThree<A : Any, B : Any, C : Any>(
-        val of: Selectable,
-        val references: List<SelectArgument>
-    ): QueryableOfThree<A, B, C> {
-        override fun buildQuery(): BuiltSubquery = BuiltSelectQuery(
-            BuiltQueryBody.from(of),
-            references,
-            false
-        )
-    }
+        of: Selectable,
+        references: List<SelectArgument>
+    ): AnySelect<RowWithThreeColumns<A, B, C>>(of, references, false), QueryableOfThree<A, B, C>
 
-    fun selectAll(vararg references: SelectArgument): Queryable<ResultRow> =
+    fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         Select(this, references.asList(), true)
 
     override fun generateSql(ds: SqlPerformer): SqlText? =
@@ -79,13 +80,13 @@ interface Selectable: QueryBodyBuilder, PerformableBlocking<RowSequence<ResultRo
     override fun performWith(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().performWith(ds)
 
-    fun select(references: List<SelectArgument>): Queryable<ResultRow> = if (references.isEmpty()) {
+    fun select(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> = if (references.isEmpty()) {
         EmptySelect(select(1 as_ label()))
     } else {
         Select(this, references, false)
     }
 
-    fun select(vararg references: SelectArgument): Queryable<ResultRow> =
+    fun select(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         select(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): QueryableOfOne<A> =

@@ -51,6 +51,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val results = values((1..20).asSequence(), listOf(number))
             { set(number, it) }
+            .subquery()
             .orderBy(castNumber.desc())
             .select(
                 number,
@@ -313,8 +314,8 @@ abstract class QueryTests: ProvideTestDatabase {
             .single().getOrNull(count)!!
 
         val doubleCount = PurchaseTable
-            .unionAll(PurchaseTable)
             .selectAll()
+            .unionAll(PurchaseTable.select(PurchaseTable))
             .performWith(cxn)
             .count()
 
@@ -416,6 +417,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val valuesQuery = values((1..5).asSequence(), listOf(n0))
             { set(n0, it) }
+            .subquery()
             .select(sum(cast(n0, INTEGER)) as_ n3)
 
         val result = select(
@@ -504,12 +506,12 @@ abstract class QueryTests: ProvideTestDatabase {
         )
 
         val actual = Tableless
+            .select(n1(0.25f), n0(50))
             .union(select(n0(10), n1(0.5f)))
             .unionAll(select(n0(20), n1(0.5f)))
             .unionAll(select(n0(30), n1(2.0f)))
             .union(select(n1(0.25f), n0(40)))
             .orderBy(n0)
-            .select(n1(0.25f), n0(50))
             .performWith(cxn)
             .map { row -> listOf(row[n0], row[n1]) }
             .toList()
@@ -530,11 +532,11 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val actual = fact.as_(alias)
             .withRecursive(fact as_ Tableless
+                .select(0L as_ index, 1L as_ value)
                 .unionAll(fact
                     .where(index less 9)
                     .select(index + 1 as_ index, ((index + 1)*value) as_ value)
                 )
-                .select(0L as_ index, 1L as_ value)
             )
             .select(alias[index], alias[value])
             .performWith(cxn)
@@ -680,6 +682,7 @@ abstract class QueryTests: ProvideTestDatabase {
         }
 
         val evensFirst = values
+            .subquery()
             .orderBy(cast(column1, INTEGER).nullsFirst(), cast(column0, INTEGER))
             .select(column0)
             .performWith(cxn)
@@ -687,6 +690,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .toList()
 
         val oddsFirst = values
+            .subquery()
             .orderBy(cast(column1, INTEGER).nullsLast(), cast(column0, INTEGER))
             .select(column0)
             .performWith(cxn)
@@ -783,6 +787,7 @@ abstract class QueryTests: ProvideTestDatabase {
     fun `empty values error`() = withDb { db ->
         assertFails {
             values<Nothing>(emptyList()) { }
+                .subquery()
                 .selectAll()
                 .generateSql(db)
         }
@@ -836,7 +841,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `name not in scope throws generated sql exception`() = withCxn { cxn, _ ->
-        val name = label<Int>()
+        val name = label<Int>("missing")
 
         try {
             CustomerTable
@@ -935,7 +940,8 @@ abstract class QueryTests: ProvideTestDatabase {
         }
 
         val joined = values
-            .crossJoin(values.as_(alias()))
+            .subquery()
+            .crossJoin(values.subqueryAs(alias()))
             .orderBy(someInt)
             .select(someInt)
             .performWith(db)

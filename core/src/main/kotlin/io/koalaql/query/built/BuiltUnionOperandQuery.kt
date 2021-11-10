@@ -2,15 +2,10 @@ package io.koalaql.query.built
 
 import io.koalaql.dsl.null_
 import io.koalaql.expr.*
-import io.koalaql.query.LabelList
-import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
-import kotlin.reflect.KClass
 
-sealed interface BuiltQuery {
-    fun populateScope(scope: Scope)
-}
+sealed interface BuiltQuery: PopulatesScope
 
 class BuiltGeneratesKeysInsert(
     val insert: BuiltInsert,
@@ -21,16 +16,19 @@ class BuiltGeneratesKeysInsert(
     }
 }
 
-sealed interface BuiltSubquery: BuiltQuery, BuiltDml {
+
+sealed interface BuiltUnionOperandQuery: PopulatesScope {
     val columns: List<Reference<*>>
 
-    override fun populateScope(scope: Scope)
+    fun columnsUnnamed(): Boolean
+
+    fun changeColumnsToFit(references: Iterable<Reference<*>>)
 }
 
-class BuiltSelectQuery(
+class BuiltSelectQuery private constructor(
     val body: BuiltQueryBody,
-    val selected: List<SelectedExpr<*>>
-): BuiltSubquery, BuiltDml {
+    var selected: List<SelectedExpr<*>>
+): BuiltUnionOperandQuery {
     constructor(
         body: BuiltQueryBody,
         references: List<SelectArgument>,
@@ -53,31 +51,9 @@ class BuiltSelectQuery(
             .toList()
     )
 
-    fun reorderToMatchUnion(outerSelected: List<SelectedExpr<*>>): BuiltSelectQuery {
-        val selectedByNames = selected.associateByTo(hashMapOf()) { it.name }
+    override var columns: List<Reference<*>> = selected.map { it.name }
 
-        check(selectedByNames.size == selected.size) {
-            "duplicate labels in select"
-        }
-
-        val selected = outerSelected.map {
-            val corresponding = selectedByNames.remove(it.name)
-
-            @Suppress("unchecked_cast")
-            corresponding ?: (SelectedExpr(null_(), it.name as Reference<Any>))
-        }
-
-        check(selectedByNames.isEmpty()) {
-            "Labels ${selectedByNames.keys} appeared in union selected but not in top level select"
-        }
-
-        return BuiltSelectQuery(
-            body = body,
-            selected = selected
-        )
-    }
-
-    override val columns: LabelList = LabelListOf(selected.map { it.name })
+    override fun columnsUnnamed(): Boolean = false
 
     override fun populateScope(scope: Scope) {
         body.populateScope(scope)
@@ -87,12 +63,27 @@ class BuiltSelectQuery(
             scope.external(it.name)
         }
     }
+
+    override fun changeColumnsToFit(references: Iterable<Reference<*>>) {
+        val selectedByReference = selected.associateBy { it.name }
+
+        columns = references.toList()
+
+        selected = references.map {
+            @Suppress("unchecked_cast")
+            selectedByReference[it] ?: SelectedExpr(null_(), it as Reference<Any>)
+        }
+    }
 }
 
 data class BuiltValuesQuery(
     val values: Values
-): BuiltSubquery {
+): BuiltUnionOperandQuery {
     override val columns get() = values.columns
 
     override fun populateScope(scope: Scope) { }
+
+    override fun changeColumnsToFit(references: Iterable<Reference<*>>) { error("not implemented") }
+
+    override fun columnsUnnamed(): Boolean = true
 }

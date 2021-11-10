@@ -24,8 +24,6 @@ class BuiltQueryBody {
 
     var windows: List<LabeledWindow> = emptyList()
 
-    val setOperations: MutableList<BuiltSetOperation> = arrayListOf()
-
     var orderBy: List<Ordinal<*>> = emptyList()
 
     var offset: Int = 0

@@ -50,6 +50,46 @@ fun SqlTextBuilder.compileJoins(
     }
 }
 
+fun SqlTextBuilder.compileFullQuery(
+    query: BuiltFullQuery,
+    compileSubquery: (BuiltUnionOperandQuery) -> Boolean,
+    compileSetOperation: (BuiltFullSetOperation) -> Unit = {
+        addSql("\n")
+        addSql(it.type)
+
+        when (it.distinctness) {
+            Distinctness.ALL -> addSql(" ALL")
+            Distinctness.DISTINCT -> { }
+        }
+
+        addSql("\n")
+
+        compileSubquery(it.body)
+    },
+    compileOrderBy: (List<Ordinal<*>>) -> Unit
+): Boolean {
+    val nonEmptyHead = compileSubquery(query.head)
+
+    query.unioned.forEach(compileSetOperation)
+
+    if (query.orderBy.isNotEmpty()) {
+        addSql("\n")
+        compileOrderBy(query.orderBy)
+    }
+
+    query.limit?.let {
+        addSql("\nLIMIT ")
+        addLiteral(value(it))
+    }
+
+    if (query.offset != 0) {
+        addSql("\n OFFSET ")
+        addLiteral(value(query.offset))
+    }
+
+    return nonEmptyHead || query.unioned.isNotEmpty()
+}
+
 fun SqlTextBuilder.compileUpdate(
     update: BuiltUpdate,
     compileWiths: (WithType, List<BuiltWith>) -> Unit,
@@ -183,7 +223,7 @@ fun SqlTextBuilder.compileExpr(
             }
         }
         is QueryableOfOne<*> -> {
-            impl.subquery(false, expr.buildQuery())
+            impl.subquery(false, BuiltFullQuery.from(expr))
         }
         is BuiltCaseExpr<*> -> parenthesize(emitParens) {
             addSql("CASE ")
@@ -284,18 +324,9 @@ fun SqlTextBuilder.compileQueryBody(
         addSql("\nHAVING ")
         compileExpr(it)
     },
-    compileSetOperation: (BuiltSetOperation) -> Unit = {
-        addError("unexpected ${it.type}")
-    },
-    selectedLabels: Set<Reference<*>> = emptySet(),
-    compileOrderByLabel: (Reference<*>) -> Unit = { compileExpr(it) },
     compileOrderBy: (List<Ordinal<*>>) -> Unit = { orderBys ->
         this.compileOrderBy(orderBys) {
-            if (it is Reference<*> && it in selectedLabels) {
-                compileOrderByLabel(it)
-            } else {
-                compileExpr(it)
-            }
+            compileExpr(it)
         }
     }
 ) {
@@ -308,8 +339,6 @@ fun SqlTextBuilder.compileQueryBody(
     body.having?.let(compileHaving)
 
     if (body.windows.isNotEmpty()) compileWindows(body.windows)
-
-    body.setOperations.forEach { compileSetOperation(it) }
 
     if (body.orderBy.isNotEmpty()) {
         addSql("\n")
@@ -417,4 +446,26 @@ fun SqlTextBuilder.compileOnConflict(
         }
         null -> { }
     }
+}
+
+fun SqlTextBuilder.compileInsert(
+    insert: BuiltInsert,
+    compileWiths: (WithType, List<BuiltWith>) -> Unit,
+    compileInsertLine: (BuiltInsert) -> Unit,
+    compileQuery: (BuiltFullQuery) -> Boolean,
+    compileOnConflict: (OnConflictOrDuplicateAction) -> Unit
+): Boolean {
+    compileWiths(insert.withType, insert.withs)
+
+    if (insert.withs.isNotEmpty()) addSql("\n")
+
+    compileInsertLine(insert)
+
+    addSql("\n")
+
+    val nonEmpty = compileQuery(insert.query)
+
+    insert.onConflict?.let(compileOnConflict)
+
+    return nonEmpty
 }

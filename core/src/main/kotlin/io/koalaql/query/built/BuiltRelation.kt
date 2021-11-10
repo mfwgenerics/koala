@@ -19,7 +19,6 @@ class BuiltRelation {
             is TableRelation -> relation.columns.map { it to it.symbol }
             is Subquery -> relation.of.columns.map { it to scope.names[it] }
             is Cte -> scope.cteColumns(relation).map { it to scope.names[it] }
-            is Values -> relation.columns.map { it to scope.names[it] }
             is EmptyRelation -> return
         }
 

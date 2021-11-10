@@ -1,8 +1,10 @@
 import io.koalaql.ddl.INTEGER
+import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
 import io.koalaql.dsl.*
 import io.koalaql.query.Tableless
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 abstract class UnionableTests: ProvideTestDatabase {
     private fun castInt(value: Int) = cast(value(value), INTEGER)
@@ -12,10 +14,10 @@ abstract class UnionableTests: ProvideTestDatabase {
         val labelOne = label<Int>()
 
         val results = Tableless
-            .unionAll(select(castInt(1) as_ labelOne))
             .select(castInt(1) as_ labelOne)
+            .unionAll(select(castInt(1) as_ labelOne))
             .performWith(db)
-            .map { it.first() }
+            .map { it[labelOne] }
             .toList()
 
         assertListEquals(listOf(1, 1), results)
@@ -26,12 +28,12 @@ abstract class UnionableTests: ProvideTestDatabase {
         val x = label<Int>()
 
         val sorted = Tableless
+            .select(castInt(3) as_ x)
             .unionAll(select(castInt(1) as_ x))
             .unionAll(select(castInt(2) as_ x))
             .orderBy(x.desc())
-            .select(castInt(3) as_ x)
             .performWith(db)
-            .map { it.first() }
+            .map { it[x] }
             .toList()
 
         assertListEquals(listOf(3, 2, 1), sorted)
@@ -60,13 +62,60 @@ abstract class UnionableTests: ProvideTestDatabase {
         val rows = cte
             .with(cte)
             .where(x eq 9)
+            .select(x, y)
             .union(cte.where(x eq 7).select(y))
             .union(cte.where(x eq 8).select(y))
             .orderBy(y)
-            .select(x, y)
             .performWith(db)
+            .map { row ->
+                row.columns.map { row[it] }
+            }
             .toList()
 
-        println(rows)
+        assertEquals(3, rows.size)
+
+        assertListEquals(listOf(null, "Eight"), rows[0])
+        assertListEquals(listOf(9, "Nine"), rows[1])
+        assertListEquals(listOf(null, "Seven"), rows[2])
+    }
+
+    @Test
+    fun `order of unions`() = withDb { db ->
+        val t0 = object : Table("table0") { }
+        val t1 = object : Table("table1") { }
+        val t2 = object : Table("table2") { }
+
+        val sql = t0
+            .select()
+            .union(t1.select())
+            .union(t2.select())
+            .generateSql(db)
+            ?.parameterizedSql
+            .orEmpty()
+
+        assert(sql.indexOf("table0") < sql.indexOf("table1"))
+        assert(sql.indexOf("table1") < sql.indexOf("table2"))
+    }
+
+    @Test
+    fun `ordered, limited and offset union`() = withDb { db ->
+        val x = label<Int>()
+
+        val results = select(castInt(11) as_ x)
+            .union(select(castInt(12) as_ x))
+            .union(select(castInt(13) as_ x))
+            .union(Tableless
+                .where(value(false))
+                .select(castInt(14) as_ x))
+            .union(select(castInt(15) as_ x))
+            .union(select(castInt(16) as_ x))
+            .orderBy(x)
+            .offset(2)
+            .limit(3)
+            .performWith(db)
+            .map { it.getValue(x) }
+            .toList()
+
+        assertListEquals(listOf(13, 15, 16), results)
     }
 }

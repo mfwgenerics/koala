@@ -16,7 +16,7 @@ class BuiltInsert: BuiltStatement {
 
     var onConflict: OnConflictOrDuplicateAction? = null
 
-    lateinit var query: BuiltSubquery
+    lateinit var query: BuiltFullQuery
 
     fun unwrapTable(): TableRelation = when (val relation = relation.relation) {
         is TableRelation -> relation
