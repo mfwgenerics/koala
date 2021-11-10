@@ -784,12 +784,12 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `empty values error`() = withDb { db ->
+    fun `empty values error`() = withCxn { cxn ->
         assertFails {
             values<Nothing>(emptyList()) { }
                 .subquery()
                 .selectAll()
-                .generateSql(db)
+                .generateSql(cxn)
         }
     }
 
@@ -918,12 +918,12 @@ abstract class QueryTests: ProvideTestDatabase {
     class JoinOrderTable(name: String): Table(name)
 
     @Test
-    fun `joins in correct order`() = withDb { db ->
+    fun `joins in correct order`() = withCxn { cxn ->
         val generated = JoinOrderTable("table0")
             .innerJoin(JoinOrderTable("table1"), value(true))
             .innerJoin(JoinOrderTable("table2"), value(true))
             .select(value(true) as_ label())
-            .generateSql(db)
+            .generateSql(cxn)
             ?.parameterizedSql
             .orEmpty()
 
@@ -932,7 +932,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `inner join without on`() = withDb { db ->
+    fun `inner join without on`() = withCxn { cxn ->
         val someInt = label<Int>()
 
         val values = values((1..3)) {
@@ -944,7 +944,7 @@ abstract class QueryTests: ProvideTestDatabase {
             .crossJoin(values.subqueryAs(alias()))
             .orderBy(someInt)
             .select(someInt)
-            .perform(db)
+            .perform(cxn)
             .map { it.first() }
             .toList()
 

@@ -9,7 +9,8 @@ object SqlTestLintingLogger: ConnectionEventWriter {
     private fun lintSql(sql: String) {
         sql.lines().forEach {
             assert(it.isNotBlank()) { sql }
-            assert(it == it.trim()) { "Inappropriate whitespace in line |$it| in\n$sql" }
+            assert(it == it.trim()) { "Inappropriate whitespace at |$it| in\n$sql" }
+            assert("  " !in it) { "Extra space at |$it|\n$sql" }
         }
     }
 
