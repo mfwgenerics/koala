@@ -1,3 +1,4 @@
+import io.koalaql.ddl.FLOAT
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
@@ -162,5 +163,34 @@ abstract class UnionableTests: ProvideTestDatabase {
             listOf(20, -10, 30, -20, 20, -10, 30, -20, 1, null),
             rows
         )
+    }
+
+    @Test
+    open fun `union to values`() = withCxn { cxn ->
+        val x = label<Int>()
+        val y = label<Float>()
+        val z = label<String>()
+
+        val results = select("Test" as_ z, 3.5f as_ y, 3 as_ x)
+            .union(values(
+                rowOf(
+                    x setTo 1,
+                    y setTo 1.5f
+                ),
+                rowOf(
+                    x setTo 2,
+                    y setTo 2.5f
+                )
+            ))
+            .orderBy(x)
+            .perform(cxn)
+            .map { row -> row.columns.map { row[it] } }
+            .toList()
+
+        assertListEquals(listOf(null, 1.5f, 1), results[0])
+        assertListEquals(listOf(null, 2.5f, 2), results[1])
+        assertListEquals(listOf("Test", 3.5f, 3), results[2])
+
+        assertEquals(3, results.size)
     }
 }

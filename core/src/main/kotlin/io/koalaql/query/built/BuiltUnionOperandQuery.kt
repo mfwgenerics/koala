@@ -2,8 +2,12 @@ package io.koalaql.query.built
 
 import io.koalaql.dsl.null_
 import io.koalaql.expr.*
+import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
+import io.koalaql.values.ReshapedValuesRowIterator
+import io.koalaql.values.RowIterator
+import io.koalaql.values.ValuesRow
 
 sealed interface BuiltQueryable: PopulatesScope
 
@@ -78,7 +82,7 @@ class BuiltSelectQuery(
 }
 
 data class BuiltValuesQuery(
-    val values: Values
+    var values: Values
 ): BuiltUnionOperandQuery {
     override val columns get() = values.columns
 
@@ -86,7 +90,15 @@ data class BuiltValuesQuery(
 
     override fun populateScope(scope: Scope) { }
 
-    override fun changeColumnsToFit(references: Iterable<Reference<*>>) { error("not implemented") }
+    override fun changeColumnsToFit(references: Iterable<Reference<*>>) {
+        val labelList = LabelListOf(references.toList())
+
+        val oldValues = values
+
+        values = Values(labelList) {
+            ReshapedValuesRowIterator(labelList, oldValues.rowIterator())
+        }
+    }
 
     override fun columnsUnnamed(): Boolean = true
 }
