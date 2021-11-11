@@ -6,8 +6,6 @@ import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
 import io.koalaql.values.ReshapedValuesRowIterator
-import io.koalaql.values.RowIterator
-import io.koalaql.values.ValuesRow
 
 sealed interface BuiltQueryable: PopulatesScope
 
@@ -96,7 +94,7 @@ data class BuiltValuesQuery(
         val oldValues = values
 
         values = Values(labelList) {
-            ReshapedValuesRowIterator(labelList, oldValues.rowIterator())
+            ReshapedValuesRowIterator(labelList, oldValues.valuesIterator())
         }
     }
 

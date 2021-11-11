@@ -396,7 +396,7 @@ fun SqlTextBuilder.compileValues(
 
     addSql("VALUES ")
 
-    val iter = values.rowIterator()
+    val iter = values.valuesIterator()
     var count = 0
 
     return if (iter.next()) {
