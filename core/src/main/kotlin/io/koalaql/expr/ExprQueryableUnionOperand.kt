@@ -7,7 +7,7 @@ import io.koalaql.values.RowSequence
 import io.koalaql.values.RowWithOneColumn
 import io.koalaql.values.unsafeCastToOneColumn
 
-interface QueryableOfOne<T : Any>: Expr<T>, QueryableUnionOperand<RowWithOneColumn<T>> {
+interface ExprQueryableUnionOperand<T : Any>: ExprQueryable<T>, QueryableUnionOperand<RowWithOneColumn<T>> {
     override fun perform(ds: BlockingPerformer): RowSequence<RowWithOneColumn<T>> =
         ds.query(BuiltQuery.from(this)).unsafeCastToOneColumn()
 
@@ -19,7 +19,7 @@ interface QueryableOfOne<T : Any>: Expr<T>, QueryableUnionOperand<RowWithOneColu
             withType = type
             withs = queries
 
-            return this@QueryableOfOne
+            return this@ExprQueryableUnionOperand
         }
     }
 }

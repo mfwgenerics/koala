@@ -8,7 +8,6 @@ import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
 import io.koalaql.sql.SqlTextBuilder
-import io.koalaql.values.RowIterator
 import io.koalaql.values.ValuesRow
 import io.koalaql.window.*
 
@@ -228,7 +227,7 @@ fun SqlTextBuilder.compileExpr(
         is SubqueryQuasiExpr -> {
             impl.subquery(false, expr.query)
         }
-        is QueryableOfOne<*> -> {
+        is ExprQueryable<*> -> {
             impl.subquery(false, BuiltQuery.from(expr))
         }
         is BuiltCaseExpr<*> -> parenthesize(emitParens) {
@@ -261,7 +260,7 @@ fun SqlTextBuilder.compileExpr(
                 override fun expr(expr: QuasiExpr) { compileExpr(expr, true, impl) }
             }.build()
         }
-        else -> error("missed case $expr")
+        is ComparisonOperand<*> -> error("should not be compiled directly as expr")
     }
 }
 

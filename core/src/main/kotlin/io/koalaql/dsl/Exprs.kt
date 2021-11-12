@@ -8,8 +8,8 @@ import io.koalaql.expr.*
 import io.koalaql.expr.fluent.ElseableCase
 import io.koalaql.expr.fluent.ThenableCase
 import io.koalaql.expr.fluent.WhenableCase
+import io.koalaql.query.Queryable
 import io.koalaql.query.built.BuiltQuery
-import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.sql.RawSqlBuilder
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
@@ -47,14 +47,14 @@ fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(thi
 
 fun <T : Any> null_(): Expr<T> = OperationType.NULL()
 
-fun exists(query: QueryableUnionOperand<*>): Expr<Boolean> =
+fun exists(query: Queryable<*>): Expr<Boolean> =
     OperationType.EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
-fun notExists(query: QueryableUnionOperand<*>): Expr<Boolean> =
+fun notExists(query: Queryable<*>): Expr<Boolean> =
     OperationType.NOT_EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
 
-infix fun <T : Any> Expr<T>.inQuery(query: QueryableOfOne<T>): Expr<Boolean> =
+infix fun <T : Any> Expr<T>.inQuery(query: ExprQueryable<T>): Expr<Boolean> =
     OperationType.IN(this, query)
-infix fun <T : Any> Expr<T>.notInQuery(query: QueryableOfOne<T>): Expr<Boolean> =
+infix fun <T : Any> Expr<T>.notInQuery(query: ExprQueryable<T>): Expr<Boolean> =
     OperationType.NOT_IN(this, query)
 
 infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
@@ -80,10 +80,10 @@ fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
 inline fun <reified T : Any> value(value: T?): Literal<T> =
     Literal(T::class, value)
 
-fun <T : Any> all(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
+fun <T : Any> all(subquery: ExprQueryable<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ALL, BuiltQuery.from(subquery))
 
-fun <T : Any> any(subquery: QueryableOfOne<T>): ComparisonOperand<T> =
+fun <T : Any> any(subquery: ExprQueryable<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ANY, BuiltQuery.from(subquery))
 
 operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =

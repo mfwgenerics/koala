@@ -22,6 +22,8 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
     var offset: Int = 0
     var limit: Int? = null
 
+    var expectedColumnOrder: List<Reference<*>>? = null
+
     fun columnsUnnamed(): Boolean = head.columnsUnnamed()
 
     override fun populateScope(scope: Scope) {
@@ -45,8 +47,18 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
         allReferences.addAll(head.columns)
         unioned.forEach { allReferences.addAll(it.body.columns) }
 
-        head.changeColumnsToFit(allReferences)
-        unioned.forEach { it.body.changeColumnsToFit(allReferences) }
+        val reorderTo = expectedColumnOrder
+            ?.let { expected ->
+                check (allReferences.size == expected.size && allReferences.containsAll(expected)) {
+                    "$expected did not match $allReferences"
+                }
+
+                expected
+            }
+            ?: allReferences
+
+        head.changeColumnsToFit(reorderTo)
+        unioned.forEach { it.body.changeColumnsToFit(reorderTo) }
     }
 
     companion object {

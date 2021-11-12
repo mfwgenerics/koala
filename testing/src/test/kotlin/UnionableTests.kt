@@ -1,9 +1,9 @@
-import io.koalaql.ddl.FLOAT
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
 import io.koalaql.dsl.*
 import io.koalaql.query.Tableless
+import io.koalaql.sql.GeneratedSqlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -192,5 +192,62 @@ abstract class UnionableTests: ProvideTestDatabase {
         assertListEquals(listOf("Test", 3.5f, 3), results[2])
 
         assertEquals(3, results.size)
+    }
+
+    @Test
+    open fun `expecting of unionable usable as expr`() = withCxn { cxn ->
+        val x = label<Int>()
+
+        val expr = select(castInt(5) as_ x)
+            .union(select(castInt(7) as_ x))
+            .union(select(castInt(9) as_ x))
+            .orderBy(x.desc())
+            .limit(1)
+            .expecting(x)
+
+        val result = select(expr + expr as_ x)
+            .perform(cxn)
+            .single()
+            .first()
+
+        assertEquals(18, result)
+    }
+
+    @Test
+    open fun `expecting reorders unionable`() = withCxn { cxn ->
+        val x = label<Int>()
+        val y = label<Int>()
+
+        val rows = select(castInt(5) as_ x, castInt(-2) as_ y)
+            .union(select(-4 as_ y, 7 as_ x))
+            .union(select(castInt(9) as_ x, -6 as_ y))
+            .orderBy(x)
+            .expecting(y, x)
+            .perform(cxn)
+            .flatMap { listOf(it.first(), it.second()) }
+            .toList()
+
+        assertListEquals(listOf(-2, 5, -4, 7, -6, 9), rows)
+    }
+
+    @Test
+    open fun `expecting column mismatch fails`() = withCxn { cxn ->
+        val x = label<Int>()
+        val y = label<Int>()
+        val z = label<Int>()
+
+        try {
+            select(castInt(5) as_ x, castInt(-2) as_ y)
+                .union(select(-4 as_ y, 7 as_ x))
+                .union(select(castInt(9) as_ z, -6 as_ y))
+                .orderBy(x)
+                .expecting(y, x)
+                .perform(cxn)
+                .toList()
+
+            assert(false)
+        } catch (ex: IllegalStateException) {
+
+        }
     }
 }

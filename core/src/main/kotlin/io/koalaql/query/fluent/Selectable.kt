@@ -6,7 +6,6 @@ import io.koalaql.dsl.label
 import io.koalaql.expr.*
 import io.koalaql.query.*
 import io.koalaql.query.built.*
-import io.koalaql.sql.SqlText
 import io.koalaql.values.*
 
 interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
@@ -20,11 +19,11 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
     override fun with(type: WithType, queries: List<BuiltWith>): Queryable<ResultRow> =
         selectAll().with(type, queries)
 
-    private abstract class AnySelect<T>(
+    private class Select(
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): QueryableUnionOperand<T> {
+    ): QueryableUnionOperand<ResultRow> {
         fun buildQuery(): BuiltUnionOperandQuery = BuiltSelectQuery(
             BuiltQueryBody.from(of),
             references,
@@ -43,13 +42,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
                 body = buildQuery()
             ))
         }
-    }
 
-    private class Select(
-        of: Selectable,
-        references: List<SelectArgument>,
-        includeAll: Boolean
-    ): AnySelect<ResultRow>(of, references, includeAll), QueryableUnionOperand<ResultRow> {
         override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
             ds.query(BuiltQuery.from(this))
 
@@ -66,45 +59,6 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
         }
     }
 
-    private class EmptySelect(
-        private val selectOne: QueryableOfOne<Int>
-    ): QueryableUnionOperand<EmptyRow> {
-        override fun BuiltQuery.buildInto(): QueryBuilder = selectOne
-
-        override fun BuiltQuery.buildIntoQueryTail(type: SetOperationType, distinctness: Distinctness) =
-            with (selectOne) { buildIntoQueryTail(type, distinctness) }
-
-        override fun perform(ds: BlockingPerformer) =
-            RowSequenceEmptyMask(ds.query(BuiltQuery.from(this)))
-
-        override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<EmptyRow> {
-            override fun perform(ds: BlockingPerformer): RowSequence<EmptyRow> =
-                RowSequenceEmptyMask(ds.query(BuiltQuery.from(this)))
-
-            override fun BuiltQuery.buildInto(): QueryBuilder? {
-                withType = type
-                withs = queries
-
-                return this@EmptySelect
-            }
-        }
-    }
-
-    private class SelectOne<A : Any>(
-        of: Selectable,
-        references: List<SelectArgument>
-    ): AnySelect<RowWithOneColumn<A>>(of, references, false), QueryableOfOne<A>
-
-    private class SelectTwo<A : Any, B : Any>(
-        of: Selectable,
-        references: List<SelectArgument>
-    ): AnySelect<RowWithTwoColumns<A, B>>(of, references, false), QueryableOfTwo<A, B>
-
-    private class SelectThree<A : Any, B : Any, C : Any>(
-        of: Selectable,
-        references: List<SelectArgument>
-    ): AnySelect<RowWithThreeColumns<A, B, C>>(of, references, false), QueryableOfThree<A, B, C>
-
     fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         Select(this, references.asList(), true)
 
@@ -112,7 +66,11 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
         selectAll().perform(ds)
 
     fun select(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> = if (references.isEmpty()) {
-        EmptySelect(select(1 as_ label()))
+        val x = label<Int>()
+
+        CastQueryableUnionOperand(select(1 as_ x)) {
+            RowSequenceEmptyMask(it)
+        }
     } else {
         Select(this, references, false)
     }
@@ -120,21 +78,27 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
     fun select(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         select(references.asList())
 
-    fun <A : Any> select(labeled: SelectOperand<A>): QueryableOfOne<A> =
-        SelectOne(this, listOf(labeled))
+    fun <A : Any> select(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =
+        CastExprQueryableUnionOperand(select(listOf(labeled))) {
+            it.unsafeCastToOneColumn()
+        }
 
     fun <A : Any, B : Any> select(
         first: SelectOperand<A>,
         second: SelectOperand<B>
-    ): QueryableOfTwo<A, B> =
-        SelectTwo(this, listOf(first, second))
+    ): QueryableUnionOperand<RowWithTwoColumns<A, B>> =
+        CastQueryableUnionOperand(select(listOf(first, second))) {
+            it.unsafeCastToTwoColumns()
+        }
 
     fun <A : Any, B : Any, C : Any> select(
         first: SelectOperand<A>,
         second: SelectOperand<B>,
         third: SelectOperand<C>
-    ): QueryableOfThree<A, B, C> =
-        SelectThree(this, listOf(first, second, third))
+    ): QueryableUnionOperand<RowWithThreeColumns<A, B, C>> =
+        CastQueryableUnionOperand(select(listOf(first, second, third))) {
+            it.unsafeCastToThreeColumns()
+        }
 
     private class Update(
         val of: Selectable,
