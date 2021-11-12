@@ -3,6 +3,7 @@ package io.koalaql.query
 import io.koalaql.IdentifierName
 import io.koalaql.expr.Column
 import io.koalaql.query.built.*
+import io.koalaql.query.fluent.QueryableResultsUnionOperand
 import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.values.*
 
@@ -30,7 +31,7 @@ class Subquery(
 class Values(
     override val columns: LabelList,
     private val impl: () -> ValuesIterator
-): QueryableUnionOperand<ResultRow>, ValuesSequence {
+): QueryableResultsUnionOperand, ValuesSequence {
     override fun valuesIterator(): ValuesIterator = impl()
 
     override fun BuiltQuery.buildInto(): QueryBuilder? {

@@ -8,7 +8,7 @@ import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.values.*
 
-interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
+interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
     override fun BuiltQuery.buildInto(): QueryBuilder? =
         with (selectAll()) { buildInto() }
 
@@ -23,7 +23,15 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): QueryableUnionOperand<ResultRow> {
+    ): QueryableResultsUnionOperand {
+        init {
+            val checkedReferences = hashSetOf<Reference<*>>()
+
+            references.forEach {
+                with (it) { checkedReferences.enforceUniqueReference() }
+            }
+        }
+
         fun buildQuery(): BuiltUnionOperandQuery = BuiltSelectQuery(
             BuiltQueryBody.from(of),
             references,
@@ -59,23 +67,28 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
         }
     }
 
-    fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
+    fun selectAll(vararg references: SelectArgument): QueryableResultsUnionOperand =
         Select(this, references.asList(), true)
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().perform(ds)
 
-    fun select(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> = if (references.isEmpty()) {
+    private class EmptyQueryableUnionOperand(
+        of: QueryableUnionOperand<*>
+    ): CastQueryableUnionOperand<ResultRow>(
+        of,
+        { RowSequenceEmptyMask(it) }
+    ), QueryableResultsUnionOperand
+
+    fun select(references: List<SelectArgument>): QueryableResultsUnionOperand = if (references.isEmpty()) {
         val x = label<Int>()
 
-        CastQueryableUnionOperand(select(1 as_ x)) {
-            RowSequenceEmptyMask(it)
-        }
+        EmptyQueryableUnionOperand(select(1 as_ x))
     } else {
         Select(this, references, false)
     }
 
-    fun select(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
+    fun select(vararg references: SelectArgument): QueryableResultsUnionOperand =
         select(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =

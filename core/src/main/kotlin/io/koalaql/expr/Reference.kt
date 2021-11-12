@@ -23,7 +23,7 @@ class AliasedReference<T : Any>(
     override val type: KClass<T>,
     private val alias: Alias,
     private val reference: Reference<T>
-): Reference<T>, SelectArgument {
+): Reference<T> {
     override val identifier: IdentifierName? get() = null
 
     override fun excludedReference(): Reference<T>? = reference.takeIf { alias === EXCLUDED_MARKER_ALIAS }

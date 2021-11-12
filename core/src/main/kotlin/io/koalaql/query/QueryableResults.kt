@@ -2,14 +2,27 @@ package io.koalaql.query
 
 import io.koalaql.expr.AsReference
 import io.koalaql.expr.ExprQueryable
+import io.koalaql.expr.Reference
 import io.koalaql.values.*
 import io.koalaql.values.unsafeCastToTwoColumns
 
 interface QueryableResults: Queryable<ResultRow> {
+    private fun expectingListOf(vararg elements: Reference<*>): List<Reference<*>> {
+        val references = hashSetOf<Reference<*>>()
+
+        elements.forEach {
+            check(references.add(it)) {
+                "duplicate reference $it in expecting(${elements.joinToString(", ")})"
+            }
+        }
+
+        return elements.asList()
+    }
+
     fun <A : Any> expecting(
         first: AsReference<A>
     ): ExprQueryable<A> =
-        ExpectingExprQueryable(this, listOf(first.asReference())) {
+        ExpectingExprQueryable(this, expectingListOf(first.asReference())) {
             it.unsafeCastToOneColumn()
         }
 
@@ -17,7 +30,7 @@ interface QueryableResults: Queryable<ResultRow> {
         first: AsReference<A>,
         second: AsReference<B>
     ): Queryable<RowWithTwoColumns<A, B>> =
-        ExpectingQueryable(this, listOf(first.asReference(), second.asReference())) {
+        ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference())) {
             it.unsafeCastToTwoColumns()
         }
 
@@ -26,7 +39,7 @@ interface QueryableResults: Queryable<ResultRow> {
         second: AsReference<B>,
         third: AsReference<C>
     ): Queryable<RowWithThreeColumns<A, B, C>> =
-        ExpectingQueryable(this, listOf(first.asReference(), second.asReference(), third.asReference())) {
+        ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference(), third.asReference())) {
             it.unsafeCastToThreeColumns()
         }
 }

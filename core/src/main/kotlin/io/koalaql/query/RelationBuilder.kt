@@ -1,11 +1,14 @@
 package io.koalaql.query
 
+import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectArgument
 import io.koalaql.expr.SelectionBuilder
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.Insertable
 
 interface RelationBuilder: Insertable, SelectArgument {
+    override fun MutableSet<Reference<*>>.enforceUniqueReference() { }
+
     override fun SelectionBuilder.buildIntoSelection() {
         fromRelation(BuiltRelation.from(this@RelationBuilder))
     }

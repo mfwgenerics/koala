@@ -7,7 +7,7 @@ import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.values.RawResultRow
 import io.koalaql.values.RowSequence
 
-class CastQueryableUnionOperand<T>(
+open class CastQueryableUnionOperand<T>(
     val of: QueryableUnionOperand<*>,
     val cast: (rows: RowSequence<RawResultRow>) -> RowSequence<T>
 ): QueryableUnionOperand<T> {

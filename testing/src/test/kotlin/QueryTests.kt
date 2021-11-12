@@ -14,6 +14,7 @@ import io.koalaql.test.shops.createAndPopulate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 
 abstract class QueryTests: ProvideTestDatabase {
     fun withExampleData(block: (DataConnection) -> Unit) = withCxn(
@@ -958,5 +959,28 @@ abstract class QueryTests: ProvideTestDatabase {
             .perform(cxn)
 
         assertEquals(0, updated)
+    }
+
+    @Test
+    fun `selecting and expecting the same field twice fails`() = withCxn(ShopTable) { cxn ->
+        assertFails {
+            ShopTable
+                .select(ShopTable.id, ShopTable.id)
+                .perform(cxn)
+        }
+
+        assertFails {
+            ShopTable
+                .selectAll()
+                .expecting(ShopTable.id)
+                .perform(cxn)
+        }
+
+        assertFails {
+            ShopTable
+                .selectAll()
+                .expecting(ShopTable.id, ShopTable.id, ShopTable.name)
+                .perform(cxn)
+        }
     }
 }
