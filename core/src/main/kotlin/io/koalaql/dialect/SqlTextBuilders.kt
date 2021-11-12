@@ -374,13 +374,13 @@ fun SqlTextBuilder.compileQueryBody(
 
 fun SqlTextBuilder.compileRow(
     columns: List<Reference<*>>,
-    iter: RowIterator<ValuesRow>,
+    row: ValuesRow,
     compileExpr: (Expr<*>) -> Unit
 ) {
     addSql("(")
     prefix("", ", ").forEach(columns) {
         @Suppress("unchecked_cast")
-        compileExpr(iter.row[it])
+        compileExpr(row[it])
     }
     addSql(")")
 }
@@ -388,7 +388,7 @@ fun SqlTextBuilder.compileRow(
 fun SqlTextBuilder.compileValues(
     query: BuiltValuesQuery,
     compileExpr: (Expr<*>) -> Unit,
-    compileRow: (List<Reference<*>>, RowIterator<ValuesRow>) -> Unit = { columns, it ->
+    compileRow: (List<Reference<*>>, ValuesRow) -> Unit = { columns, it ->
         this.compileRow(columns, it, compileExpr)
     }
 ): Boolean {
@@ -406,7 +406,7 @@ fun SqlTextBuilder.compileValues(
             if (count == 1) beginAbridgement()
 
             rowPrefix.next {
-                compileRow(values.columns, iter)
+                compileRow(values.columns, iter.row)
             }
 
             count++

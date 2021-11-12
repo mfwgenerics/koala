@@ -29,9 +29,9 @@ class Subquery(
 
 class Values(
     override val columns: LabelList,
-    private val impl: () -> RowIterator<ValuesRow>
+    private val impl: () -> ValuesIterator
 ): QueryableUnionOperand<ResultRow>, ValuesSequence {
-    override fun valuesIterator(): RowIterator<ValuesRow> = impl()
+    override fun valuesIterator(): ValuesIterator = impl()
 
     override fun BuiltQuery.buildInto(): QueryBuilder? {
         head = BuiltValuesQuery(this@Values)

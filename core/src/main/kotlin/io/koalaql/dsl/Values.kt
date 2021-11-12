@@ -18,7 +18,7 @@ inline fun <T> values(
     return Values(columns) {
         val iter = source.iterator()
 
-        object : RowIterator<ValuesRow> {
+        object : ValuesIterator {
             override var row: PreLabeledValues = PreLabeledValues(columns)
 
             override fun next(): Boolean {
@@ -87,7 +87,7 @@ inline fun <T> values(
     }
 
     return Values(labels) {
-        IteratorToRowIterator(rows.iterator())
+        IteratorToValuesIterator(rows.iterator())
     }
 }
 
@@ -114,7 +114,7 @@ fun values(
     val columns = LabelListOf(labelSet.toList())
 
     return Values(columns) {
-        IteratorToRowIterator(rows.iterator())
+        IteratorToValuesIterator(rows.iterator())
     }
 }
 
