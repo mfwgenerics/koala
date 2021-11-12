@@ -29,14 +29,6 @@ inline fun <T> values(
 
                 return true
             }
-
-            override fun takeRow(): ValuesRow {
-                val result = row
-                row = PreLabeledValues(columns)
-                return result
-            }
-
-            override fun close() { }
         }
     }
 }
