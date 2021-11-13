@@ -536,7 +536,7 @@ class MysqlDialect(): SqlDialect {
     }
 
     override fun compile(dml: BuiltDml): SqlText? {
-        return with(Compilation(scope = Scope(NameRegistry()))) {
+        return with(Compilation(scope = Scope(NameRegistry { "column_$it" }))) {
             val nonEmpty = when (dml) {
                 is BuiltQuery -> compileQuery(dml)
                 is BuiltInsert -> scopedIn(dml) { compileInsert(dml) }

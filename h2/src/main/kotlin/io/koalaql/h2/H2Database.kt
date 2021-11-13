@@ -35,7 +35,7 @@ fun H2Database(db: String, mode: H2CompatibilityMode? = null): JdbcDataSource {
         dialect = H2Dialect(mode),
         provider = object : JdbcProvider {
             override fun connect(): Connection =
-                DriverManager.getConnection("jdbc:h2:mem:$db;MV_STORE=false")
+                DriverManager.getConnection(url)
 
             override fun close() {
                 keepAlive.close()

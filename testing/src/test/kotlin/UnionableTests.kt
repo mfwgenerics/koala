@@ -250,4 +250,46 @@ abstract class UnionableTests: ProvideTestDatabase {
 
         }
     }
+
+    @Test
+    open fun `limit on values`() = withCxn { cxn ->
+        val x = label<Int>()
+
+        val result = values(rowOf(x setTo castInt(10)), rowOf(x setTo castInt(12)))
+            .limit(1)
+            .perform(cxn)
+            .single()
+            .getValue(x)
+
+        val resultExpecting = values(rowOf(x setTo castInt(10)), rowOf(x setTo castInt(12)))
+            .limit(1)
+            .expecting(x)
+            .perform(cxn)
+            .single()
+            .first()
+
+        assertEquals(10, result)
+        assertEquals(10, resultExpecting)
+    }
+
+    @Test
+    open fun `order by on values`() = withCxn { cxn ->
+        val x = label<Int>()
+        val y = label<Int>()
+
+        val result =
+            values(0..7) {
+                this[x] = castInt(-it)
+                this[y] = castInt(it + (it % 2)*10)
+            }
+            .orderBy(y)
+            .perform(cxn)
+            .flatMap { listOf(it.getValue(x), it.getValue(y)) }
+            .toList()
+
+        assertListEquals(
+            listOf(0, 0, -2, 2, -4, 4, -6, 6, -1, 11, -3, 13, -5, 15, -7, 17),
+            result
+        )
+    }
 }

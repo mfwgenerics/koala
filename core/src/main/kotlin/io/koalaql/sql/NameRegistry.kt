@@ -5,7 +5,9 @@ import io.koalaql.query.Alias
 import io.koalaql.query.Cte
 import io.koalaql.window.WindowLabel
 
-class NameRegistry {
+class NameRegistry(
+    private val positionalName: (Int) -> String? = { null }
+) {
     private val registered = hashMapOf<Any, String>()
 
     private var tableN: Int = 0
@@ -39,4 +41,6 @@ class NameRegistry {
             .identifier.asString
             ?: generateT()
         }
+
+    fun positionalLabel(position: Int): String? = positionalName(position)
 }

@@ -22,7 +22,12 @@ class Scope(
 
     private object Internal: Registered
 
+    private class ValuesColumn(
+        val position: Int
+    ): Registered
+
     private val ctes = hashMapOf<Cte, List<Reference<*>>>()
+
     private val external = hashMapOf<Reference<*>, String>()
     private val internal = hashMapOf<Reference<*>, Registered>()
 
@@ -54,10 +59,22 @@ class Scope(
         internal.putIfAbsent(name, Internal)
     }
 
-    fun resolveOrNull(name: Reference<*>): Resolved? {
-        val registered = internal[name] ?: return enclosing?.resolveOrNull(name)
+    fun unnamed(name: Reference<*>, position: Int) {
+        internal.putIfAbsent(name, ValuesColumn(position))
+    }
 
-        return when (registered) {
+    fun resolveOrNull(name: Reference<*>): Resolved? =
+        when (val it = resolve(name)) {
+            is SqlResult.Value -> it.value
+            is SqlResult.Error -> null
+        }
+
+    fun resolve(name: Reference<*>): SqlResult<Resolved> {
+        val registered = internal[name]
+            ?: return enclosing?.resolve(name)
+            ?: SqlResult.Error("$name is not in scope")
+
+        return SqlResult.Value(when (registered) {
             is UnderAlias -> Resolved(
                 alias = registered.alias?.let { names[it] },
                 innerName = registered.innerName
@@ -66,12 +83,13 @@ class Scope(
                 alias = null,
                 innerName = names[name]
             )
-        }
+            is ValuesColumn -> Resolved(
+                alias = null,
+                innerName = names.positionalLabel(registered.position)
+                    ?: return SqlResult.Error("can't reference column in position ${registered.position}")
+            )
+        })
     }
-
-    fun resolve(name: Reference<*>): SqlResult<Resolved> = resolveOrNull(name)
-        ?.let { SqlResult.Value(it) }
-        ?: SqlResult.Error("$name not in scope")
 
     operator fun get(alias: Alias): String = names[alias]
     operator fun get(cte: Cte): String = names[cte]

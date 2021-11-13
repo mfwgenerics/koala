@@ -5,6 +5,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.QueryableResultsUnionOperand
 import io.koalaql.query.fluent.QueryableUnionOperand
+import io.koalaql.query.fluent.UnionedOrderable
 import io.koalaql.values.*
 
 sealed interface Relation: AliasableRelation {
@@ -31,7 +32,7 @@ class Subquery(
 class Values(
     override val columns: LabelList,
     private val impl: () -> ValuesIterator
-): QueryableResultsUnionOperand, ValuesSequence {
+): QueryableResultsUnionOperand, ValuesSequence, UnionedOrderable {
     override fun valuesIterator(): ValuesIterator = impl()
 
     override fun BuiltQuery.buildInto(): QueryBuilder? {

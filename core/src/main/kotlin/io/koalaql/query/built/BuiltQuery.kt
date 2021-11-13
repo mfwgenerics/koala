@@ -27,7 +27,11 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
     fun columnsUnnamed(): Boolean = head.columnsUnnamed()
 
     override fun populateScope(scope: Scope) {
-        head.columns.forEach { scope.internal(it) }
+        if (columnsUnnamed()) {
+            columns.forEachIndexed { ix, it -> scope.unnamed(it, ix) }
+        } else {
+            columns.forEach { scope.internal(it) }
+        }
     }
 
     fun populateCtes(scope: Scope) {
