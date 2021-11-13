@@ -3,11 +3,11 @@ package io.koalaql.docs.queries
 /* SHOW */
 /*
 ---
-title: Where
-sidebar_position: 3
+title: Order By
+sidebar_position: 8
 ---
 */
 /* HIDE */
 
-class Where {
+class OrderBy {
 }

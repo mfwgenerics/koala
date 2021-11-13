@@ -1,4 +1,4 @@
-package io.koalaql.docs
+package io.koalaql.docs.examples
 
 import io.koalaql.ddl.DATE
 import io.koalaql.ddl.INTEGER
@@ -20,48 +20,35 @@ import kotlin.test.assertEquals
 ---
 title: Quick Example
 custom_edit_url: https://github.com/mfwgenerics/koala/blob/examples/docs/src/main/kotlin/io/koalaql/docs/Example.kt
-sidebar_position: 2
+sidebar_position: 1
 ---
-
-### Define a table
 */
-
-object ShopTable: Table("Shop") {
-    val id = column("id", INTEGER.autoIncrement().primaryKey())
-
-    val name = column("name", VARCHAR(256))
-    val address = column("address", VARCHAR(512))
-
-    val established = column("established", DATE.nullable())
-}
 
 /* HIDE */
 
-class Example {
-    @Test
-    fun quickExample() {
-        /* SHOW */
+class QuickExample {
+    /* SHOW */
+    object ShopTable: Table("Shop") {
+        val id = column("id", INTEGER.autoIncrement().primaryKey())
 
-        /*
-        ### Connect to your database
-        We use H2 in this example
-        */
+        val name = column("name", VARCHAR(256))
+        val address = column("address", VARCHAR(512))
+
+        val established = column("established", DATE.nullable())
+    }
+
+    /* HIDE */
+    @Test
+    /* SHOW */
+    fun main() {
         val db = H2DataSource(
             provider = {
                 DriverManager.getConnection("jdbc:h2:mem:example;DB_CLOSE_DELAY=-1")
             }
         )
 
-        /*
-        ### Declare the table
-        This should be done for all tables at startup
-        */
         db.declareTables(ShopTable)
 
-        /*
-        ### Insert into the table
-        We also read back the auto-generated id from the database
-        */
         val id = ShopTable
             .insert(values(
                 rowOf(
@@ -74,16 +61,13 @@ class Example {
             .perform(db)
             .single()
 
-        /*
-        ### Select from the table
-         */
         val row = ShopTable
             .where(ShopTable.id eq id)
             .perform(db)
             .single()
 
         assertEquals("Helen's Hardware Store", row[ShopTable.name])
-
-        /* HIDE */
     }
+
+    /* HIDE */
 }

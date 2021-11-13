@@ -55,7 +55,11 @@ abstract class DocGenTask : DefaultTask() {
 
         var show = false
 
-        return texts
+        val output = arrayListOf<String>()
+
+        var wasCode = false
+
+        texts
             .asSequence()
             .mapNotNull {
                 when (val trimmed = "${it.second}".trimIndent().trim()) {
@@ -63,17 +67,35 @@ abstract class DocGenTask : DefaultTask() {
                     "HIDE" -> { show = false; null }
                     "" -> null
                     else -> if (show) {
-                        if (it.first) {
-                            "```kotlin\n$trimmed\n```"
+                        /*if (it.first) {
+                            it.first to "```kotlin\n$trimmed\n```"
                         } else {
-                            trimmed
-                        }
+                            it.first to trimmed
+                        }*/
+
+                        it.first to trimmed
                     } else {
                         null
                     }
                 }
             }
-            .joinToString("\n")
+            .forEach { (isCode, it) ->
+                if (wasCode && !isCode) {
+                    output.add("```")
+                } else if (isCode && !wasCode) {
+                    output.add("```kotlin")
+                } else if (isCode) {
+                    output.add("")
+                }
+
+                output.add(it)
+
+                wasCode = isCode
+            }
+
+        if (wasCode) output.add("```")
+
+        return output.joinToString("\n")
     }
 
     private fun visitDirectory(source: File, dest: File) {

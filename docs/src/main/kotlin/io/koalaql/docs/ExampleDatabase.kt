@@ -66,3 +66,7 @@ fun ExampleDatabase(): ExampleData {
         groceryStoreId = ids[1]
     )
 }
+
+inline fun testExampleDatabase(block: ExampleData.() -> Unit) = with(ExampleDatabase()) {
+    block()
+}

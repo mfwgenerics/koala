@@ -2,13 +2,14 @@ package io.koalaql.docs.statements
 
 import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.ShopTable
+import io.koalaql.docs.testExampleDatabase
 import org.junit.Test
 import kotlin.test.assertEquals
 
 /* SHOW */
 /*
 ---
-title: Select
+title: Updates
 sidebar_position: 1
 ---
 */
@@ -16,7 +17,7 @@ sidebar_position: 1
 
 class Update {
     @Test
-    fun emptyUpdate() = with(ExampleDatabase()) {
+    fun emptyUpdate() = testExampleDatabase {
         /* SHOW */
         /*
         ### Empty updates

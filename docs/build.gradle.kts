@@ -11,4 +11,6 @@ dependencies {
     testImplementation(project(":testing", "testArchive"))
 }
 
-tasks.register<DocGenTask>("generate")
+tasks.register<DocGenTask>("generate") {
+    dependsOn("test")
+}

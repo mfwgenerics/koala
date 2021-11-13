@@ -4,6 +4,7 @@ import assertListEquals
 import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
+import io.koalaql.docs.testExampleDatabase
 import io.koalaql.dsl.*
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowOfTwo
@@ -14,21 +15,21 @@ import kotlin.test.assertFails
 /* SHOW */
 /*
 ---
-title: Select
+title: Selects
 custom_edit_url: https://github.com/mfwgenerics/koala/blob/examples/docs/src/main/kotlin/io/koalaql/docs/queries/Select.kt
 sidebar_position: 1
 ---
 */
 /* HIDE */
 
-class Select {
+class Selects {
     @Test
-    fun selectAlls() = with(ExampleDatabase()) {
+    fun selectAlls() = testExampleDatabase {
         /* SHOW */
         /*
         ### Selecting all columns
 
-        `.selectAll()` will select all columns from a query.
+        Use `.selectAll()` to select all columns from a query.
         */
 
         val allSelected = ShopTable
@@ -36,9 +37,6 @@ class Select {
             .selectAll()
             .perform(db)
 
-        val row = allSelected.single()
-
-        assertEquals("Helen's Hardware Store", row[ShopTable.name])
         assertListEquals(ShopTable.columns, allSelected.columns)
 
         /*
@@ -61,10 +59,15 @@ class Select {
          */
 
         /* HIDE */
+
+        val row = allSelected.single()
+
+        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertListEquals(ShopTable.columns, allSelected.columns)
     }
 
     @Test
-    fun selectPair() = with(ExampleDatabase()) {
+    fun selectPair() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -72,7 +75,7 @@ class Select {
 
         Selecting a small number of fixed columns gives you a specialized
         query with statically typed rows of ordered columns.
-        You can use Kotlin's destructuring or call positional methods
+        You can use Kotlin's destructuring or call positional
         methods to access these fields in a type safe way.
         */
 
@@ -98,7 +101,7 @@ class Select {
     }
 
     @Test
-    fun selectFromTable() = with(ExampleDatabase()) {
+    fun selectFromTable() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -131,7 +134,7 @@ class Select {
     }
 
     @Test
-    fun selectDistinct() = with(ExampleDatabase()) {
+    fun selectDistinct() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -152,7 +155,7 @@ class Select {
     }
 
     @Test
-    fun explicitLabel() = with(ExampleDatabase()) {
+    fun explicitLabel() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -188,7 +191,7 @@ class Select {
     }
 
     @Test
-    fun labeledExpr() = with(ExampleDatabase()) {
+    fun labeledExpr() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -211,11 +214,14 @@ class Select {
     }
 
     @Test
-    fun selectEmpty() = with(ExampleDatabase()) {
+    fun selectEmpty() = testExampleDatabase {
         /* SHOW */
 
         /*
         ### Empty selections
+
+        Selects can be empty. This will generate SQL with `SELECT 1`
+
          */
 
         val emptySelect = ShopTable
@@ -234,7 +240,7 @@ class Select {
     }
 
     @Test
-    fun selectAliased() = with(ExampleDatabase()) {
+    fun selectAliased() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -256,7 +262,7 @@ class Select {
     }
 
     @Test
-    fun expectPair() = with(ExampleDatabase()) {
+    fun expectPair() = testExampleDatabase {
         /* SHOW */
 
         /*
@@ -289,7 +295,7 @@ class Select {
 
         /*
 
-        This will not work if the columns sets do not match at runtime. This code will fail:
+        This will not work if the columns sets do not match at runtime. The following code will fail:
 
          */
 

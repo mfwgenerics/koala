@@ -3,11 +3,11 @@ package io.koalaql.docs.queries
 /* SHOW */
 /*
 ---
-title: Where
-sidebar_position: 3
+title: Values
+sidebar_position: 6
 ---
 */
 /* HIDE */
 
-class Where {
+class Values {
 }
