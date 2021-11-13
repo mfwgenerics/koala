@@ -2,6 +2,7 @@ package io.koalaql.query.built
 
 import io.koalaql.dsl.null_
 import io.koalaql.expr.*
+import io.koalaql.query.Distinctness
 import io.koalaql.query.LabelListOf
 import io.koalaql.query.Values
 import io.koalaql.sql.Scope
@@ -31,7 +32,8 @@ sealed interface BuiltUnionOperandQuery: PopulatesScope {
 class BuiltSelectQuery(
     val body: BuiltQueryBody,
     val selectArgs: List<SelectArgument>,
-    val includeAll: Boolean
+    val includeAll: Boolean,
+    var distinctness: Distinctness
 ): BuiltUnionOperandQuery {
     lateinit var selected: List<SelectedExpr<*>>
 

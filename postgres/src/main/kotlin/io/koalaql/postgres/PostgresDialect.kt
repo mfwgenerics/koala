@@ -327,7 +327,7 @@ class PostgresDialect: SqlDialect {
         )
 
         fun compileSelect(select: BuiltSelectQuery) {
-            sql.selectClause(select.selected, scope) { compileExpr(it, false) }
+            sql.selectClause(select, scope) { compileExpr(it, false) }
 
             if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 

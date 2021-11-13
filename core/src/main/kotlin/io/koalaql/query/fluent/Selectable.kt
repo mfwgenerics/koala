@@ -20,6 +20,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         selectAll().with(type, queries)
 
     private class Select(
+        val distinctness: Distinctness,
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
@@ -35,7 +36,8 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         fun buildQuery(): BuiltUnionOperandQuery = BuiltSelectQuery(
             BuiltQueryBody.from(of),
             references,
-            includeAll
+            includeAll,
+            distinctness
         )
 
         override fun BuiltQuery.buildInto(): QueryBuilder? {
@@ -67,8 +69,25 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         }
     }
 
+    private fun select(
+        distinctness: Distinctness,
+        references: List<SelectArgument>
+    ): QueryableResultsUnionOperand = if (references.isEmpty()) {
+        val x = label<Int>()
+
+        EmptyQueryableUnionOperand(select(distinctness, listOf(1 as_ x)))
+    } else {
+        Select(distinctness, this, references, false)
+    }
+
+    fun select(references: List<SelectArgument>): QueryableResultsUnionOperand =
+        select(Distinctness.ALL, references)
+
+    fun selectDistinct(references: List<SelectArgument>): QueryableResultsUnionOperand =
+        select(Distinctness.DISTINCT, references)
+
     fun selectAll(vararg references: SelectArgument): QueryableResultsUnionOperand =
-        Select(this, references.asList(), true)
+        Select(Distinctness.ALL, this, references.asList(), true)
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().perform(ds)
@@ -80,16 +99,11 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         { RowSequenceEmptyMask(it) }
     ), QueryableResultsUnionOperand
 
-    fun select(references: List<SelectArgument>): QueryableResultsUnionOperand = if (references.isEmpty()) {
-        val x = label<Int>()
-
-        EmptyQueryableUnionOperand(select(1 as_ x))
-    } else {
-        Select(this, references, false)
-    }
-
     fun select(vararg references: SelectArgument): QueryableResultsUnionOperand =
         select(references.asList())
+
+    fun selectDistinct(vararg references: SelectArgument): QueryableResultsUnionOperand =
+        selectDistinct(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =
         CastExprQueryableUnionOperand(select(listOf(labeled))) {
@@ -110,6 +124,28 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         third: SelectOperand<C>
     ): QueryableUnionOperand<RowOfThree<A, B, C>> =
         CastQueryableUnionOperand(select(listOf(first, second, third))) {
+            it.unsafeCastToThreeColumns()
+        }
+
+    fun <A : Any> selectDistinct(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =
+        CastExprQueryableUnionOperand(selectDistinct(listOf(labeled))) {
+            it.unsafeCastToOneColumn()
+        }
+
+    fun <A : Any, B : Any> selectDistinct(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>
+    ): QueryableUnionOperand<RowOfTwo<A, B>> =
+        CastQueryableUnionOperand(selectDistinct(listOf(first, second))) {
+            it.unsafeCastToTwoColumns()
+        }
+
+    fun <A : Any, B : Any, C : Any> selectDistinct(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>,
+        third: SelectOperand<C>
+    ): QueryableUnionOperand<RowOfThree<A, B, C>> =
+        CastQueryableUnionOperand(selectDistinct(listOf(first, second, third))) {
             it.unsafeCastToThreeColumns()
         }
 

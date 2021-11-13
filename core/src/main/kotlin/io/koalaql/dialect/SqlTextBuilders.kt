@@ -13,11 +13,15 @@ import io.koalaql.values.ValuesRow
 import io.koalaql.window.*
 
 fun SqlTextBuilder.selectClause(
-    selected: List<SelectedExpr<*>>,
+    query: BuiltSelectQuery,
     scope: Scope,
     compileExpr: (Expr<*>) -> Unit
 ) {
+    val selected = query.selected
+
     addSql("SELECT ")
+
+    if (query.distinctness == Distinctness.DISTINCT) addSql("DISTINCT ")
 
     if (selected.isNotEmpty()) {
         prefix("", "\n, ").forEach(selected) {

@@ -29,7 +29,6 @@ class Select {
         ### Selecting all columns
 
         `.selectAll()` will select all columns from a query.
-
         */
 
         val allSelected = ShopTable
@@ -125,6 +124,29 @@ class Select {
         ShopTable
             .innerJoin(CustomerTable, ShopTable.id eq CustomerTable.shop)
             .select(ShopTable, CustomerTable)
+
+        /* HIDE */
+
+        Unit
+    }
+
+    @Test
+    fun selectDistinct() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        /*
+        ### Select distinct
+        All `.select(...)` methods have a corresponding `.selectDistinct(...)`.
+         */
+
+        val distinctShopIds = CustomerTable
+            .selectDistinct(CustomerTable.shop)
+            .also { println(it.generateSql(db)) }
+            .perform(db)
+            .map { it.first() }
+            .toList()
+
+        assertListEquals(distinctShopIds, distinctShopIds.distinct())
 
         /* HIDE */
     }
