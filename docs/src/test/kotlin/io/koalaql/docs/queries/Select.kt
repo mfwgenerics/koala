@@ -5,8 +5,11 @@ import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.dsl.*
+import io.koalaql.values.ResultRow
+import io.koalaql.values.RowOfTwo
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 /* SHOW */
 /*
@@ -53,29 +56,6 @@ class Select {
         /* HIDE */
     }
 
-    @Test
-    fun selectPair() = with(ExampleDatabase()) {
-        /* SHOW */
-
-        /*
-        ### Individual columns
-        */
-
-        val row = ShopTable
-            .where(ShopTable.id eq hardwareStoreId)
-            .select(ShopTable.name, ShopTable.address) // select a pair
-            .perform(db)
-            .single()
-
-        val (name, address) = row
-
-        assertEquals(row[ShopTable.name], name)
-        assertEquals(row[ShopTable.address], address)
-
-        assertEquals("Helen's Hardware Store @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
-
-        /* HIDE */
-    }
 
     @Test
     fun selectFromTable() = with(ExampleDatabase()) {
@@ -95,6 +75,81 @@ class Select {
             .toList()
 
         /* HIDE */
+    }
+
+    @Test
+    fun selectPair() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        /*
+        ### Individual columns
+
+        Selecting a small number of fixed columns gives you a specialized
+        query with statically typed rows of ordered columns.
+        You can use Kotlin's destructuring or call positional methods
+        methods to access these fields in a type safe way.
+        */
+
+        val row = ShopTable
+            .where(ShopTable.id eq hardwareStoreId)
+            .select(ShopTable.name, ShopTable.address) // select a pair
+            .perform(db)
+            .single()
+
+        val (name, address) = row // destructuring support
+
+        assertEquals(
+            name,
+            row.first() // using positional methods also works
+        )
+
+        assertEquals(row[ShopTable.name], name)
+        assertEquals(row[ShopTable.address], address)
+
+        assertEquals("Helen's Hardware Store @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
+
+        /* HIDE */
+    }
+
+    @Test
+    fun expectPair() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        /*
+        ### Expecting columns
+
+        If you know the exact columns a query will have at runtime,
+        you can convert it to a query of statically typed ordered rows.
+        This is sometimes necessary when using subqueries in expressions.
+        */
+
+        val columnsList = listOf(ShopTable.address, ShopTable.name)
+
+        val query = ShopTable
+            .where(ShopTable.id eq hardwareStoreId)
+            .select(columnsList) // can't statically type this
+
+        val genericRow: ResultRow = query
+            .perform(db)
+            .single()
+
+        val staticallyTypedRow: RowOfTwo<String, String> = query
+            .expecting(ShopTable.name, ShopTable.address) // convert to statically typed query
+            .perform(db)
+            .single()
+
+        assertEquals(
+            genericRow[ShopTable.name],
+            staticallyTypedRow.first()
+        )
+
+        assertFails {
+            query.expecting(ShopTable.name)
+        }
+
+        /* HIDE */
+
+        Unit
     }
 
     @Test

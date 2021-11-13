@@ -1,6 +1,6 @@
 package io.koalaql.values
 
-interface RowWithThreeColumns<A : Any, B : Any, C : Any>: RowWithTwoColumns<A, B> {
+interface RowOfThree<A : Any, B : Any, C : Any>: RowOfTwo<A, B> {
     fun thirdOrNull(): C?
 
     fun third(): C = checkNotNull(thirdOrNull())

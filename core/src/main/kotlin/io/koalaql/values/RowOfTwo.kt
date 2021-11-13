@@ -1,6 +1,6 @@
 package io.koalaql.values
 
-interface RowWithTwoColumns<A : Any, B : Any>: RowWithOneColumn<A> {
+interface RowOfTwo<A : Any, B : Any>: RowOfOne<A> {
     fun secondOrNull(): B?
 
     fun second(): B = checkNotNull(secondOrNull())

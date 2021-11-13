@@ -1,7 +1,6 @@
 package io.koalaql.query
 
 import io.koalaql.expr.ExprQueryableUnionOperand
-import io.koalaql.expr.Reference
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltWith
 import io.koalaql.query.built.QueryBuilder
@@ -10,9 +9,9 @@ import io.koalaql.values.*
 
 class CastExprQueryableUnionOperand<T : Any>(
     val of: QueryableUnionOperand<*>,
-    val cast: (rows: RowSequence<RawResultRow>) -> RowSequence<RowWithOneColumn<T>>
+    val cast: (rows: RowSequence<RawResultRow>) -> RowSequence<RowOfOne<T>>
 ): ExprQueryableUnionOperand<T> {
-    override fun perform(ds: BlockingPerformer): RowSequence<RowWithOneColumn<T>> =
+    override fun perform(ds: BlockingPerformer): RowSequence<RowOfOne<T>> =
         cast(ds.query(BuiltQuery.from(this)))
 
     override fun BuiltQuery.buildInto(): QueryBuilder = of
@@ -21,8 +20,8 @@ class CastExprQueryableUnionOperand<T : Any>(
         with (of) { buildIntoQueryTail(type, distinctness) }
     }
 
-    override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<RowWithOneColumn<T>> {
-        override fun perform(ds: BlockingPerformer): RowSequence<RowWithOneColumn<T>> =
+    override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<RowOfOne<T>> {
+        override fun perform(ds: BlockingPerformer): RowSequence<RowOfOne<T>> =
             cast(ds.query(BuiltQuery.from(this)))
 
         override fun BuiltQuery.buildInto(): QueryBuilder {

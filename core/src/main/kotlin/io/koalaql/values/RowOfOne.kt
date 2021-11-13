@@ -1,6 +1,6 @@
 package io.koalaql.values
 
-interface RowWithOneColumn<A : Any>: ResultRow {
+interface RowOfOne<A : Any>: ResultRow {
     fun firstOrNull(): A?
 
     fun first(): A = checkNotNull(firstOrNull())

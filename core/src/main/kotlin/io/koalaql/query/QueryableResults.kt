@@ -29,7 +29,7 @@ interface QueryableResults: Queryable<ResultRow> {
     fun <A : Any, B : Any> expecting(
         first: AsReference<A>,
         second: AsReference<B>
-    ): Queryable<RowWithTwoColumns<A, B>> =
+    ): Queryable<RowOfTwo<A, B>> =
         ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference())) {
             it.unsafeCastToTwoColumns()
         }
@@ -38,7 +38,7 @@ interface QueryableResults: Queryable<ResultRow> {
         first: AsReference<A>,
         second: AsReference<B>,
         third: AsReference<C>
-    ): Queryable<RowWithThreeColumns<A, B, C>> =
+    ): Queryable<RowOfThree<A, B, C>> =
         ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference(), third.asReference())) {
             it.unsafeCastToThreeColumns()
         }

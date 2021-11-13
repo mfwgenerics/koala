@@ -40,11 +40,14 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
         }
     }
 
+    private fun columnsAlreadyOrdered(): Boolean =
+        unioned.isEmpty() && expectedColumnOrder == null
+
     fun finishBuild() {
         head.computeColumns(withs)
         unioned.forEach { it.body.computeColumns(withs) }
 
-        if (unioned.isEmpty()) return
+        if (columnsAlreadyOrdered()) return
 
         val allReferences = linkedSetOf<Reference<*>>()
 

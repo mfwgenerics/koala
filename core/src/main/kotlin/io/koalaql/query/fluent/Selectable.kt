@@ -99,7 +99,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
     fun <A : Any, B : Any> select(
         first: SelectOperand<A>,
         second: SelectOperand<B>
-    ): QueryableUnionOperand<RowWithTwoColumns<A, B>> =
+    ): QueryableUnionOperand<RowOfTwo<A, B>> =
         CastQueryableUnionOperand(select(listOf(first, second))) {
             it.unsafeCastToTwoColumns()
         }
@@ -108,7 +108,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         first: SelectOperand<A>,
         second: SelectOperand<B>,
         third: SelectOperand<C>
-    ): QueryableUnionOperand<RowWithThreeColumns<A, B, C>> =
+    ): QueryableUnionOperand<RowOfThree<A, B, C>> =
         CastQueryableUnionOperand(select(listOf(first, second, third))) {
             it.unsafeCastToThreeColumns()
         }
