@@ -167,8 +167,12 @@ fun SqlTextBuilder.compileExpr(
 
             addSql(aggregated.expr.type.sql)
             parenthesize {
-                prefix("", ", ").forEach(aggregated.expr.args) {
-                    impl.aggregatable(false, it)
+                if (aggregated.expr.args.isNotEmpty()) {
+                    prefix("", ", ").forEach(aggregated.expr.args) {
+                        impl.aggregatable(false, it)
+                    }
+                } else if (aggregated.expr.type == OperationType.COUNT) {
+                    addSql("*")
                 }
             }
 
