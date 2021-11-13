@@ -7,16 +7,33 @@ import io.koalaql.expr.built.BuiltAggregatedExpr
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.RawSqlBuilder
+import io.koalaql.sql.Scope
 import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.values.ValuesRow
 import io.koalaql.window.*
 
-fun SqlTextBuilder.selectClause(selected: List<SelectedExpr<*>>, compileSelect: (SelectedExpr<*>) -> Unit) {
+fun SqlTextBuilder.selectClause(
+    selected: List<SelectedExpr<*>>,
+    scope: Scope,
+    compileExpr: (Expr<*>) -> Unit
+) {
     addSql("SELECT ")
 
     if (selected.isNotEmpty()) {
         prefix("", "\n, ").forEach(selected) {
-            compileSelect(it)
+            val resolved = when (it.expr) {
+                is AsReference -> scope.resolveOrNull(it.asReference())
+                else -> null
+            }
+
+            val relabel = scope.nameOf(it.name)
+
+            compileExpr(it.expr)
+
+            if (resolved?.innerName != relabel) {
+                addSql(" ")
+                addIdentifier(scope.nameOf(it.name))
+            }
         }
     } else {
         addError("unable to generate empty select")

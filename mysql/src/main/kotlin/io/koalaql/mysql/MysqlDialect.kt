@@ -454,11 +454,7 @@ class MysqlDialect(): SqlDialect {
         )
 
         fun compileSelect(select: BuiltSelectQuery) {
-            sql.selectClause(select.selected) {
-                compileExpr(it.expr, false)
-                sql.addSql(" ")
-                sql.addIdentifier(scope.nameOf(it.name))
-            }
+            sql.selectClause(select.selected, scope) { compileExpr(it, false) }
 
             if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
 

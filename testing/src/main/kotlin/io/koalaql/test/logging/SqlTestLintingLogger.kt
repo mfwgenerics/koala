@@ -11,6 +11,9 @@ object SqlTestLintingLogger: ConnectionEventWriter {
             assert(it.isNotBlank()) { sql }
             assert(it == it.trim()) { "Inappropriate whitespace at |$it| in\n$sql" }
             assert("  " !in it) { "Extra space at |$it|\n$sql" }
+            assert("""."c0" "c0"""" !in it && """.`c0` `c0`""" !in it) {
+                "Redundant relabeling in\n$sql"
+            }
         }
     }
 
