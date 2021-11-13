@@ -140,7 +140,7 @@ fun SqlTextBuilder.compileExpr(
     emitParens: Boolean,
     impl: ExpressionCompiler
 ) {
-    when (expr) {
+    val forceExhaustiveWhen = when (expr) {
         is AggregatedExpr<*> -> {
             val aggregated = BuiltAggregatedExpr.from(expr)
 
@@ -260,7 +260,13 @@ fun SqlTextBuilder.compileExpr(
                 override fun expr(expr: QuasiExpr) { compileExpr(expr, true, impl) }
             }.build()
         }
-        is ComparisonOperand<*> -> error("should not be compiled directly as expr")
+        is BetweenExpr<*> -> {
+            compileExpr(expr.value, false, impl)
+            addSql(" BETWEEN ")
+            compileExpr(expr.low, true, impl)
+            addSql(" AND ")
+            compileExpr(expr.high, true, impl)
+        }
     }
 }
 

@@ -995,4 +995,31 @@ abstract class QueryTests: ProvideTestDatabase {
                 .perform(cxn)
         }
     }
+
+    private object SingleIntTable : Table("SingleInt") {
+        val value = column("value", INTEGER)
+    }
+
+    @Test
+    fun `group by betweens`() = withCxn(SingleIntTable) { cxn ->
+        SingleIntTable
+            .insert(values(1..9) { this[SingleIntTable.value] = it })
+            .perform(cxn)
+
+        val betweened = SingleIntTable.value
+            .between(4, 6)
+            .as_(label())
+
+        val count = count(value(1)) as_ label()
+
+        val results = SingleIntTable
+            .groupBy(betweened)
+            .orderBy(betweened.desc())
+            .select(count, betweened)
+            .perform(cxn)
+            .map { it.first() }
+            .toList()
+
+        assertListEquals(results, listOf(3, 6))
+    }
 }

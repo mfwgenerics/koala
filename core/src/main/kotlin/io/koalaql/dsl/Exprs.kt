@@ -146,3 +146,9 @@ inline infix fun <reified T : Any> Reference<T>.setTo(rhs: T?): LiteralAssignmen
 
 fun lower(expr: Expr<String>): Expr<String> = OperationType.LOWER(expr)
 fun upper(expr: Expr<String>): Expr<String> = OperationType.UPPER(expr)
+
+fun <T : Any> Expr<T>.between(lhs: Expr<T>, rhs: Expr<T>): Expr<Boolean> =
+    BetweenExpr(this, lhs, rhs)
+
+inline fun <reified T : Any> Expr<T>.between(lhs: T?, rhs: T?) =
+    between(value(lhs), value(rhs))
