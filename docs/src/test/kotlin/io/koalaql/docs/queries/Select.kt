@@ -26,53 +26,40 @@ class Select {
     fun selectAlls() = with(ExampleDatabase()) {
         /* SHOW */
         /*
-        ### All columns
+        ### Selecting all columns
+
+        `.selectAll()` will select all columns from a query.
+
         */
 
-        val selectAll = ShopTable
+        val allSelected = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
-            .selectAll() // select all columns
+            .selectAll()
             .perform(db)
 
-        val row = selectAll.single()
+        val row = allSelected.single()
 
         assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertListEquals(ShopTable.columns, allSelected.columns)
+
+        /*
+        In most cases `.selectAll()` can be omitted:
+         */
 
         val implicitSelectAll = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .perform(db)
 
-        assertListEquals(selectAll.columns, implicitSelectAll.columns)
+        assertListEquals(allSelected.columns, implicitSelectAll.columns)
 
         /*
         :::info
 
-        `SELECT *` will never appear in generated SQL.
+        `SELECT * FROM` will never appear in generated SQL.
         The generated SQL for these queries will name columns explicitly.
 
         :::
          */
-
-        /* HIDE */
-    }
-
-
-    @Test
-    fun selectFromTable() = with(ExampleDatabase()) {
-        /* SHOW */
-
-        /*
-        ### Columns of a single table
-         */
-
-        val hardwareCustomers = ShopTable
-            .innerJoin(CustomerTable, ShopTable.id eq CustomerTable.shop)
-            .where(ShopTable.id eq hardwareStoreId)
-            .orderBy(CustomerTable.name)
-            .select(CustomerTable) // select only fields from CustomerTable
-            .perform(db)
-            .map { row -> row[CustomerTable.name] }
-            .toList()
 
         /* HIDE */
     }
@@ -90,7 +77,7 @@ class Select {
         methods to access these fields in a type safe way.
         */
 
-        val row = ShopTable
+        val row: RowOfTwo<String, String> = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
             .select(ShopTable.name, ShopTable.address) // select a pair
             .perform(db)
@@ -112,44 +99,34 @@ class Select {
     }
 
     @Test
-    fun expectPair() = with(ExampleDatabase()) {
+    fun selectFromTable() = with(ExampleDatabase()) {
         /* SHOW */
 
         /*
-        ### Expecting columns
+        ### All columns of a Table
 
-        If you know the exact columns a query will have at runtime,
-        you can convert it to a query of statically typed ordered rows.
-        This is sometimes necessary when using subqueries in expressions.
-        */
+        Passing a `Table` to `.select` will automatically select all fields from that `Table`:
 
-        val columnsList = listOf(ShopTable.address, ShopTable.name)
+         */
 
-        val query = ShopTable
+        val hardwareCustomers = ShopTable
+            .innerJoin(CustomerTable, ShopTable.id eq CustomerTable.shop)
             .where(ShopTable.id eq hardwareStoreId)
-            .select(columnsList) // can't statically type this
-
-        val genericRow: ResultRow = query
+            .orderBy(CustomerTable.name)
+            .select(CustomerTable) // select only fields from CustomerTable
             .perform(db)
-            .single()
 
-        val staticallyTypedRow: RowOfTwo<String, String> = query
-            .expecting(ShopTable.name, ShopTable.address) // convert to statically typed query
-            .perform(db)
-            .single()
+        assertListEquals(CustomerTable.columns, hardwareCustomers.columns)
 
-        assertEquals(
-            genericRow[ShopTable.name],
-            staticallyTypedRow.first()
-        )
+        /*
+        You can pass multiple `Table`s to select:
+         */
 
-        assertFails {
-            query.expecting(ShopTable.name)
-        }
+        ShopTable
+            .innerJoin(CustomerTable, ShopTable.id eq CustomerTable.shop)
+            .select(ShopTable, CustomerTable)
 
         /* HIDE */
-
-        Unit
     }
 
     @Test
@@ -158,18 +135,32 @@ class Select {
 
         /*
         ### Expressions and labels
+
+        Expressions can be selected by using `as_` to label them.
+        You can use an existing column name as a label or create an anonymous label:
          */
 
-        val lowerName = label<String>()
+        val lowercaseName = label<String>()
+
+        /*
+        Here we select `LOWER(ShopTable.name)` in SQL and label it:
+        */
 
         val row = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
-            .select(ShopTable, lower(ShopTable.name) as_ lowerName)
+            .select(
+                ShopTable,
+                lower(ShopTable.name) as_ lowercaseName
+            )
             .perform(db)
             .single()
 
-        assertEquals("helen's hardware store", row[lowerName])
-        assertEquals(row[ShopTable.name].lowercase(), row[lowerName])
+        /*
+        The label can then be used to access the result of the expression:
+         */
+
+        assertEquals("helen's hardware store", row[lowercaseName])
+        assertEquals(row[ShopTable.name].lowercase(), row[lowercaseName])
 
         /* HIDE */
     }
@@ -178,7 +169,12 @@ class Select {
     fun labeledExpr() = with(ExampleDatabase()) {
         /* SHOW */
 
-        val lowerName = lower(ShopTable.name) as_ label() // label<String>() is inferred
+        /*
+        For convenience you can use the labeled expression to refer to the label.
+        Here is another way of writing the code from above:
+         */
+
+        val lowerName = lower(ShopTable.name) as_ label()
 
         val row = ShopTable
             .where(ShopTable.id eq hardwareStoreId)
@@ -235,5 +231,55 @@ class Select {
         assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
 
         /* HIDE */
+    }
+
+    @Test
+    fun expectPair() = with(ExampleDatabase()) {
+        /* SHOW */
+
+        /*
+        ### Expecting columns
+
+        If you know the exact columns a query will have at runtime,
+        you can convert it to a query of statically typed rows.
+        This is sometimes necessary when using subqueries in expressions.
+        */
+
+        val columnsList = listOf(ShopTable.address, ShopTable.name)
+
+        val query = ShopTable
+            .where(ShopTable.id eq hardwareStoreId)
+            .select(columnsList)
+
+        val genericRow: ResultRow = query
+            .perform(db)
+            .single()
+
+        val staticallyTypedRow: RowOfTwo<String, String> = query
+            .expecting(ShopTable.name, ShopTable.address) // convert to statically typed query
+            .perform(db)
+            .single()
+
+        assertEquals(
+            genericRow[ShopTable.name],
+            staticallyTypedRow.first()
+        )
+
+        /*
+
+        This will not work if the columns sets do not match at runtime. This code will fail:
+
+         */
+
+        assertFails {
+            ShopTable
+                .where(ShopTable.id eq hardwareStoreId)
+                .select(listOf(ShopTable.address, ShopTable.name))
+                .expecting(ShopTable.name)
+        }
+
+        /* HIDE */
+
+        Unit
     }
 }
