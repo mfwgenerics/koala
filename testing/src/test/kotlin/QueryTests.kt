@@ -14,7 +14,6 @@ import io.koalaql.test.shops.createAndPopulate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 
 abstract class QueryTests: ProvideTestDatabase {
     fun withExampleData(block: (DataConnection) -> Unit) = withCxn(
@@ -374,21 +373,21 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val results = PurchaseTable
             .select(
-                case(PurchaseTable.product)
-                    .when_("Apple").then("aPPLE")
-                .end() as_ n0,
-                case()
-                    .when_(PurchaseTable.product eq "Apple").then("Apple?")
-                    .when_(PurchaseTable.product eq "Pen").then("Pen?")
-                .end() as_ n1,
-                case(PurchaseTable.product)
-                    .when_("Hammer").then("'ammer")
-                    .else_("'lse")
-                .end() as_ n2,
-                case()
-                    .when_(PurchaseTable.product neq "Pear").then("not a pear")
-                    .else_(PurchaseTable.product)
-                .end() as_ n3,
+                case(PurchaseTable.product,
+                    when_("Apple").then("aPPLE")
+                ) as_ n0,
+                case(
+                    when_(PurchaseTable.product eq "Apple").then("Apple?"),
+                    when_(PurchaseTable.product eq "Pen").then("Pen?")
+                ) as_ n1,
+                case(PurchaseTable.product,
+                    when_("Hammer").then("'ammer"),
+                    else_ = value("'lse")
+                ) as_ n2,
+                case(
+                    when_(PurchaseTable.product neq "Pear").then("not a pear"),
+                    else_ = PurchaseTable.product
+                ) as_ n3,
                 rawExpr<Int> {
                     sql("CASE")
                     sql("\nWHEN "); expr(PurchaseTable.product eq "Apple"); sql(" THEN 12")
@@ -412,10 +411,10 @@ abstract class QueryTests: ProvideTestDatabase {
 
     @Test
     fun `case expressions ordered correctly`() = withCxn { cxn ->
-        val result = select(cast(case()
-            .when_(value(true)).then(value(2))
-            .when_(value(true)).then(value(3))
-            .end(), INTEGER) as_ label())
+        val result = select(cast(case(
+                when_(true).then(2),
+                when_(true).then(3),
+            ), INTEGER) as_ label())
             .perform(cxn)
             .single()
             .first()
@@ -890,10 +889,9 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals("Pear", product)
 
         val (p0, p1, p2) = whered
-            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product)
-                .when_("Pear")
-                .then("pear")
-                .end() as_ label())
+            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product,
+                when_("Pear").then("pear")
+            ) as_ label())
             .perform(cxn)
             .single()
 
@@ -917,10 +915,9 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals("Pear", product2)
 
         val (p02, p12, p22) = limited
-            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product)
-                .when_("Pear")
-                .then("pear")
-                .end() as_ label())
+            .select(PurchaseTable.product, 0 as_ label(), case(PurchaseTable.product,
+                when_("Pear").then("pear")
+            ) as_ label())
             .perform(cxn)
             .single()
 

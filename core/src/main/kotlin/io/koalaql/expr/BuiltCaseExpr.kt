@@ -5,7 +5,7 @@ import io.koalaql.unfoldBuilder
 class BuiltCaseExpr<T : Any>: Expr<T> {
     var onExpr: Expr<*>? = null
 
-    val whens = ArrayDeque<CaseWhenThen<*, *>>()
+    var whens: List<WhenThen<*, *>> = emptyList()
     var elseExpr: Expr<*>? = null
 
     companion object {

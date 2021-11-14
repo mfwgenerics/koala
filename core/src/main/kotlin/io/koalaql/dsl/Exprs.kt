@@ -5,9 +5,6 @@ import io.koalaql.ExprAssignment
 import io.koalaql.LiteralAssignment
 import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
-import io.koalaql.expr.fluent.ElseableCase
-import io.koalaql.expr.fluent.ThenableCase
-import io.koalaql.expr.fluent.WhenableCase
 import io.koalaql.query.Queryable
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.sql.RawSqlBuilder
@@ -116,16 +113,34 @@ inline operator fun <reified T : Number> Expr<T>.minus(rhs: T): Expr<T> =
 operator fun <T : Number> Expr<T>.unaryMinus(): Expr<T> =
     OperationType.UNARY_MINUS(this)
 
-fun <T : Any> case(expr: Expr<T>): Case<T> = Case(expr)
-fun case(): Case<Boolean> = Case(null)
+fun <R : Any> case(whens: List<WhenThen<Boolean, R>>, else_: Expr<R>? = null): Expr<R> =
+    BuiltCaseExpr<R>().apply {
+        this.whens = whens
+        elseExpr = else_
+    }
 
-inline infix fun <reified S : Any> Case<S>.when_(expr: S) = when_(value(expr))
-inline infix fun <S : Any, reified T : Any> Case<S>.else_(expr: T) = else_(value(expr))
-inline infix fun <S : Any, reified T : Any> CaseWhen<S>.then(expr: T) = then(value(expr))
+fun <T : Any, R : Any> case(
+    expr: Expr<T>,
+    whens: List<WhenThen<T, R>>,
+    else_: Expr<R>? = null
+): Expr<R> =
+    BuiltCaseExpr<R>().apply {
+        onExpr = expr
+        this.whens = whens
+        elseExpr = else_
+    }
 
-inline infix fun <reified S : Any, T : Any> WhenableCase<S, T>.when_(expr: S) = when_(value(expr))
-inline infix fun <reified T : Any> ElseableCase<T>.else_(expr: T) = else_(value(expr))
-inline infix fun <S : Any, reified T : Any> ThenableCase<S, T>.then(expr: T) = then(value(expr))
+fun <T : Any, R : Any> case(expr: Expr<T>, vararg whens: WhenThen<T, R>, else_: Expr<R>? = null): Expr<R> =
+    case(expr, whens.asList(), else_)
+
+fun <R : Any> case(vararg whens: WhenThen<Boolean, R>, else_: Expr<R>? = null): Expr<R> =
+    case(whens.asList(), else_)
+
+fun <T : Any> when_(expr: Expr<T>): When<T> = When(expr)
+inline fun <reified T : Any> when_(expr: T): When<T> = When(value(expr))
+
+inline fun <T : Any, reified R : Any> When<T>.then(expr: R): WhenThen<T, R> =
+    then(value(expr))
 
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     OperationType.COALESCE(expr, *operands)
