@@ -2,7 +2,7 @@ package io.koalaql.query.built
 
 import io.koalaql.expr.Ordinal
 import io.koalaql.expr.Reference
-import io.koalaql.query.ReversedList
+import io.koalaql.query.BackwardsList
 import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
@@ -15,7 +15,7 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
 
     lateinit var head: BuiltUnionOperandQuery
 
-    val unioned = ReversedList<BuiltSetOperation>()
+    val unioned = BackwardsList<BuiltSetOperation>()
 
     var orderBy: List<Ordinal<*>> = emptyList()
 

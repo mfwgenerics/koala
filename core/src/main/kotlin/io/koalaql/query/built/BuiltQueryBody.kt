@@ -3,7 +3,7 @@ package io.koalaql.query.built
 import io.koalaql.expr.Expr
 import io.koalaql.expr.Ordinal
 import io.koalaql.query.LockMode
-import io.koalaql.query.ReversedList
+import io.koalaql.query.BackwardsList
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 import io.koalaql.window.LabeledWindow
@@ -11,7 +11,7 @@ import io.koalaql.window.LabeledWindow
 class BuiltQueryBody {
     lateinit var relation: BuiltRelation
 
-    val joins: ReversedList<BuiltJoin> = ReversedList()
+    val joins: BackwardsList<BuiltJoin> = BackwardsList()
 
     var where: Expr<Boolean>? = null
 

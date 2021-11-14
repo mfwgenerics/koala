@@ -1,6 +1,6 @@
 package io.koalaql.query
 
-class ReversedList<T>(
+class BackwardsList<T>(
     private val values: ArrayList<T> = arrayListOf()
 ): List<T> by (values as List<T>).asReversed() {
     /* upcast to get correct .asReversed() ^ */
