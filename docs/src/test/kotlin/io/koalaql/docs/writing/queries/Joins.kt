@@ -1,4 +1,4 @@
-package io.koalaql.docs.queries
+package io.koalaql.docs.writing.queries
 
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable

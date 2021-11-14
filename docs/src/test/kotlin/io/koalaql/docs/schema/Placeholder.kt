@@ -1,4 +1,4 @@
-package io.koalaql.docs.expressions
+package io.koalaql.docs.schema
 
 /* SHOW */
 

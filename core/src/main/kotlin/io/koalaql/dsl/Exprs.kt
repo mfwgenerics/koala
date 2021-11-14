@@ -139,9 +139,6 @@ fun <R : Any> case(vararg whens: WhenThen<Boolean, R>, else_: Expr<R>? = null): 
 fun <T : Any> when_(expr: Expr<T>): When<T> = When(expr)
 inline fun <reified T : Any> when_(expr: T): When<T> = When(value(expr))
 
-inline fun <T : Any, reified R : Any> When<T>.then(expr: R): WhenThen<T, R> =
-    then(value(expr))
-
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     OperationType.COALESCE(expr, *operands)
 

@@ -1,4 +1,4 @@
-package io.koalaql.docs.usage
+package io.koalaql.docs.executing
 
 import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.ShopTable

@@ -1,7 +1,6 @@
-package io.koalaql.docs.queries
+package io.koalaql.docs.writing.queries
 
 import assertListEquals
-import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase

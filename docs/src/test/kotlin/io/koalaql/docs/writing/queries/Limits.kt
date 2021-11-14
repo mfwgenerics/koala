@@ -1,6 +1,5 @@
-package io.koalaql.docs.queries
+package io.koalaql.docs.writing.queries
 
-import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
 import org.junit.Test

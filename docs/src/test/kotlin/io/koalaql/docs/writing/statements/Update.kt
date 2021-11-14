@@ -1,6 +1,5 @@
-package io.koalaql.docs.statements
+package io.koalaql.docs.writing.statements
 
-import io.koalaql.docs.ExampleDatabase
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
 import org.junit.Test

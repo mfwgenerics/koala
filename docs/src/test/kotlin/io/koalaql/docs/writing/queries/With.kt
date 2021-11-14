@@ -1,4 +1,4 @@
-package io.koalaql.docs.queries
+package io.koalaql.docs.writing.queries
 
 /* SHOW */
 /*

@@ -1,11 +1,7 @@
-package io.koalaql.docs.queries
+package io.koalaql.docs.writing.queries
 
-import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
-import io.koalaql.dsl.as_
-import io.koalaql.dsl.count
-import io.koalaql.dsl.label
 import org.junit.Test
 
 /* SHOW */
