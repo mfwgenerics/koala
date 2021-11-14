@@ -411,6 +411,19 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
+    fun `case expressions ordered correctly`() = withCxn { cxn ->
+        val result = select(cast(case()
+            .when_(value(true)).then(value(2))
+            .when_(value(true)).then(value(3))
+            .end(), INTEGER) as_ label())
+            .perform(cxn)
+            .single()
+            .first()
+
+        assertEquals(2, result)
+    }
+
+    @Test
     fun `standalone coalesce and scalar query`() = withCxn { cxn ->
         val n0 = label<Int>("n0")
         val n1 = label<String>("n1")
