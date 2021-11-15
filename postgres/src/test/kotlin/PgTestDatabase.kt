@@ -1,4 +1,5 @@
 import io.koalaql.CreateIfNotExists
+import io.koalaql.DeclareStrategy
 import io.koalaql.JdbcSchemaDetection
 import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.event.DataSourceEvent
@@ -9,7 +10,7 @@ import io.koalaql.test.retrying
 import java.sql.Connection
 import java.sql.DriverManager
 
-fun PgTestDatabase(db: String): JdbcDataSource {
+fun PgTestDatabase(db: String, declareBy: DeclareStrategy): JdbcDataSource {
     val outerCxn = retrying {
         DriverManager.getConnection("jdbc:postgresql://localhost:5432/", "postgres", "mysecretpassword")
     }

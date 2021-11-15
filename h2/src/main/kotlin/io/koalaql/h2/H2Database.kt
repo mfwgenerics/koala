@@ -23,7 +23,11 @@ fun H2DataSource(
     events
 )
 
-fun H2Database(db: String, mode: H2CompatibilityMode? = null): JdbcDataSource {
+fun H2Database(
+    db: String,
+    mode: H2CompatibilityMode? = null,
+    declareBy: DeclareStrategy? = CreateIfNotExists
+): JdbcDataSource {
     val url = when (mode) {
         H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MV_STORE=false;MODE=MYSQL"
         null -> "jdbc:h2:mem:$db;MV_STORE=false"

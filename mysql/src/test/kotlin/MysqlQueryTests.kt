@@ -1,4 +1,4 @@
-import io.koalaql.CreateIfNotExists
+import io.koalaql.DeclareStrategy
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.values
 import io.koalaql.dsl.setTo
@@ -6,7 +6,9 @@ import io.koalaql.jdbc.JdbcException
 import kotlin.test.Test
 
 class MysqlQueryTests: QueryTests() {
-    override fun connect(db: String) = MysqlTestDatabase(db, declareBy = CreateIfNotExists)
+    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
+        declareBy = declareBy
+    )
 
     @Test
     fun empty() {

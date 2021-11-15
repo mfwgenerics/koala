@@ -1,9 +1,11 @@
-import io.koalaql.CreateIfNotExists
+import io.koalaql.DeclareStrategy
 import io.koalaql.jdbc.JdbcException
 import kotlin.test.Test
 
 class MysqlUnionableTests: UnionableTests() {
-    override fun connect(db: String) = MysqlTestDatabase(db, declareBy = CreateIfNotExists)
+    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
+        declareBy = declareBy
+    )
 
     @Test
     fun empty() { }

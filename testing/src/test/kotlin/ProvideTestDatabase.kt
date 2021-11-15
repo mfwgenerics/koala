@@ -1,16 +1,15 @@
-import io.koalaql.DataConnection
+import io.koalaql.*
 import io.koalaql.ddl.Table
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.logging.SqlTestLintingLogger
-import io.koalaql.transact
 import java.security.SecureRandom
 import kotlin.math.absoluteValue
 
 interface ProvideTestDatabase {
-    fun connect(db: String): JdbcDataSource
+    fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource
 
-    fun withDb(block: (JdbcDataSource) -> Unit) {
-        val testDb = connect("db${SecureRandom().nextLong().absoluteValue}")
+    fun withDb(declareBy: DeclareStrategy = CreateIfNotExists, block: (JdbcDataSource) -> Unit) {
+        val testDb = connect("db${SecureRandom().nextLong().absoluteValue}", declareBy)
 
         try {
             block(testDb)

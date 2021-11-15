@@ -1,3 +1,4 @@
+import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.*
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.Diff
@@ -8,6 +9,7 @@ import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.assertMatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 abstract class DdlTests: ProvideTestDatabase {
     object CustomerTable: Table("Customer") {
@@ -174,6 +176,73 @@ abstract class DdlTests: ProvideTestDatabase {
 
         expected.forEachIndexed { ix, pair ->
             assertEquals(pair, createdAlteredDropped[ix], "${diffs[ix]}")
+        }
+    }
+
+    @Test
+    fun `drop columns rejected`() = withDb(
+        declareBy = DeclareStrategy.NO_DROP
+    ) { db ->
+        val table1 = object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116).default("test"))
+            val column1 = column("column1", INTEGER)
+        }
+
+        assert(!db.detectChanges(listOf(table1)).isEmpty())
+
+        db.declareTables(object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116).default("test"))
+            val column1 = column("column1", INTEGER)
+        })
+
+        assert(db.detectChanges(listOf(table1)).isEmpty())
+
+        val table2 = object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116))
+            val column1 = column("column1", INTEGER)
+        }
+
+        assert(!db.detectChanges(listOf(table2)).isEmpty())
+
+        db.declareTables(table2)
+
+        assert(db.detectChanges(listOf(table2)).isEmpty())
+
+        assertFails {
+            db.declareTables(object : Table("TestTable") {
+                val column0 = column("column0", VARCHAR(116))
+            })
+        }
+    }
+
+
+    @Test
+    fun `modify columns rejected`() = withDb(
+        declareBy = DeclareStrategy.CREATE_ONLY
+    ) { db ->
+        val table1 = object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116).default("test"))
+            val column1 = column("column1", INTEGER)
+        }
+
+        assert(!db.detectChanges(listOf(table1)).isEmpty())
+
+        db.declareTables(object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116).default("test"))
+            val column1 = column("column1", INTEGER)
+        })
+
+        assert(db.detectChanges(listOf(table1)).isEmpty())
+
+        val table2 = object : Table("TestTable") {
+            val column0 = column("column0", VARCHAR(116))
+            val column1 = column("column1", INTEGER)
+        }
+
+        assert(!db.detectChanges(listOf(table2)).isEmpty())
+
+        assertFails {
+            db.declareTables(table2)
         }
     }
 }

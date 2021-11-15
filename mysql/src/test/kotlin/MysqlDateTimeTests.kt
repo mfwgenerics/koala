@@ -1,9 +1,9 @@
-import io.koalaql.CreateIfNotExists
+import io.koalaql.DeclareStrategy
 import org.junit.Test
 
 class MysqlDateTimeTests: DateTimeTests() {
-    override fun connect(db: String) = MysqlTestDatabase(db,
-        declareBy = CreateIfNotExists
+    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
+        declareBy = declareBy
     )
 
     @Test

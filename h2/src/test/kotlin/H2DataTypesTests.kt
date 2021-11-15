@@ -1,3 +1,4 @@
+import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.BIGINT
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.SMALLINT
@@ -8,7 +9,8 @@ import io.koalaql.test.data.DataTypeValuesMap
 import org.junit.Test
 
 class H2DataTypesTests: DataTypesTest() {
-    override fun connect(db: String): JdbcDataSource = H2Database(db)
+    override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
+        H2Database(db, declareBy = declareBy)
 
     @Test
     fun empty() { }

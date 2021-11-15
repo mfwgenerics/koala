@@ -1,3 +1,4 @@
+import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.*
 import io.koalaql.dsl.currentTimestamp
 import io.koalaql.dsl.eq
@@ -9,7 +10,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class H2QueryTests: QueryTests() {
-    override fun connect(db: String): JdbcDataSource = H2Database(db)
+    override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
+        H2Database(db, declareBy = declareBy)
 
     @Test
     fun empty() {
