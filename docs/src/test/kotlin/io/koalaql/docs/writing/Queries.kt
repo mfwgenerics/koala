@@ -1,24 +1,25 @@
-package io.koalaql.docs.writing.queries
+package io.koalaql.docs.writing
 
-import assertListEquals
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
 import io.koalaql.dsl.*
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowOfTwo
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
+import kotlin.test.*
 
 /* SHOW */
 /*
 ---
-title: Selects
-custom_edit_url: https://github.com/mfwgenerics/koala/blob/examples/docs/src/main/kotlin/io/koalaql/docs/queries/Select.kt
-sidebar_position: 1
+title: Queries
+sidebar_position: 4
 ---
 */
+/* HIDE */
+
+
+/* SHOW */
+/* ## Selects */
 /* HIDE */
 
 class Selects {
@@ -36,7 +37,7 @@ class Selects {
             .selectAll()
             .perform(db)
 
-        assertListEquals(ShopTable.columns, allSelected.columns)
+        assertContentEquals(ShopTable.columns, allSelected.columns)
 
         /*
         In most cases `.selectAll()` can be omitted:
@@ -46,7 +47,7 @@ class Selects {
             .where(ShopTable.id eq hardwareStoreId)
             .perform(db)
 
-        assertListEquals(allSelected.columns, implicitSelectAll.columns)
+        assertContentEquals(allSelected.columns, implicitSelectAll.columns)
 
         /*
         :::info
@@ -62,7 +63,7 @@ class Selects {
         val row = allSelected.single()
 
         assertEquals("Helen's Hardware Store", row[ShopTable.name])
-        assertListEquals(ShopTable.columns, allSelected.columns)
+        assertContentEquals(ShopTable.columns, allSelected.columns)
     }
 
     @Test
@@ -117,7 +118,7 @@ class Selects {
             .select(CustomerTable) // select only fields from CustomerTable
             .perform(db)
 
-        assertListEquals(CustomerTable.columns, hardwareCustomers.columns)
+        assertContentEquals(CustomerTable.columns, hardwareCustomers.columns)
 
         /*
         You can pass multiple `Table`s to select:
@@ -143,12 +144,11 @@ class Selects {
 
         val distinctShopIds = CustomerTable
             .selectDistinct(CustomerTable.shop)
-            .also { println(it.generateSql(db)) }
             .perform(db)
             .map { it.first() }
             .toList()
 
-        assertListEquals(distinctShopIds, distinctShopIds.distinct())
+        assertContentEquals(distinctShopIds, distinctShopIds.distinct())
 
         /* HIDE */
     }
@@ -239,28 +239,6 @@ class Selects {
     }
 
     @Test
-    fun selectAliased() = testExampleDatabase {
-        /* SHOW */
-
-        /*
-        ### Aliases
-         */
-
-        val alias = alias()
-
-        val row = ShopTable
-            .innerJoin(ShopTable.as_(alias), alias[ShopTable.id] eq groceryStoreId)
-            .where(ShopTable.id eq hardwareStoreId)
-            .perform(db)
-            .single()
-
-        assertEquals("Helen's Hardware Store", row[ShopTable.name])
-        assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
-
-        /* HIDE */
-    }
-
-    @Test
     fun expectPair() = testExampleDatabase {
         /* SHOW */
 
@@ -309,4 +287,319 @@ class Selects {
 
         Unit
     }
+}
+
+/* SHOW */
+/* ## Joins */
+/* HIDE */
+
+class Joins {
+    @Test
+    fun innerJoin() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Inner join
+         */
+
+        CustomerTable
+            .innerJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun leftJoin() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Left and right join
+         */
+
+        CustomerTable
+            .leftJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
+            .perform(db)
+
+        CustomerTable
+            .rightJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun crossJoin() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Cross join
+         */
+
+        ShopTable
+            .crossJoin(CustomerTable)
+            .perform(db)
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Aliases */
+/* HIDE */
+
+class Aliases {
+    @Test
+    fun selectAliased() = testExampleDatabase {
+        /* SHOW */
+
+        /*
+        ### Self-join with alias
+         */
+
+        val alias = alias()
+
+        val row = ShopTable
+            .innerJoin(ShopTable.as_(alias), alias[ShopTable.id] eq groceryStoreId)
+            .where(ShopTable.id eq hardwareStoreId)
+            .perform(db)
+            .single()
+
+        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Where */
+/* HIDE */
+
+class Where {
+    @Test
+    fun chainWheres() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Chaining wheres
+         */
+
+        ShopTable
+            .where(ShopTable.id eq hardwareStoreId)
+            .where(ShopTable.name eq "Helen's Hardware Store")
+            .perform(db)
+            .single()
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Group By */
+/* HIDE */
+
+class GroupBy {
+    @Test
+    fun countingGroupBy() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Group by
+         */
+
+        val customerCount = label<Int>()
+
+        CustomerTable
+            .groupBy(CustomerTable.shop)
+            .select(CustomerTable.shop, count() as_ customerCount)
+            .perform(db)
+
+        /* HIDE */
+    }
+}
+
+
+/* SHOW */
+/* ## Windows */
+/* HIDE */
+
+class Windows {
+    @Test
+    fun selectingWindows() = testExampleDatabase {
+        /* SHOW */
+
+        /*
+        ### Window clause
+         */
+
+        val shopsWindow = window() as_ all().partitionBy(ShopTable.id)
+
+        val totalSpent = sum(CustomerTable.spent).over(shopsWindow) as_ label()
+        val rank = rank().over(shopsWindow.orderBy(CustomerTable.spent.desc())) as_ label()
+
+        val rankings = ShopTable
+            .innerJoin(CustomerTable, CustomerTable.shop eq ShopTable.id)
+            .window(shopsWindow)
+            .orderBy(ShopTable.name, rank)
+            .select(
+                ShopTable.name,
+                CustomerTable.name,
+                CustomerTable.spent,
+                rank,
+                totalSpent
+            )
+            .perform(db)
+            .map { row ->
+                "${row[CustomerTable.name]} #${row[rank]} at ${row[ShopTable.name]} " +
+                "spent $${row[CustomerTable.spent]} of $${row[totalSpent]}"
+            }
+            .toList()
+
+        assertContentEquals(
+            rankings,
+            listOf(
+                "Angela Abara #1 at 24 Hr Groceries spent $79.99 of $79.99",
+                "Michael M. Michael #1 at Helen's Hardware Store spent $125.00 of $145.50",
+                "Maria Robinson #2 at Helen's Hardware Store spent $20.50 of $145.50"
+            )
+        )
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Values */
+/* HIDE */
+
+class Values {
+}
+
+/* SHOW */
+/* ## Unions */
+/* HIDE */
+
+class Unions {
+}
+
+
+/* SHOW */
+/* ## Order By */
+/* HIDE */
+
+class OrderBy {
+    @Test
+    fun orderBy() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Order by
+         */
+
+        val alphabetical = ShopTable
+            .orderBy(ShopTable.name)
+            .perform(db)
+
+        val reverseAlphabetical = ShopTable
+            .orderBy(ShopTable.name.desc())
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun orderByDesc() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Nulls first and last
+         */
+
+        ShopTable
+            .orderBy(ShopTable.established.desc().nullsLast())
+            .perform(db)
+
+        ShopTable
+            .orderBy(ShopTable.established.asc().nullsFirst())
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun multiOrderBy() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Compound order
+         */
+
+        ShopTable
+            .orderBy(
+                ShopTable.established.desc().nullsLast(),
+                ShopTable.name
+            )
+            .perform(db)
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Limits */
+/* HIDE */
+
+class Limits {
+    @Test
+    fun limits() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Limit
+         */
+
+        val firstByName = ShopTable
+            .orderBy(ShopTable.name)
+            .limit(1)
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun offsets() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Offset
+         */
+
+        val thirdByName = ShopTable
+            .orderBy(ShopTable.name)
+            .offset(2)
+            .limit(1)
+            .perform(db)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun offsetWithoutLimit() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### Offset without limit
+         */
+
+        ShopTable
+            .orderBy(ShopTable.name)
+            .offset(2)
+            .perform(db)
+
+        /* HIDE */
+    }
+}
+
+/* SHOW */
+/* ## Locking */
+/* HIDE */
+
+class Locking {
+}
+
+/* SHOW */
+/* ## With */
+/* HIDE */
+
+class With {
 }

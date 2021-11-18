@@ -56,6 +56,11 @@ fun ExampleDatabase(): ExampleData {
                 CustomerTable.shop setTo ids[0],
                 CustomerTable.name setTo "Maria Robinson",
                 CustomerTable.spent setTo BigDecimal("20.50")
+            ),
+            rowOf(
+                CustomerTable.shop setTo ids[1],
+                CustomerTable.name setTo "Angela Abara",
+                CustomerTable.spent setTo BigDecimal("79.99")
             )
         ))
         .perform(db)
