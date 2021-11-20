@@ -1,3 +1,5 @@
-#Koala
+# Koala
 
-Koala is an SQL DSL for Kotlin. Currently under construction.
+Koala is an SQL DSL for Kotlin.
+
+Docs are under construction [here](https://mfwgenerics.github.io/koala/)

@@ -1013,7 +1013,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `values as expression in select`() = withCxn { cxn ->
+    open fun `values as expression in select`() = withCxn { cxn ->
         val label0 = label<String>()
 
         val result = select(values(listOf(cast(value("test"), TEXT))) { this[label0] = it }.expecting(label0) as_ label0)
