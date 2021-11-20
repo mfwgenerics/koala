@@ -235,7 +235,7 @@ class PostgresDialect: SqlDialect {
         }
 
         addSql(" ")
-        addAlias(relation)
+        addSql(scope[relation.computedAlias])
 
         explicitLabels?.let { labels ->
             parenthesize {
@@ -287,17 +287,19 @@ class PostgresDialect: SqlDialect {
     fun ScopedSqlBuilder.compileInsert(insert: BuiltInsert): Boolean {
         val relvar = insert.unwrapTable()
 
+        val insertAlias = Alias()
+
         compileInsertLine(insert) {
             addIdentifier(relvar.tableName)
             addSql(" AS ")
-            addAlias(insert.relation)
+            addAlias(insertAlias)
         }
 
         addSql("\n")
 
         val nonEmpty = compileQuery(insert.query)
 
-        val updateCtx = Expressions(withColumns(relvar.columns, insert.relation.computedAlias))
+        val updateCtx = Expressions(withColumns(relvar.columns, insertAlias))
 
         compileOnConflict(insert.onConflict) { assignment ->
             updateCtx.sql.compileAssignment(assignment)
@@ -343,7 +345,7 @@ class PostgresDialect: SqlDialect {
 
     private inner class Expressions(
         val sql: ScopedSqlBuilder
-    ): ExpressionCompiler {
+    ) : ExpressionCompiler {
         override fun excluded(reference: Reference<*>) {
             sql.addSql("EXCLUDED.")
 
@@ -377,7 +379,7 @@ class PostgresDialect: SqlDialect {
     override fun compile(dml: BuiltDml): SqlText? {
         val sql = ScopedSqlBuilder(
             SqlTextBuilder(IdentifierQuoteStyle.DOUBLE),
-            Scope(NameRegistry { "column${it+1}" })
+            Scope(NameRegistry { "column${it + 1}" })
         )
 
         return sql.compile(dml,

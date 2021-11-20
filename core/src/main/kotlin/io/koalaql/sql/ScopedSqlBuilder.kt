@@ -19,8 +19,8 @@ class ScopedSqlBuilder(
         output.addSql(sql)
     }
 
-    fun addAlias(relation: BuiltRelation) {
-        addSql(scope[relation.computedAlias])
+    fun addAlias(alias: Alias) {
+        addSql(scope[alias])
     }
 
     fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {

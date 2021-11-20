@@ -611,16 +611,16 @@ abstract class QueryTests: ProvideTestDatabase {
 
     open val requiresOnConflictKey get() = false
 
+    private fun OnConflictable.onConflict0(): OnDuplicated {
+        return if (requiresOnConflictKey) {
+            onConflict(MergeTest.conflictKey)
+        } else {
+            onDuplicate()
+        }
+    }
+
     @Test
     open fun `on duplicate update with values`() = withCxn(MergeTest) { cxn ->
-        fun OnConflictable.onConflict0(): OnDuplicated {
-            return if (requiresOnConflictKey) {
-                onConflict(MergeTest.conflictKey)
-            } else {
-                onDuplicate()
-            }
-        }
-
         fun expectValueOf(x: Int, y: Int, z: Int, nz: Int) {
             val row = MergeTest
                 .where(MergeTest.x eq x)
@@ -682,6 +682,47 @@ abstract class QueryTests: ProvideTestDatabase {
             .perform(cxn)
 
         expectValueOf(4, 7, -3, -28)
+    }
+
+    @Test
+    open fun `on duplicate update with select`() = withCxn(MergeTest) { cxn ->
+        fun expectValueOf(x: Int, y: Int, z: Int, nz: Int) {
+            val row = MergeTest
+                .where(MergeTest.x eq x)
+                .where(MergeTest.y eq y)
+                .select(MergeTest.z, MergeTest.nz)
+                .perform(cxn)
+                .single()
+
+            assertEquals(z, row.getValue(MergeTest.z))
+            assertEquals(nz, row.getValue(MergeTest.nz))
+        }
+
+        MergeTest
+            .insert(rowOf(
+                MergeTest.x setTo 4,
+                MergeTest.y setTo 7,
+                MergeTest.z setTo 11,
+                MergeTest.nz setTo -11
+            ))
+            .onConflict0()
+            .set(MergeTest.z, MergeTest.nz)
+            .perform(cxn)
+
+        expectValueOf(4, 7, 11, -11)
+
+        MergeTest
+            .insert(MergeTest.selectAll())
+            .onConflict0()
+            .update(listOf(
+                MergeTest.x setTo MergeTest.x + Excluded[MergeTest.x],
+                MergeTest.y setTo MergeTest.y + 1,
+                MergeTest.z setTo MergeTest.z + 1,
+                MergeTest.nz setTo MergeTest.nz + 1,
+            ))
+            .perform(cxn)
+
+        expectValueOf(8, 8, 12, -10)
     }
 
     @Test

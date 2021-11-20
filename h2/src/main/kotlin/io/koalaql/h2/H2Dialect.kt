@@ -234,7 +234,7 @@ class H2Dialect(
         }
 
         addSql(" ")
-        addAlias(relation)
+        addSql(scope[relation.computedAlias])
 
         explicitLabels?.let { labels ->
             compileRelabels(labels)
@@ -333,13 +333,16 @@ class H2Dialect(
 
     private inner class Expressions(
         val sql: ScopedSqlBuilder
-    ): ExpressionCompiler {
+    ) : ExpressionCompiler {
         override fun excluded(reference: Reference<*>) {
             when (compatibilityMode) {
                 H2CompatibilityMode.MYSQL -> {
                     sql.addSql("VALUES")
                     sql.parenthesize {
-                        sql.compileReference(reference)
+                        when (reference) {
+                            is Column<*> -> sql.addIdentifier(reference.symbol)
+                            else -> sql.compileReference(reference)
+                        }
                     }
                 }
                 null -> sql.addError("Excluded[] is not supported by this dialect")

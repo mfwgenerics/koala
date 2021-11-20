@@ -36,6 +36,15 @@ class H2QueryTests: QueryTests() {
         } catch (ex: Exception) { }
     }
 
+    override fun `on duplicate update with select`() {
+        /* H2 does not support ON CONFLICT/ON DUPLICATE in its native dialect */
+
+        try {
+            super.`on duplicate update with values`()
+            assert(false)
+        } catch (ex: Exception) { }
+    }
+
     @Test
     fun `generated sql`() = withDb { db ->
         val table = object : Table("Venue") {

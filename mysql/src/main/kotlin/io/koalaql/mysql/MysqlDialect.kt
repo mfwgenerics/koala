@@ -7,6 +7,7 @@ import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
+import io.koalaql.dsl.alias
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.query.*
@@ -108,11 +109,11 @@ class MysqlDialect(): SqlDialect {
     private fun UnmappedDataType<*>.rawSql(): String = when (this) {
         TIMESTAMP -> "DATETIME"
         is DATETIME -> {
-            val suffix = precision?.let { "($precision)" }?:""
+            val suffix = precision?.let { "($precision)" } ?: ""
             "DATETIME$suffix"
         }
         is TIME -> {
-            val suffix = precision?.let { "($precision)" }?:""
+            val suffix = precision?.let { "($precision)" } ?: ""
             "TIME$suffix"
         }
         else -> defaultRawSql()
@@ -345,7 +346,7 @@ class MysqlDialect(): SqlDialect {
         }
 
         addSql(" ")
-        addAlias(relation)
+        addSql(scope[relation.computedAlias])
 
         explicitLabels?.let { labels ->
             parenthesize {
@@ -392,7 +393,7 @@ class MysqlDialect(): SqlDialect {
         compileOnConflict = {
             val relvar = insert.unwrapTable()
 
-            val sql = withColumns(relvar.columns)
+            val sql = withColumns(relvar.columns, alias(relvar.tableName))
 
             sql.compileOnConflict(it) {
                 sql.compileAssignment(it)
@@ -426,7 +427,7 @@ class MysqlDialect(): SqlDialect {
 
     private inner class Expressions(
         val sql: ScopedSqlBuilder
-    ): ExpressionCompiler {
+    ) : ExpressionCompiler {
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
             sql.compileReference(value)
         }
@@ -450,7 +451,10 @@ class MysqlDialect(): SqlDialect {
         override fun excluded(reference: Reference<*>) {
             sql.addSql("VALUES")
             sql.parenthesize {
-                sql.compileReference(reference)
+                when (reference) {
+                    is Column<*> -> sql.addIdentifier(reference.symbol)
+                    else -> sql.compileReference(reference)
+                }
             }
         }
     }
