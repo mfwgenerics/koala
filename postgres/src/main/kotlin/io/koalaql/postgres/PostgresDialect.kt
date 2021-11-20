@@ -1,5 +1,6 @@
 package io.koalaql.postgres
 
+import io.koalaql.Assignment
 import io.koalaql.ddl.*
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
@@ -136,359 +137,257 @@ class PostgresDialect: SqlDialect {
         return results
     }
 
-    private class Compilation(
-        val scope: Scope,
-        override val sql: SqlTextBuilder = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
-    ): ExpressionCompiler {
-        fun compileReference(name: Reference<*>) {
-            sql.withResult(scope.resolve(name)) {
-                sql.addResolved(it)
-            }
+
+    fun ScopedSqlBuilder.compileReference(name: Reference<*>) {
+        resolveReference(name)
+    }
+
+    fun ScopedSqlBuilder.compileOrderBy(ordinals: List<Ordinal<*>>) {
+        compileOrderBy(ordinals) {
+            compileExpr(it, false)
         }
+    }
 
-        fun compileOrderBy(ordinals: List<Ordinal<*>>) {
-            sql.compileOrderBy(ordinals) {
-                compileExpr(it, false)
-            }
-        }
+    fun ScopedSqlBuilder.compileAggregatable(aggregatable: BuiltAggregatable) {
+        if (aggregatable.distinct == Distinctness.DISTINCT) addSql("DISTINCT ")
 
-        fun compileAggregatable(aggregatable: BuiltAggregatable) {
-            if (aggregatable.distinct == Distinctness.DISTINCT) sql.addSql("DISTINCT ")
+        compileExpr(aggregatable.expr, false)
 
-            compileExpr(aggregatable.expr, false)
+        if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
+    }
 
-            if (aggregatable.orderBy.isNotEmpty()) compileOrderBy(aggregatable.orderBy)
-        }
-
-        fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>) {
-            when (marker) {
-                CurrentRow -> sql.addSql("CURRENT ROW")
-                is Following<*> -> {
-                    compileExpr(marker.offset)
-                }
-                is Preceding<*> -> {
-                    compileExpr(marker.offset)
-                }
-                Unbounded -> sql.addSql("UNBOUNDED $direction")
-            }
-        }
-
-        fun compileWindow(window: BuiltWindow) {
-            val partitionedBy = window.partitions.partitions
-            val orderBy = window.partitions.orderBy
-
-            val prefix = sql.prefix("", " ")
-
-            window.partitions.from?.let {
-                prefix.next {
-                    sql.addSql(scope.nameOf(it))
-                }
-            }
-
-            if (partitionedBy.isNotEmpty()) prefix.next {
-                sql.prefix("PARTITION BY ", ", ").forEach(partitionedBy) {
-                    compileExpr(it, false)
-                }
-            }
-
-            if (orderBy.isNotEmpty()) prefix.next {
-                compileOrderBy(orderBy)
-            }
-
-            window.type?.let { windowType ->
-                prefix.next {
-                    sql.addSql(windowType.sql)
-                    sql.addSql(" ")
-
-                    val until = window.until
-
-                    if (until == null) {
-                        compileRangeMarker("PRECEDING", window.from)
-                    } else {
-                        sql.addSql("BETWEEN ")
-                        compileRangeMarker("PRECEDING", window.from)
-                        sql.addSql(" AND ")
-                        compileRangeMarker("FOLLOWING", until)
-                    }
-                }
-            }
-        }
-
-        fun compileCastDataType(type: UnmappedDataType<*>) {
-            sql.addSql(type.toRawSql())
-        }
-
-        fun compileQuery(query: BuiltQuery): Boolean {
-            return scopedCtesIn(query) {
-                sql.compileFullQuery(
-                    query = query,
-                    compileWiths = { compileWiths(it) },
-                    compileSubquery = { compileQuery(it) },
-                    compileOrderBy = {
-                        scopedIn(query) {
-                            compileOrderBy(it)
-                        }
-                    }
-                )
-            }
-        }
-
-        fun compileQuery(query: BuiltUnionOperandQuery): Boolean {
-            val innerScope = scope.innerScope()
-
-            query.populateScope(innerScope)
-
-            val compilation = Compilation(
-                sql = sql,
-                scope = innerScope
-            )
-
-            return when (query) {
-                is BuiltSelectQuery -> {
-                    compilation.compileSelect(query)
-                    return true
-                }
-                is BuiltValuesQuery -> compilation.compileValues(query)
-            }
-        }
-
-        fun compileSubqueryExpr(subquery: BuiltQuery) {
-            sql.parenthesize {
-                compileQuery(subquery)
-            }
-        }
-
-        fun compileSetLhs(expr: Reference<*>) {
-            sql.withResult(scope.resolve(expr)) {
-                sql.addIdentifier(it.innerName)
-            }
-        }
-
-        fun compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-            sql.compileExpr(expr, emitParens, this)
-        }
-
-        fun compileRelation(relation: BuiltRelation) {
-            val explicitLabels = when (val baseRelation = relation.relation) {
-                is TableRelation -> {
-                    sql.addIdentifier(baseRelation.tableName)
-                    null
-                }
-                is Subquery -> {
-                    val innerScope = scope.innerScope()
-
-                    baseRelation.of.populateScope(innerScope)
-
-                    sql.parenthesize {
-                        compileQuery(baseRelation.of)
-                    }
-
-                    if (baseRelation.of.columnsUnnamed()) {
-                        baseRelation.of.columns
-                    } else {
-                        null
-                    }
-                }
-                is Cte -> {
-                    sql.addSql(scope[baseRelation])
-
-                    if (relation.computedAlias.identifier == baseRelation.identifier) return
-
-                    null
-                }
-                is EmptyRelation -> return
-            }
-
-            sql.addSql(" ")
-            sql.addSql(scope[relation.computedAlias])
-
-            explicitLabels?.let { labels ->
-                sql.parenthesize {
-                    sql.prefix("", ", ").forEach(labels) {
-                        sql.addSql(scope.nameOf(it))
-                    }
-                }
-            }
-        }
-
-        fun compileRelabels(labels: List<Reference<*>>) {
-            sql.parenthesize {
-                sql.prefix("", ", ").forEach(labels) {
-                    sql.addIdentifier(scope.nameOf(it))
-                }
-            }
-        }
-
-        fun compileWiths(withable: BuiltWithable) = sql.compileWiths(
-            withable,
-            compileCte = { sql.addSql(scope[it]) },
-            compileRelabels = { compileRelabels(it) },
-            compileQuery = { compileQuery(it) }
+    fun ScopedSqlBuilder.compileWindow(window: BuiltWindow) =
+        compileWindow(window,
+            compileExpr = { compileExpr(it) },
+            compileOrderBy = { compileOrderBy(it) }
         )
 
-        fun compileSelect(select: BuiltSelectQuery) {
-            sql.selectClause(select, scope) { compileExpr(it, false) }
+    fun ScopedSqlBuilder.compileCastDataType(type: UnmappedDataType<*>) {
+        addSql(type.toRawSql())
+    }
 
-            if (select.body.relation.relation != EmptyRelation) sql.addSql("\nFROM ")
+    fun ScopedSqlBuilder.compileQuery(query: BuiltQuery): Boolean {
+        return scopedCtesIn(query) {
+            compileFullQuery(
+                query = query,
+                compileWiths = { compileWiths(it) },
+                compileSubquery = { compileQuery(it) },
+                compileOrderBy = {
+                    scopedIn(query) {
+                        compileOrderBy(it)
+                    }
+                }
+            )
+        }
+    }
 
-            sql.compileQueryBody(
-                select.body,
+    fun ScopedSqlBuilder.compileQuery(query: BuiltUnionOperandQuery): Boolean {
+        val compilation = withScope(query)
+
+        return when (query) {
+            is BuiltSelectQuery -> {
+                compilation.compileSelect(query)
+                return true
+            }
+            is BuiltValuesQuery -> compilation.compileValues(query)
+        }
+    }
+
+    fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltQuery) {
+        parenthesize {
+            compileQuery(subquery)
+        }
+    }
+
+    fun ScopedSqlBuilder.compileSetLhs(expr: Reference<*>) {
+        resolveWithoutAlias(expr)
+    }
+
+    fun ScopedSqlBuilder.compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
+        compileExpr(expr, emitParens, Expressions(this))
+    }
+
+    fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
+        val explicitLabels = when (val baseRelation = relation.relation) {
+            is TableRelation -> {
+                addIdentifier(baseRelation.tableName)
+                null
+            }
+            is Subquery -> {
+                parenthesize {
+                    compileQuery(baseRelation.of)
+                }
+
+                if (baseRelation.of.columnsUnnamed()) {
+                    baseRelation.of.columns
+                } else {
+                    null
+                }
+            }
+            is Cte -> {
+                addCte(baseRelation)
+
+                if (relation.computedAlias.identifier == baseRelation.identifier) return
+
+                null
+            }
+            is EmptyRelation -> return
+        }
+
+        addSql(" ")
+        addAlias(relation)
+
+        explicitLabels?.let { labels ->
+            parenthesize {
+                prefix("", ", ").forEach(labels) {
+                    addReference(it)
+                }
+            }
+        }
+    }
+
+    fun ScopedSqlBuilder.compileRelabels(labels: List<Reference<*>>) {
+        parenthesize {
+            prefix("", ", ").forEach(labels) {
+                addReference(it)
+            }
+        }
+    }
+
+    fun ScopedSqlBuilder.compileWiths(withable: BuiltWithable) = compileWiths(
+        withable,
+        compileCte = { addCte(it) },
+        compileRelabels = { compileRelabels(it) },
+        compileQuery = { compileQuery(it) }
+    )
+
+    fun ScopedSqlBuilder.compileSelect(select: BuiltSelectQuery) {
+        selectClause(select) { compileExpr(it, false) }
+
+        if (select.body.relation.relation != EmptyRelation) addSql("\nFROM ")
+
+        compileQueryBody(
+            select.body,
+            compileExpr = { compileExpr(it, false) },
+            compileRelation = { compileRelation(it) },
+            compileWindows = { windows -> compileWindows(windows) }
+        )
+    }
+
+    fun ScopedSqlBuilder.compileValues(query: BuiltValuesQuery): Boolean {
+        return compileValues(query, compileExpr = { compileExpr(it, false) })
+    }
+
+    fun ScopedSqlBuilder.compileAssignment(assignment: Assignment<*>) {
+        compileSetLhs(assignment.reference)
+        addSql(" = ")
+        compileExpr(assignment.expr)
+    }
+
+    fun ScopedSqlBuilder.compileInsert(insert: BuiltInsert): Boolean {
+        val relvar = insert.unwrapTable()
+
+        compileInsertLine(insert) {
+            addIdentifier(relvar.tableName)
+            addSql(" AS ")
+            addAlias(insert.relation)
+        }
+
+        addSql("\n")
+
+        val nonEmpty = compileQuery(insert.query)
+
+        val updateCtx = Expressions(withColumns(relvar.columns, insert.relation.computedAlias))
+
+        compileOnConflict(insert.onConflict) { assignment ->
+            updateCtx.sql.compileAssignment(assignment)
+        }
+
+        return nonEmpty
+    }
+
+    fun ScopedSqlBuilder.compileWindows(windows: List<LabeledWindow>) = compileWindowClause(windows) { window ->
+        compileWindow(window)
+    }
+
+    fun ScopedSqlBuilder.compileDelete(delete: BuiltDelete) = compileDelete(delete,
+        compileWiths = { compileWiths(it) },
+        compileQueryBody = { query ->
+            compileQueryBody(
+                query,
                 compileExpr = { compileExpr(it, false) },
                 compileRelation = { compileRelation(it) },
-                compileWindows = { windows -> compileWindows(windows) }
+                compileWindows = { compileWindows(it) }
             )
         }
+    )
 
-        fun compileValues(query: BuiltValuesQuery): Boolean {
-            return sql.compileValues(query, compileExpr = { compileExpr(it, false) })
-        }
+    private inline fun <T> ScopedSqlBuilder.scopedIn(query: PopulatesScope, block: ScopedSqlBuilder.() -> T): T {
+        val compilation = withScope(query)
 
-        fun compileInsert(insert: BuiltInsert): Boolean {
-            val relvar = insert.unwrapTable()
+        return compilation.block()
+    }
 
-            sql.compileInsertLine(insert) {
-                sql.addIdentifier(relvar.tableName)
-                sql.addSql(" AS ")
-                sql.addSql(scope[insert.relation.computedAlias])
-            }
+    private inline fun <T> ScopedSqlBuilder.scopedCtesIn(query: BuiltQuery, block: ScopedSqlBuilder.() -> T): T {
+        val compilation = withCtes(query)
 
-            sql.addSql("\n")
+        return compilation.block()
+    }
 
-            val nonEmpty = compileQuery(insert.query)
+    fun ScopedSqlBuilder.compileUpdate(update: BuiltUpdate) = compileUpdate(update,
+        compileWiths = { compileWiths(it) },
+        compileRelation = { compileRelation(it) },
+        compileAssignment = { compileAssignment(it) },
+        compileExpr = { compileExpr(it, false) }
+    )
 
-            sql.compileOnConflict(insert.onConflict) { assignments ->
-                val innerScope = scope.innerScope()
-
-                relvar.columns.forEach {
-                    innerScope.internal(it, it.symbol, insert.relation.computedAlias)
-                }
-
-                val updateCtx = Compilation(innerScope, sql)
-
-                sql.prefix(" ", "\n,").forEach(assignments) {
-                    val ref = it.reference
-
-                    if (ref is Column<*>) {
-                        sql.addIdentifier(ref.symbol)
-                    } else {
-                        sql.addError("can't update a non-column reference")
-                    }
-
-                    sql.addSql(" = ")
-                    updateCtx.compileExpr(it.expr)
-                }
-            }
-
-            return nonEmpty
-        }
-
-        fun compileUpdate(update: BuiltUpdate) = sql.compileUpdate(update,
-            compileWiths = { compileWiths(it) },
-            compileRelation = { compileRelation(it) },
-            compileAssignment = {
-                compileSetLhs(it.reference)
-                sql.addSql(" = ")
-                compileExpr(it.expr)
-            },
-            compileExpr = { compileExpr(it, false) }
-        )
-
+    private inner class Expressions(
+        val sql: ScopedSqlBuilder
+    ): ExpressionCompiler {
         override fun excluded(reference: Reference<*>) {
             sql.addSql("EXCLUDED.")
 
             when (reference) {
                 is Column<*> -> sql.addIdentifier(reference.symbol)
-                else -> compileReference(reference)
+                else -> sql.compileReference(reference)
             }
         }
 
         override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
-            compileReference(value)
+            sql.compileReference(value)
         }
 
         override fun subquery(emitParens: Boolean, subquery: BuiltQuery) {
-            compileSubqueryExpr(subquery)
+            sql.compileSubqueryExpr(subquery)
         }
 
         override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) {
-            compileAggregatable(aggregatable)
+            sql.compileAggregatable(aggregatable)
         }
 
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
-            compileCastDataType(to)
+            sql.compileCastDataType(to)
         }
 
         override fun window(window: BuiltWindow) {
-            compileWindow(window)
-        }
-
-        fun compileWindows(windows: List<LabeledWindow>) {
-            sql.prefix("\nWINDOW ", "\n, ").forEach(windows) {
-                sql.addSql(scope.nameOf(it.label))
-                sql.addSql(" AS ")
-                sql.addSql("(")
-                compileWindow(BuiltWindow.from(it.window))
-                sql.addSql(")")
-            }
-        }
-
-        fun compileDelete(delete: BuiltDelete) = sql.compileDelete(delete,
-            compileWiths = { compileWiths(it) },
-            compileQueryBody = { query ->
-                sql.compileQueryBody(
-                    query,
-                    compileExpr = { compileExpr(it, false) },
-                    compileRelation = { compileRelation(it) },
-                    compileWindows = { compileWindows(it) }
-                )
-            }
-        )
-
-        inline fun <T> scopedIn(query: PopulatesScope, block: Compilation.() -> T): T {
-            val innerScope = scope.innerScope()
-
-            query.populateScope(innerScope)
-
-            val compilation = Compilation(
-                sql = sql,
-                scope = innerScope
-            )
-
-            return compilation.block()
-        }
-
-        // TODO remove this after WITH changes
-        private inline fun <T> scopedCtesIn(query: BuiltQuery, block: Compilation.() -> T): T {
-            val innerScope = scope.innerScope()
-
-            query.populateCtes(innerScope)
-
-            val compilation = Compilation(
-                sql = sql,
-                scope = innerScope
-            )
-
-            return compilation.block()
+            sql.compileWindow(window)
         }
     }
 
     override fun compile(dml: BuiltDml): SqlText? {
-        return with(Compilation(scope = Scope(NameRegistry { "column${it+1}" }))) {
-            val nonEmpty = when (dml) {
-                is BuiltQuery -> compileQuery(dml)
-                is BuiltInsert -> scopedIn(dml) { compileInsert(dml) }
-                is BuiltUpdate -> scopedIn(dml) { compileUpdate(dml) }
-                is BuiltDelete -> {
-                    scopedIn(dml) { compileDelete(dml) }
-                    true
-                }
-            }
+        val sql = ScopedSqlBuilder(
+            SqlTextBuilder(IdentifierQuoteStyle.DOUBLE),
+            Scope(NameRegistry { "column${it+1}" })
+        )
 
-            if (nonEmpty) {
-                sql.toSql()
-            } else {
-                null
+        return sql.compile(dml,
+            compileQuery = { sql.compileQuery(it) },
+            compileInsert = { sql.scopedIn(it) { compileInsert(it) } },
+            compileUpdate = { sql.scopedIn(it) { compileUpdate(it) } },
+            compileDelete = {
+                sql.scopedIn(dml) { compileDelete(it) }
+                true
             }
-        }
+        )
     }
 }
