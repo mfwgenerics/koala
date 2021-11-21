@@ -22,66 +22,66 @@ private fun UnmappedDataType<*>.toRawSql(): String = when (this) {
 }
 
 class PostgresDialect: SqlDialect {
-    private fun compileDefaultExpr(sql: SqlTextBuilder, expr: Expr<*>) {
+    private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {
         when (expr) {
-            is Literal -> sql.addLiteral(expr)
-            is Column<*> -> sql.addIdentifier(expr.symbol)
+            is Literal -> addLiteral(expr)
+            is Column<*> -> addIdentifier(expr.symbol)
             else -> error("not implemented")
         }
     }
 
-    private fun compileDataType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
-        sql.addSql(type.toRawSql())
+    private fun ScopedSqlBuilder.compileDataType(type: UnmappedDataType<*>) {
+        addSql(type.toRawSql())
     }
 
-    private fun compileSerialType(sql: SqlTextBuilder, type: UnmappedDataType<*>) {
+    private fun ScopedSqlBuilder.compileSerialType(type: UnmappedDataType<*>) {
         when (type) {
-            SMALLINT -> sql.addSql("SMALLSERIAL")
-            INTEGER -> sql.addSql("SERIAL")
-            BIGINT -> sql.addSql("BIGSERIAL")
-            else -> sql.addError("no serial type corresponds to $type")
+            SMALLINT -> addSql("SMALLSERIAL")
+            INTEGER -> addSql("SERIAL")
+            BIGINT -> addSql("BIGSERIAL")
+            else -> addError("no serial type corresponds to $type")
         }
     }
 
-    private fun compileIndexDef(sql: SqlTextBuilder, name: String, def: BuiltIndexDef) {
-        sql.addSql("CONSTRAINT ")
+    private fun ScopedSqlBuilder.compileIndexDef(name: String, def: BuiltIndexDef) {
+        addSql("CONSTRAINT ")
 
-        sql.addIdentifier(name)
+        addIdentifier(name)
 
-        sql.addSql(when (def.type) {
+        addSql(when (def.type) {
             IndexType.PRIMARY -> " PRIMARY KEY"
             IndexType.UNIQUE -> " UNIQUE"
             IndexType.INDEX -> " INDEX"
         })
 
-        sql.addSql(" ")
-        sql.parenthesize {
-            sql.prefix("", ", ").forEach(def.keys.keys) { key ->
-                compileDefaultExpr(sql, key)
+        addSql(" ")
+        parenthesize {
+            prefix("", ", ").forEach(def.keys.keys) { key ->
+                compileDefaultExpr(key)
             }
         }
     }
 
-    private fun compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE IF NOT EXISTS ")
+    private fun ScopedSqlBuilder.compileCreateTable(table: Table) {
+        addSql("CREATE TABLE IF NOT EXISTS ")
 
-        sql.addIdentifier(table.tableName)
-        sql.parenthesize {
-            val comma = sql.prefix("\n", ",\n")
+        addIdentifier(table.tableName)
+        parenthesize {
+            val comma = prefix("\n", ",\n")
 
             comma.forEach(table.columns.includingUnused()) {
                 val def = it.builtDef
 
-                sql.addIdentifier(it.symbol)
-                sql.addSql(" ")
+                addIdentifier(it.symbol)
+                addSql(" ")
 
                 if (def.autoIncrement) {
-                    compileSerialType(sql, def.columnType.dataType)
+                    compileSerialType(def.columnType.dataType)
                 } else {
-                    compileDataType(sql, def.columnType.dataType)
+                    compileDataType(def.columnType.dataType)
                 }
 
-                if (def.notNull) sql.addSql(" NOT NULL")
+                if (def.notNull) addSql(" NOT NULL")
 
                 def.default?.let { default ->
                     @Suppress("unchecked_cast")
@@ -93,33 +93,33 @@ class PostgresDialect: SqlDialect {
                         )
                     }
 
-                    sql.addSql(" DEFAULT ")
-                    compileDefaultExpr(sql, finalExpr)
+                    addSql(" DEFAULT ")
+                    compileDefaultExpr(finalExpr)
                 }
             }
 
             table.primaryKey?.let { pk ->
                 comma.next {
-                    sql.addSql("CONSTRAINT ")
-                    sql.addIdentifier(pk.name)
-                    sql.addSql(" PRIMARY KEY (")
-                    sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                    addSql("CONSTRAINT ")
+                    addIdentifier(pk.name)
+                    addSql(" PRIMARY KEY (")
+                    prefix("", ", ").forEach(pk.def.keys.keys) {
                         when (it) {
-                            is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                            is TableColumn<*> -> addIdentifier(it.symbol)
                             else -> error("expression keys unsupported")
                         }
                     }
-                    sql.addSql(")")
+                    addSql(")")
                 }
             }
 
             table.indexes.forEach { index ->
                 comma.next {
-                    compileIndexDef(sql, index.name, index.def)
+                    compileIndexDef(index.name, index.def)
                 }
             }
 
-            sql.addSql("\n")
+            addSql("\n")
         }
     }
 
@@ -129,7 +129,10 @@ class PostgresDialect: SqlDialect {
         change.tables.created.forEach { (_, table) ->
             val sql = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
 
-            compileCreateTable(sql, table)
+            ScopedSqlBuilder(
+                sql,
+                Scope(NameRegistry { "column${it + 1}" })
+            ).compileCreateTable(table)
 
             results.add(sql.toSql())
         }
@@ -235,7 +238,7 @@ class PostgresDialect: SqlDialect {
         }
 
         addSql(" ")
-        addSql(scope[relation.computedAlias])
+        addAlias(relation.computedAlias)
 
         explicitLabels?.let { labels ->
             parenthesize {

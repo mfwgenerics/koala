@@ -12,6 +12,7 @@ import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
+import io.koalaql.identifier.Named
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.*
@@ -31,7 +32,7 @@ class H2Dialect(
             ScopedSqlBuilder(
                 sql,
                 Scope(NameRegistry { "C${it + 1}" })
-            ).compileCreateTable(sql, table)
+            ).compileCreateTable(table)
 
             results.add(sql.toSql())
         }
@@ -96,12 +97,12 @@ class H2Dialect(
         }
     }
 
-    fun ScopedSqlBuilder.compileCreateTable(sql: SqlTextBuilder, table: Table) {
-        sql.addSql("CREATE TABLE IF NOT EXISTS ")
+    fun ScopedSqlBuilder.compileCreateTable(table: Table) {
+        addSql("CREATE TABLE IF NOT EXISTS ")
 
-        sql.addIdentifier(table.tableName)
-        sql.parenthesize {
-            val comma = sql.prefix("\n", ",\n")
+        addIdentifier(table.tableName)
+        parenthesize {
+            val comma = prefix("\n", ",\n")
 
             comma.forEach(table.columns.includingUnused()) {
                 compileColumnDef(it)
@@ -109,16 +110,16 @@ class H2Dialect(
 
             table.primaryKey?.let { pk ->
                 comma.next {
-                    sql.addSql("CONSTRAINT ")
-                    sql.addIdentifier(pk.name)
-                    sql.addSql(" PRIMARY KEY (")
-                    sql.prefix("", ", ").forEach(pk.def.keys.keys) {
+                    addSql("CONSTRAINT ")
+                    addIdentifier(pk.name)
+                    addSql(" PRIMARY KEY (")
+                    prefix("", ", ").forEach(pk.def.keys.keys) {
                         when (it) {
-                            is TableColumn<*> -> sql.addIdentifier(it.symbol)
+                            is TableColumn<*> -> addIdentifier(it.symbol)
                             else -> error("expression keys unsupported")
                         }
                     }
-                    sql.addSql(")")
+                    addSql(")")
                 }
             }
 
@@ -130,7 +131,7 @@ class H2Dialect(
                 }
             }
 
-            sql.addSql("\n")
+            addSql("\n")
         }
     }
 
@@ -234,7 +235,7 @@ class H2Dialect(
         }
 
         addSql(" ")
-        addSql(scope[relation.computedAlias])
+        addAlias(relation.computedAlias)
 
         explicitLabels?.let { labels ->
             compileRelabels(labels)

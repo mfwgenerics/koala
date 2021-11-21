@@ -5,6 +5,7 @@ import io.koalaql.dialect.ExpressionCompiler
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatedExpr
+import io.koalaql.identifier.Named
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.values.ValuesRow
@@ -543,7 +544,7 @@ class ScopedSqlBuilder(
         }
     }
 
-    fun addIdentifier(id: String) = output.addIdentifier(id)
+    fun addIdentifier(id: String) = output.addIdentifier(Named(id))
 
     fun compileOnConflict(
         onConflict: OnConflictOrDuplicateAction?,
@@ -669,7 +670,7 @@ class ScopedSqlBuilder(
     }
 
     fun addReference(reference: Reference<*>) {
-        output.addIdentifier(scope.nameOf(reference))
+        output.addIdentifier(Named(scope.nameOf(reference)))
     }
 
     fun resolveReference(reference: Reference<*>) {
@@ -680,7 +681,7 @@ class ScopedSqlBuilder(
 
     fun resolveWithoutAlias(reference: Reference<*>) {
         output.withResult(scope.resolve(reference)) {
-            output.addIdentifier(it.innerName)
+            output.addIdentifier(Named(it.innerName))
         }
     }
 

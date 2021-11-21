@@ -1,6 +1,9 @@
 package io.koalaql.sql
 
 import io.koalaql.expr.Literal
+import io.koalaql.identifier.Unquoted
+import io.koalaql.identifier.Named
+import io.koalaql.identifier.SqlIdentifier
 
 class SqlTextBuilder(
     private val quoteStyle: IdentifierQuoteStyle
@@ -30,17 +33,24 @@ class SqlTextBuilder(
         contents.append(sql)
     }
 
-    fun addIdentifier(id: String) {
-        addSql(quoteStyle.quote)
-        addSql(id)
-        addSql(quoteStyle.quote)
+    fun addIdentifier(id: SqlIdentifier) {
+        val exhaustive = when (id) {
+            is Unquoted -> {
+                addSql(id.id)
+            }
+            is Named -> {
+                addSql(quoteStyle.quote)
+                addSql(id.name)
+                addSql(quoteStyle.quote)
+            }
+        }
     }
 
     fun addResolved(resolved: Resolved) {
         resolved.alias?.let {
             addSql("$it.")
         }
-        addIdentifier(resolved.innerName)
+        addIdentifier(Named(resolved.innerName))
     }
 
     fun addError(error: String) {

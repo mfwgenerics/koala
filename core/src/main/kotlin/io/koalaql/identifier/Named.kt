@@ -2,7 +2,7 @@ package io.koalaql.identifier
 
 class Named(
     val name: String
-): LabelIdentifier {
+): LabelIdentifier, SqlIdentifier {
     override fun equals(other: Any?): Boolean =
         other is Named && name == other.name
 

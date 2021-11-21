@@ -346,7 +346,7 @@ class MysqlDialect(): SqlDialect {
         }
 
         addSql(" ")
-        addSql(scope[relation.computedAlias])
+        addAlias(relation.computedAlias)
 
         explicitLabels?.let { labels ->
             parenthesize {
