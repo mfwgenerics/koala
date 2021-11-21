@@ -1,10 +1,10 @@
 package io.koalaql.query
 
-import io.koalaql.IdentifierName
 import io.koalaql.expr.Column
+import io.koalaql.identifier.LabelIdentifier
+import io.koalaql.identifier.Unnamed
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.QueryableResultsUnionOperand
-import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.query.fluent.UnionedOrderable
 import io.koalaql.values.*
 
@@ -65,7 +65,7 @@ class Values(
 }
 
 class Cte(
-    val identifier: IdentifierName = IdentifierName()
+    val identifier: LabelIdentifier = Unnamed()
 ): Relation {
     override fun BuiltRelation.buildIntoRelation() {
         relation = this@Cte

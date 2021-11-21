@@ -3,8 +3,8 @@ package io.koalaql.expr
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.QueryableUnionOperand
-import io.koalaql.values.RowSequence
 import io.koalaql.values.RowOfOne
+import io.koalaql.values.RowSequence
 import io.koalaql.values.unsafeCastToOneColumn
 
 interface ExprQueryableUnionOperand<T : Any>: ExprQueryable<T>, QueryableUnionOperand<RowOfOne<T>> {

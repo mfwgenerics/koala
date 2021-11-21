@@ -4,7 +4,6 @@ import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.Reference
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.query.built.BuiltQuery
-import io.koalaql.sql.SqlTextBuilder
 import io.koalaql.window.built.BuiltWindow
 
 interface ExpressionCompiler {

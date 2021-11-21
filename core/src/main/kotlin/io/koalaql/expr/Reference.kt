@@ -1,13 +1,13 @@
 package io.koalaql.expr
 
-import io.koalaql.IdentifierName
+import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.query.Alias
 import kotlin.reflect.KClass
 
 sealed interface Reference<T : Any>: SelectOperand<T> {
     val type: KClass<T>
 
-    val identifier: IdentifierName?
+    val identifier: LabelIdentifier?
 
     override fun SelectionBuilder.buildIntoSelection() {
         expression(this@Reference, this@Reference)
@@ -24,7 +24,7 @@ class AliasedReference<T : Any>(
     private val alias: Alias,
     private val reference: Reference<T>
 ): Reference<T> {
-    override val identifier: IdentifierName? get() = null
+    override val identifier: LabelIdentifier? get() = null
 
     override fun excludedReference(): Reference<T>? = reference.takeIf { alias === EXCLUDED_MARKER_ALIAS }
 
@@ -39,7 +39,7 @@ class AliasedReference<T : Any>(
 
 abstract class NamedReference<T : Any>(
     override val type: KClass<T>,
-    override val identifier: IdentifierName
+    override val identifier: LabelIdentifier
 ): Reference<T> {
     override fun equals(other: Any?): Boolean =
         other is NamedReference<*> && identifier == other.identifier

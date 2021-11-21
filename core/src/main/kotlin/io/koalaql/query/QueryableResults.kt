@@ -4,7 +4,6 @@ import io.koalaql.expr.AsReference
 import io.koalaql.expr.ExprQueryable
 import io.koalaql.expr.Reference
 import io.koalaql.values.*
-import io.koalaql.values.unsafeCastToTwoColumns
 
 interface QueryableResults: Queryable<ResultRow> {
     private fun expectingListOf(vararg elements: Reference<*>): List<Reference<*>> {

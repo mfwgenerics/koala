@@ -1,8 +1,8 @@
 import io.koalaql.DataConnection
-import io.koalaql.IdentifierName
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Label
+import io.koalaql.identifier.Unnamed
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.data.DataTypeValuesMap
 import io.koalaql.test.data.DataTypeWithValues
@@ -36,7 +36,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     }
 
     private fun <T : Any> selectData(cxn: DataConnection, values: DataTypeWithValues<T>) {
-        val label = Label(values.type.type, IdentifierName())
+        val label = Label(values.type.type, Unnamed())
         val casted = cast(cast(label, values.type), values.type)
 
         val rows = values(values.values) { this[label] = it }
@@ -132,7 +132,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     @Test
     fun `read and write null`() = withCxn { cxn ->
         examples().entries().forEach {
-            val name = Label(it.type.type, IdentifierName())
+            val name = Label(it.type.type, Unnamed())
             val wasNull = name.isNull() as_ label()
 
             val row = values(listOf(1)) { this[name] = null }

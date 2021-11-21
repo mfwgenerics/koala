@@ -1,12 +1,12 @@
 package io.koalaql.dsl
 
-import io.koalaql.IdentifierName
 import io.koalaql.expr.Expr
 import io.koalaql.expr.GroupedOperationExpr
 import io.koalaql.expr.OperationType
 import io.koalaql.expr.WindowFunctionExpr
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.expr.fluent.WindowFunction
+import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.window.*
 import io.koalaql.window.fluent.Partitionable
 
@@ -29,7 +29,7 @@ inline fun <reified T : Any> following(offset: T): FrameRangeMarker<Expr<T>> =
     Following(value(offset))
 
 fun window(identifier: String? = null): WindowLabel =
-    WindowLabel(IdentifierName(identifier))
+    WindowLabel(LabelIdentifier(identifier))
 
 infix fun WindowLabel.as_(window: Window): LabeledWindow =
     LabeledWindow(window, this)

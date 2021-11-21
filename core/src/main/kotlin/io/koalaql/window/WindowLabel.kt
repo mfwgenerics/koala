@@ -1,12 +1,13 @@
 package io.koalaql.window
 
-import io.koalaql.IdentifierName
+import io.koalaql.identifier.LabelIdentifier
+import io.koalaql.identifier.Unnamed
 import io.koalaql.window.built.BuiltWindow
 import io.koalaql.window.built.WindowBuilder
 import io.koalaql.window.fluent.Partitionable
 
 class WindowLabel(
-    val identifier: IdentifierName = IdentifierName()
+    val identifier: LabelIdentifier = Unnamed()
 ): Partitionable {
     override fun BuiltWindow.buildIntoWindow(): WindowBuilder? {
         partitions.from = this@WindowLabel

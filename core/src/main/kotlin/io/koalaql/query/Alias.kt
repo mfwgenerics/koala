@@ -1,11 +1,12 @@
 package io.koalaql.query
 
-import io.koalaql.IdentifierName
 import io.koalaql.expr.AliasedReference
 import io.koalaql.expr.AsReference
+import io.koalaql.identifier.LabelIdentifier
+import io.koalaql.identifier.Unnamed
 
 class Alias(
-    val identifier: IdentifierName = IdentifierName()
+    val identifier: LabelIdentifier = Unnamed()
 ): GetsAliasedReference {
     override fun <T : Any> get(reference: AsReference<T>): AliasedReference<T> {
         val actual = reference.asReference()

@@ -1,10 +1,10 @@
 package io.koalaql.dsl
 
-import io.koalaql.IdentifierName
+import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.query.*
 
 fun cte(identifier: String? = null): Cte =
-    Cte(IdentifierName(identifier))
+    Cte(LabelIdentifier(identifier))
 
 infix fun Cte.as_(queryable: Queryable<*>): CtedQueryable =
     CtedQueryable(this, queryable)
