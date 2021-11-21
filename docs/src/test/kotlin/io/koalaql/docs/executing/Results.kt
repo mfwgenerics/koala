@@ -40,7 +40,7 @@ class Results {
                 }
                 .toSet()
 
-            assert("Helen's Hardware Store" in names)
+            assert("Helen's Hardware" in names)
             assert("24 Hr Groceries" in names)
 
             /*

@@ -1,5 +1,6 @@
 package io.koalaql.docs.writing.expressions
 
+import assertGeneratedSql
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
 import io.koalaql.dsl.*
@@ -42,6 +43,16 @@ class CaseExpressions {
             .getValue(shopType)
 
         assertEquals(type, "GROCERIES")
+
+        assertGeneratedSql("""
+            SELECT CASE T0."id"
+            WHEN ? THEN ?
+            WHEN ? THEN ?
+            ELSE ?
+            END "c0"
+            FROM "Shop" T0
+            WHERE T0."id" = ?
+        """)
 
         /* HIDE */
     }

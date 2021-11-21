@@ -19,6 +19,71 @@ abstract class DocGenTask : DefaultTask() {
 
     private val NUL = 0.toChar()
 
+    private class CodeBlockBuilder(
+        private val needsImports: () -> Boolean
+    ) {
+        private enum class CodeType(
+            val title: String,
+            val style: String
+        ) {
+            Kotlin("Kotlin", "kotlin"),
+            Sql("SQL", "sql")
+        }
+
+        private var mode = CodeType.Kotlin
+        private val code = linkedMapOf<CodeType, StringBuilder>()
+
+        fun addLine(line: String) {
+            if (line.contains("assertGeneratedSql(\"\"\"")) {
+                mode = CodeType.Sql
+            } else if (mode == CodeType.Sql && line.contains("\"\"\")")) {
+                mode = CodeType.Kotlin
+            } else {
+                val builder = code[mode]
+
+                if (builder != null) {
+                    builder.append("\n")
+                    builder.append(line)
+                } else {
+                    code[mode] = StringBuilder(line)
+                }
+            }
+        }
+
+        fun outputTo(output: ArrayList<String>) {
+            with (output) {
+                fun outputCode(type: CodeType, content: String) {
+                    add("```${type.style}")
+                    add(content.trimIndent().trim())
+                    add("```")
+                }
+
+                if (code.size > 1) {
+                    add("````mdx-code-block")
+                    if (needsImports()) {
+                        add("import Tabs from '@theme/Tabs';")
+                        add("import TabItem from '@theme/TabItem';")
+                    }
+                    add("")
+                    add("<Tabs>")
+                    code.forEach { (type, content) ->
+                        add("""<TabItem value="${type.style}" label="${type.title}">""")
+                        add("")
+                        outputCode(type, "$content")
+                        add("")
+                        add("</TabItem>")
+                    }
+                    add("</Tabs>")
+                    add("````")
+                } else {
+                    code.forEach { (type, content) ->
+                        outputCode(type, "$content")
+                    }
+                }
+            }
+        }
+    }
+
     private fun transformToMd(source: String): String {
         /* this low quality approach does the trick for now */
 
@@ -57,7 +122,8 @@ abstract class DocGenTask : DefaultTask() {
 
         val output = arrayListOf<String>()
 
-        var wasCode = false
+        var needsImports = true
+        var codeBlock: CodeBlockBuilder? = null
 
         texts
             .asSequence()
@@ -67,12 +133,6 @@ abstract class DocGenTask : DefaultTask() {
                     "HIDE" -> { show = false; null }
                     "" -> null
                     else -> if (show) {
-                        /*if (it.first) {
-                            it.first to "```kotlin\n$trimmed\n```"
-                        } else {
-                            it.first to trimmed
-                        }*/
-
                         it.first to trimmed
                     } else {
                         null
@@ -80,20 +140,32 @@ abstract class DocGenTask : DefaultTask() {
                 }
             }
             .forEach { (isCode, it) ->
-                if (wasCode && !isCode) {
-                    output.add("```")
-                } else if (isCode && !wasCode) {
-                    output.add("```kotlin")
+                if (codeBlock != null && !isCode) {
+                    codeBlock?.outputTo(output)
+                    codeBlock = null
+                } else if (codeBlock == null && isCode) {
+                    codeBlock = CodeBlockBuilder {
+                        if (needsImports) {
+                            needsImports = false
+                            true
+                        } else {
+                            false
+                        }
+                    }
                 } else if (isCode) {
-                    output.add("")
+                    codeBlock?.addLine("")
                 }
 
-                output.add(it)
-
-                wasCode = isCode
+                if (isCode) {
+                    it.splitToSequence('\n').forEach {
+                        codeBlock?.addLine(it)
+                    }
+                } else {
+                    output.add(it)
+                }
             }
 
-        if (wasCode) output.add("```")
+        codeBlock?.outputTo(output)
 
         return output.joinToString("\n")
     }

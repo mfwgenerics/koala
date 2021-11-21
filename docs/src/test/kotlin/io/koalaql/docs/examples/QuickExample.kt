@@ -52,7 +52,7 @@ class QuickExample {
         val id = ShopTable
             .insert(values(
                 rowOf(
-                    ShopTable.name setTo "Helen's Hardware Store",
+                    ShopTable.name setTo "Helen's Hardware",
                     ShopTable.address setTo "63 Smith Street, Caledonia, 62281D",
                     ShopTable.established setTo LocalDate.parse("1991-02-20")
                 )
@@ -66,7 +66,7 @@ class QuickExample {
             .perform(db)
             .single()
 
-        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertEquals("Helen's Hardware", row[ShopTable.name])
     }
 
     /* HIDE */

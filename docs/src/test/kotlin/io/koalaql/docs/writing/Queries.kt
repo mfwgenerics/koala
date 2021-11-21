@@ -1,5 +1,6 @@
 package io.koalaql.docs.writing
 
+import assertGeneratedSql
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
@@ -39,6 +40,15 @@ class Selects {
 
         assertContentEquals(ShopTable.columns, allSelected.columns)
 
+        assertGeneratedSql("""
+            SELECT T0."id" "c0"
+            , T0."name" "c1"
+            , T0."address" "c2"
+            , T0."established" "c3"
+            FROM "Shop" T0
+            WHERE T0."id" = ?
+        """)
+
         /*
         In most cases `.selectAll()` can be omitted:
          */
@@ -48,6 +58,15 @@ class Selects {
             .perform(db)
 
         assertContentEquals(allSelected.columns, implicitSelectAll.columns)
+
+        assertGeneratedSql("""
+            SELECT T0."id" "c0"
+            , T0."name" "c1"
+            , T0."address" "c2"
+            , T0."established" "c3"
+            FROM "Shop" T0
+            WHERE T0."id" = ?
+        """)
 
         /*
         :::info
@@ -62,7 +81,7 @@ class Selects {
 
         val row = allSelected.single()
 
-        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertEquals("Helen's Hardware", row[ShopTable.name])
         assertContentEquals(ShopTable.columns, allSelected.columns)
     }
 
@@ -95,7 +114,14 @@ class Selects {
         assertEquals(row[ShopTable.name], name)
         assertEquals(row[ShopTable.address], address)
 
-        assertEquals("Helen's Hardware Store @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
+        assertEquals("Helen's Hardware @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
+
+        assertGeneratedSql("""
+            SELECT T0."name" "c0"
+            , T0."address" "c1"
+            FROM "Shop" T0
+            WHERE T0."id" = ?
+        """)
 
         /* HIDE */
     }
@@ -120,6 +146,17 @@ class Selects {
 
         assertContentEquals(CustomerTable.columns, hardwareCustomers.columns)
 
+        assertGeneratedSql("""
+            SELECT T0."id" "c0"
+            , T0."shop" "c1"
+            , T0."name" "c2"
+            , T0."spent" "c3"
+            FROM "Shop" T1
+            INNER JOIN "Customer" T0 ON T1."id" = T0."shop"
+            WHERE T1."id" = ?
+            ORDER BY T0."name" ASC
+        """)
+
         /*
         You can pass multiple `Table`s to select:
          */
@@ -127,6 +164,20 @@ class Selects {
         ShopTable
             .innerJoin(CustomerTable, ShopTable.id eq CustomerTable.shop)
             .select(ShopTable, CustomerTable)
+            .perform(db)
+
+        assertGeneratedSql("""
+            SELECT T0."id" "c0"
+            , T0."name" "c1"
+            , T0."address" "c2"
+            , T0."established" "c3"
+            , T1."id" "c4"
+            , T1."shop" "c5"
+            , T1."name" "c6"
+            , T1."spent" "c7"
+            FROM "Shop" T0
+            INNER JOIN "Customer" T1 ON T0."id" = T1."shop"
+        """)
 
         /* HIDE */
 
@@ -183,7 +234,7 @@ class Selects {
         The label can then be used to access the result of the expression:
          */
 
-        assertEquals("helen's hardware store", row[lowercaseName])
+        assertEquals("helen's hardware", row[lowercaseName])
         assertEquals(row[ShopTable.name].lowercase(), row[lowercaseName])
 
         /* HIDE */
@@ -206,7 +257,7 @@ class Selects {
             .perform(db)
             .single()
 
-        assertEquals("helen's hardware store", row[lowerName])
+        assertEquals("helen's hardware", row[lowerName])
         assertEquals(row[ShopTable.name].lowercase(), row[lowerName])
 
         /* HIDE */
@@ -234,6 +285,12 @@ class Selects {
             .count()
 
         assertEquals(2, rowCount)
+
+        assertGeneratedSql("""
+            SELECT ? "c0"
+            FROM "Shop" T0
+            WHERE T0."id" IN (?, ?)
+        """)
 
         /* HIDE */
     }
@@ -362,7 +419,7 @@ class Aliases {
             .perform(db)
             .single()
 
-        assertEquals("Helen's Hardware Store", row[ShopTable.name])
+        assertEquals("Helen's Hardware", row[ShopTable.name])
         assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
 
         /* HIDE */
@@ -383,7 +440,7 @@ class Where {
 
         ShopTable
             .where(ShopTable.id eq hardwareStoreId)
-            .where(ShopTable.name eq "Helen's Hardware Store")
+            .where(ShopTable.name eq "Helen's Hardware")
             .perform(db)
             .single()
 
@@ -455,10 +512,22 @@ class Windows {
             rankings,
             listOf(
                 "Angela Abara #1 at 24 Hr Groceries spent $79.99 of $79.99",
-                "Michael M. Michael #1 at Helen's Hardware Store spent $125.00 of $145.50",
-                "Maria Robinson #2 at Helen's Hardware Store spent $20.50 of $145.50"
+                "Michael M. Michael #1 at Helen's Hardware spent $125.00 of $145.50",
+                "Maria Robinson #2 at Helen's Hardware spent $20.50 of $145.50"
             )
         )
+
+        assertGeneratedSql("""
+            SELECT T0."name" "c0"
+            , T1."name" "c1"
+            , T1."spent" "c2"
+            , RANK() OVER (w0 ORDER BY T1."spent" DESC) "c3"
+            , SUM(T1."spent") OVER (w0) "c4"
+            FROM "Shop" T0
+            INNER JOIN "Customer" T1 ON T1."shop" = T0."id"
+            WINDOW w0 AS (PARTITION BY T0."id")
+            ORDER BY T0."name" ASC, "c3" ASC
+        """)
 
         /* HIDE */
     }
