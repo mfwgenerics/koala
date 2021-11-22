@@ -1,6 +1,8 @@
 package io.koalaql.sql
 
 import io.koalaql.expr.Reference
+import io.koalaql.identifier.Named
+import io.koalaql.identifier.SqlIdentifier
 import io.koalaql.query.Alias
 import io.koalaql.query.Cte
 import io.koalaql.window.WindowLabel
@@ -17,7 +19,7 @@ class Scope(
 
     private class UnderAlias(
         val alias: Alias?,
-        val innerName: String
+        val innerName: SqlIdentifier
     ): Registered
 
     private object Internal: Registered
@@ -28,7 +30,7 @@ class Scope(
 
     private val ctes = hashMapOf<Cte, List<Reference<*>>>()
 
-    private val external = hashMapOf<Reference<*>, String>()
+    private val external = hashMapOf<Reference<*>, SqlIdentifier>()
     private val internal = hashMapOf<Reference<*>, Registered>()
 
     fun cte(cte: Cte, labels: List<Reference<*>>) {
@@ -39,12 +41,12 @@ class Scope(
         { "missing cte $cte in scope $this" }
 
     fun external(name: Reference<*>, symbol: String? = null) {
-        check(external.putIfAbsent(name, symbol?:names[name]) == null)
+        check(external.putIfAbsent(name, symbol?.let { Named(it) }?:names[name]) == null)
     }
 
     fun internal(
         name: Reference<*>,
-        innerName: String,
+        innerName: SqlIdentifier,
         alias: Alias?
     ) {
         val value = UnderAlias(
@@ -91,11 +93,11 @@ class Scope(
         })
     }
 
-    operator fun get(alias: Alias): String = names[alias]
-    operator fun get(cte: Cte): String = names[cte]
+    operator fun get(alias: Alias): SqlIdentifier = names[alias]
+    operator fun get(cte: Cte): SqlIdentifier = names[cte]
 
-    fun nameOf(name: Reference<*>): String = external[name]?:names[name]
-    fun nameOf(label: WindowLabel): String = names[label]
+    fun nameOf(name: Reference<*>): SqlIdentifier = external[name]?:names[name]
+    fun nameOf(label: WindowLabel): SqlIdentifier = names[label]
 
     override fun toString(): String = "scope-${System.identityHashCode(this)}"
 }

@@ -21,7 +21,7 @@ class ScopedSqlBuilder(
     }
 
     fun addAlias(alias: Alias) {
-        addSql(scope[alias])
+        output.addIdentifier(scope[alias])
     }
 
     fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {
@@ -70,7 +70,7 @@ class ScopedSqlBuilder(
 
                 if (resolved?.innerName != relabel) {
                     addSql(" ")
-                    addIdentifier(scope.nameOf(it.name))
+                    output.addIdentifier(scope.nameOf(it.name))
                 }
             }
         } else {
@@ -663,14 +663,14 @@ class ScopedSqlBuilder(
         val innerScope = scope.innerScope()
 
         columns.forEach {
-            innerScope.internal(it, it.symbol, alias)
+            innerScope.internal(it, Named(it.symbol), alias)
         }
 
         innerScope
     }
 
     fun addReference(reference: Reference<*>) {
-        output.addIdentifier(Named(scope.nameOf(reference)))
+        output.addIdentifier(scope.nameOf(reference))
     }
 
     fun resolveReference(reference: Reference<*>) {
@@ -681,16 +681,16 @@ class ScopedSqlBuilder(
 
     fun resolveWithoutAlias(reference: Reference<*>) {
         output.withResult(scope.resolve(reference)) {
-            output.addIdentifier(Named(it.innerName))
+            output.addIdentifier(it.innerName)
         }
     }
 
     fun addCte(cte: Cte) {
-        output.addSql(scope[cte])
+        output.addIdentifier(scope[cte])
     }
 
     fun addWindow(window: WindowLabel) {
-        output.addSql(scope.nameOf(window))
+        output.addIdentifier(scope.nameOf(window))
     }
 
     fun compile(

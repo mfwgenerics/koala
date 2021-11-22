@@ -41,10 +41,10 @@ class Selects {
         assertContentEquals(ShopTable.columns, allSelected.columns)
 
         assertGeneratedSql("""
-            SELECT T0."id" "c0"
-            , T0."name" "c1"
-            , T0."address" "c2"
-            , T0."established" "c3"
+            SELECT T0."id" c0
+            , T0."name" c1
+            , T0."address" c2
+            , T0."established" c3
             FROM "Shop" T0
             WHERE T0."id" = ?
         """)
@@ -60,10 +60,10 @@ class Selects {
         assertContentEquals(allSelected.columns, implicitSelectAll.columns)
 
         assertGeneratedSql("""
-            SELECT T0."id" "c0"
-            , T0."name" "c1"
-            , T0."address" "c2"
-            , T0."established" "c3"
+            SELECT T0."id" c0
+            , T0."name" c1
+            , T0."address" c2
+            , T0."established" c3
             FROM "Shop" T0
             WHERE T0."id" = ?
         """)
@@ -117,8 +117,8 @@ class Selects {
         assertEquals("Helen's Hardware @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
 
         assertGeneratedSql("""
-            SELECT T0."name" "c0"
-            , T0."address" "c1"
+            SELECT T0."name" c0
+            , T0."address" c1
             FROM "Shop" T0
             WHERE T0."id" = ?
         """)
@@ -147,10 +147,10 @@ class Selects {
         assertContentEquals(CustomerTable.columns, hardwareCustomers.columns)
 
         assertGeneratedSql("""
-            SELECT T0."id" "c0"
-            , T0."shop" "c1"
-            , T0."name" "c2"
-            , T0."spent" "c3"
+            SELECT T0."id" c0
+            , T0."shop" c1
+            , T0."name" c2
+            , T0."spent" c3
             FROM "Shop" T1
             INNER JOIN "Customer" T0 ON T1."id" = T0."shop"
             WHERE T1."id" = ?
@@ -167,14 +167,14 @@ class Selects {
             .perform(db)
 
         assertGeneratedSql("""
-            SELECT T0."id" "c0"
-            , T0."name" "c1"
-            , T0."address" "c2"
-            , T0."established" "c3"
-            , T1."id" "c4"
-            , T1."shop" "c5"
-            , T1."name" "c6"
-            , T1."spent" "c7"
+            SELECT T0."id" c0
+            , T0."name" c1
+            , T0."address" c2
+            , T0."established" c3
+            , T1."id" c4
+            , T1."shop" c5
+            , T1."name" c6
+            , T1."spent" c7
             FROM "Shop" T0
             INNER JOIN "Customer" T1 ON T0."id" = T1."shop"
         """)
@@ -287,7 +287,7 @@ class Selects {
         assertEquals(2, rowCount)
 
         assertGeneratedSql("""
-            SELECT ? "c0"
+            SELECT ? c0
             FROM "Shop" T0
             WHERE T0."id" IN (?, ?)
         """)
@@ -518,15 +518,15 @@ class Windows {
         )
 
         assertGeneratedSql("""
-            SELECT T0."name" "c0"
-            , T1."name" "c1"
-            , T1."spent" "c2"
-            , RANK() OVER (w0 ORDER BY T1."spent" DESC) "c3"
-            , SUM(T1."spent") OVER (w0) "c4"
+            SELECT T0."name" c0
+            , T1."name" c1
+            , T1."spent" c2
+            , RANK() OVER (w0 ORDER BY T1."spent" DESC) c3
+            , SUM(T1."spent") OVER (w0) c4
             FROM "Shop" T0
             INNER JOIN "Customer" T1 ON T1."shop" = T0."id"
             WINDOW w0 AS (PARTITION BY T0."id")
-            ORDER BY T0."name" ASC, "c3" ASC
+            ORDER BY T0."name" ASC, c3 ASC
         """)
 
         /* HIDE */

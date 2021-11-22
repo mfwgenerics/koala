@@ -48,9 +48,10 @@ class SqlTextBuilder(
 
     fun addResolved(resolved: Resolved) {
         resolved.alias?.let {
-            addSql("$it.")
+            addIdentifier(it)
+            addSql(".")
         }
-        addIdentifier(Named(resolved.innerName))
+        addIdentifier(resolved.innerName)
     }
 
     fun addError(error: String) {

@@ -1,6 +1,8 @@
 package io.koalaql.sql
 
+import io.koalaql.identifier.SqlIdentifier
+
 data class Resolved(
-    val alias: String? = null,
-    val innerName: String
+    val alias: SqlIdentifier? = null,
+    val innerName: SqlIdentifier
 )

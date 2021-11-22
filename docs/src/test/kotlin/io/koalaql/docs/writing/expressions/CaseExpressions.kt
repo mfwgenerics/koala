@@ -49,7 +49,7 @@ class CaseExpressions {
             WHEN ? THEN ?
             WHEN ? THEN ?
             ELSE ?
-            END "c0"
+            END c0
             FROM "Shop" T0
             WHERE T0."id" = ?
         """)

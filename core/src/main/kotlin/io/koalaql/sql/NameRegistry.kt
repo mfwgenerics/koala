@@ -1,9 +1,7 @@
 package io.koalaql.sql
 
 import io.koalaql.expr.Reference
-import io.koalaql.identifier.LabelIdentifier
-import io.koalaql.identifier.Named
-import io.koalaql.identifier.Unnamed
+import io.koalaql.identifier.*
 import io.koalaql.query.Alias
 import io.koalaql.query.Cte
 import io.koalaql.window.WindowLabel
@@ -11,44 +9,38 @@ import io.koalaql.window.WindowLabel
 class NameRegistry(
     private val positionalName: (Int) -> String? = { null }
 ) {
-    private val registered = hashMapOf<Any, String>()
+    private class Names<K>(
+        private val prefix: String
+    ) {
+        private val registered = hashMapOf<K, SqlIdentifier>()
+        private var count = 0
 
-    private var tableN: Int = 0
-    private var columnsN: Int = 0
-    private var windowsN: Int = 0
+        private fun generate() = Unquoted("$prefix${count++}")
 
-    private fun generateT(): String = "T${tableN++}"
-    private fun generatec(): String = "c${columnsN++}"
-    private fun generatew(): String = "w${windowsN++}"
-
-    private val LabelIdentifier.asString: String? get() = when (this) {
-        is Unnamed -> null
-        is Named -> name
+        fun get(key: K, identifier: LabelIdentifier?): SqlIdentifier =
+            registered.getOrPut(key) {
+                when (identifier) {
+                    is Named -> identifier
+                    null, is Unnamed -> generate()
+                }
+            }
     }
 
-    operator fun get(cte: Cte): String =
-        registered.getOrPut(cte.identifier) { cte
-            .identifier.asString
-            ?: generateT()
-        }
+    private val tables = Names<LabelIdentifier>("T")
+    private val columns = Names<Reference<*>>("c")
+    private val windows = Names<WindowLabel>("w")
 
-    operator fun get(name: Reference<*>): String =
-        registered.getOrPut(name) { name
-            .identifier?.asString
-            ?: generatec()
-        }
+    operator fun get(cte: Cte): SqlIdentifier =
+        tables.get(cte.identifier, cte.identifier)
 
-    operator fun get(label: WindowLabel): String =
-        registered.getOrPut(label) { label
-            .identifier.asString
-            ?: generatew()
-        }
+    operator fun get(name: Reference<*>): SqlIdentifier =
+        columns.get(name, name.identifier)
 
-    operator fun get(alias: Alias): String =
-        registered.getOrPut(alias.identifier) { alias
-            .identifier.asString
-            ?: generateT()
-        }
+    operator fun get(label: WindowLabel): SqlIdentifier =
+        windows.get(label, label.identifier)
 
-    fun positionalLabel(position: Int): String? = positionalName(position)
+    operator fun get(alias: Alias): SqlIdentifier =
+        tables.get(alias.identifier, alias.identifier)
+
+    fun positionalLabel(position: Int): SqlIdentifier? = positionalName(position)?.let(::Named)
 }

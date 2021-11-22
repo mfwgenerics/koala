@@ -63,13 +63,13 @@ class H2QueryTests: QueryTests() {
         }
 
         val expectedSql = """
-            SELECT T0."create" "c0"
-            , T0."name" "c1"
-            , T0."description" "c2"
-            , T0."id" "c3"
-            , T0."closed" "c4"
-            , T0."type" "c5"
-            , T0."rating" "c6"
+            SELECT T0."create" c0
+            , T0."name" c1
+            , T0."description" c2
+            , T0."id" c3
+            , T0."closed" c4
+            , T0."type" c5
+            , T0."rating" c6
             FROM "Venue" T0
             WHERE T0."id" = ?
             ORDER BY T0."type" ASC, T0."name" DESC NULLS LAST
