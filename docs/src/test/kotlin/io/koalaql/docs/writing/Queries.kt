@@ -7,6 +7,7 @@ import io.koalaql.docs.testExampleDatabase
 import io.koalaql.dsl.*
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowOfTwo
+import java.math.BigDecimal
 import kotlin.test.*
 
 /* SHOW */
@@ -46,7 +47,7 @@ class Selects {
             , T0."address" c2
             , T0."established" c3
             FROM "Shop" T0
-            WHERE T0."id" = ?
+            WHERE T0."id" = 1
         """)
 
         /*
@@ -65,7 +66,7 @@ class Selects {
             , T0."address" c2
             , T0."established" c3
             FROM "Shop" T0
-            WHERE T0."id" = ?
+            WHERE T0."id" = 1
         """)
 
         /*
@@ -120,7 +121,7 @@ class Selects {
             SELECT T0."name" c0
             , T0."address" c1
             FROM "Shop" T0
-            WHERE T0."id" = ?
+            WHERE T0."id" = 1
         """)
 
         /* HIDE */
@@ -153,7 +154,7 @@ class Selects {
             , T0."spent" c3
             FROM "Shop" T1
             INNER JOIN "Customer" T0 ON T1."id" = T0."shop"
-            WHERE T1."id" = ?
+            WHERE T1."id" = 1
             ORDER BY T0."name" ASC
         """)
 
@@ -287,9 +288,9 @@ class Selects {
         assertEquals(2, rowCount)
 
         assertGeneratedSql("""
-            SELECT ? c0
+            SELECT 1 c0
             FROM "Shop" T0
-            WHERE T0."id" IN (?, ?)
+            WHERE T0."id" IN (1, 2)
         """)
 
         /* HIDE */
@@ -538,6 +539,98 @@ class Windows {
 /* HIDE */
 
 class Values {
+    @Test
+    fun singleRow() = testExampleDatabase {
+        /* SHOW */
+
+        /*
+        ### From rows
+         */
+
+        val fakeShop = rowOf(
+            ShopTable.name setTo "Fake Shop",
+            ShopTable.address setTo "79 Fake Street, Fakesville"
+        )
+
+        val result = values(fakeShop)
+            .perform(db)
+            .single()
+
+        assertEquals("Fake Shop", result[ShopTable.name])
+
+        assertGeneratedSql("""
+            VALUES ('Fake Shop', '79 Fake Street, Fakesville')
+        """)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun batchValues() = testExampleDatabase {
+        /* SHOW */
+
+        /*
+        ### From a collection
+         */
+
+        val names = listOf("Dylan", "Santiago", "Chloe")
+
+        val customers = values(names) { name ->
+            this[CustomerTable.name] = name
+            this[CustomerTable.shop] = groceryStoreId
+            this[CustomerTable.spent] = BigDecimal("10.80")
+        }
+
+        CustomerTable
+            .insert(customers)
+            .perform(db)
+
+        assertGeneratedSql("""
+            INSERT INTO "Customer"("name", "shop", "spent")
+            VALUES ('Dylan', 2, 10.80)
+            , ('Santiago', 2, 10.80)
+            , ('Chloe', 2, 10.80)
+        """)
+
+        /* HIDE */
+    }
+
+    @Test
+    fun usingLabels() = testExampleDatabase {
+        /* SHOW */
+
+        /*
+        ### Using labels
+         */
+
+        val name = label<String>("name")
+        val age = label<Int>("age")
+
+        val names = values(listOf("Jeremy", "Sofia")) {
+            this[name] = it
+            this[age] = 29
+        }
+
+        val (firstName, firstAge) = names
+            .subquery()
+            .orderBy(name.desc())
+            .select(upper(name) as_ name, age)
+            .perform(db)
+            .first()
+
+        assertEquals(firstName, "SOFIA")
+        assertEquals(firstAge, 29)
+
+        assertGeneratedSql("""
+            SELECT UPPER(T0."name") "name"
+            , T0."age"
+            FROM (VALUES ('Jeremy', 29)
+            , ('Sofia', 29)) T0("name", "age")
+            ORDER BY T0."name" DESC
+        """)
+
+        /* HIDE */
+    }
 }
 
 /* SHOW */

@@ -46,12 +46,12 @@ class CaseExpressions {
 
         assertGeneratedSql("""
             SELECT CASE T0."id"
-            WHEN ? THEN ?
-            WHEN ? THEN ?
-            ELSE ?
+            WHEN 1 THEN 'HARDWARE'
+            WHEN 2 THEN 'GROCERIES'
+            ELSE 'OTHER'
             END c0
             FROM "Shop" T0
-            WHERE T0."id" = ?
+            WHERE T0."id" = 2
         """)
 
         /* HIDE */

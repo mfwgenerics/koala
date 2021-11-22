@@ -4,6 +4,7 @@ import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.setTo
+import io.koalaql.dsl.value
 import io.koalaql.dsl.values
 import io.koalaql.event.*
 import io.koalaql.h2.H2DataSource
@@ -11,6 +12,7 @@ import io.koalaql.sql.SqlText
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.time.LocalDate
+import kotlin.random.Random
 
 private class SqlLogger: DataSourceEvent by DataSourceEvent.DISCARD {
     val logged: MutableList<SqlText> = arrayListOf()
@@ -31,11 +33,13 @@ private class SqlLogger: DataSourceEvent by DataSourceEvent.DISCARD {
 }
 
 fun ExampleDatabase(): ExampleData {
+    val name = "test${Random.nextInt()}"
+
     val logger = SqlLogger()
 
     val db = H2DataSource(
         provider = {
-            DriverManager.getConnection("jdbc:h2:mem:example;DB_CLOSE_DELAY=-1")
+            DriverManager.getConnection("jdbc:h2:mem:$name;DB_CLOSE_DELAY=-1")
         },
         events = logger
     )

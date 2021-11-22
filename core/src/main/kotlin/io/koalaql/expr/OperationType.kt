@@ -70,7 +70,7 @@ enum class OperationType(
 
     CURRENT_TIMESTAMP("CURRENT_TIMESTAMP", OperationFixity.APPLY),
 
-    UPPER("LOWER", OperationFixity.APPLY),
+    UPPER("UPPER", OperationFixity.APPLY),
     LOWER("LOWER", OperationFixity.APPLY),
 
     /* aggregates */
