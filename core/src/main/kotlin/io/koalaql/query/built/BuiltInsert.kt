@@ -1,7 +1,7 @@
 package io.koalaql.query.built
 
-import io.koalaql.query.OnConflictOrDuplicateAction
-import io.koalaql.query.TableRelation
+import io.koalaql.identifier.Named
+import io.koalaql.query.*
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 
@@ -20,7 +20,11 @@ class BuiltInsert: BuiltStatement {
     }
 
     override fun populateScope(scope: Scope) {
+        val columns = unwrapTable().columns
 
+        columns.forEach {
+            scope.internal(it, Named(it.symbol), null)
+        }
     }
 
     companion object {

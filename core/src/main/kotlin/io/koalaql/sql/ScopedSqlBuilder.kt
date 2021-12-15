@@ -47,18 +47,12 @@ class ScopedSqlBuilder(
     fun addError(error: String) = output.addError(error)
     fun addLiteral(value: Literal<*>?) = output.addLiteral(value)
 
-    fun selectClause(
-        query: BuiltSelectQuery,
+    fun selectFields(
+        fields: List<SelectedExpr<*>>,
         compileExpr: (Expr<*>) -> Unit
     ) {
-        val selected = query.selected
-
-        addSql("SELECT ")
-
-        if (query.distinctness == Distinctness.DISTINCT) addSql("DISTINCT ")
-
-        if (selected.isNotEmpty()) {
-            prefix("", "\n, ").forEach(selected) {
+        if (fields.isNotEmpty()) {
+            prefix("", "\n, ").forEach(fields) {
                 val resolved = when (it.expr) {
                     is AsReference -> scope.resolveOrNull(it.asReference())
                     else -> null
@@ -74,8 +68,32 @@ class ScopedSqlBuilder(
                 }
             }
         } else {
-            addError("unable to generate empty select")
+            addError("unable to generate empty selection")
         }
+    }
+
+    fun selectClause(
+        query: BuiltSelectQuery,
+        compileExpr: (Expr<*>) -> Unit
+    ) {
+        val selected = query.selected
+
+        addSql("SELECT ")
+
+        if (query.distinctness == Distinctness.DISTINCT) addSql("DISTINCT ")
+
+        selectFields(selected, compileExpr)
+    }
+
+    fun returningClause(
+        query: BuiltReturning,
+        compileExpr: (Expr<*>) -> Unit
+    ) {
+        val returned = query.returned
+
+        addSql("RETURNING ")
+
+        selectFields(returned, compileExpr)
     }
 
     fun compileRangeMarker(direction: String, marker: FrameRangeMarker<*>, compileExpr: (Expr<*>) -> Unit) {
@@ -345,7 +363,7 @@ class ScopedSqlBuilder(
                 impl.subquery(false, expr.query)
             }
             is ExprQueryable<*> -> {
-                impl.subquery(false, BuiltQuery.from(expr))
+                impl.subquery(false, with (expr) { BuilderContext.buildQuery() })
             }
             is BuiltCaseExpr<*> -> parenthesize(emitParens) {
                 addSql("CASE")
@@ -615,7 +633,7 @@ class ScopedSqlBuilder(
         withable: BuiltWithable,
         compileCte: (Cte) -> Unit,
         compileRelabels : (List<Reference<*>>) -> Unit,
-        compileQuery: (BuiltQuery) -> Boolean
+        compileQuery: (BuiltSubquery) -> Boolean
     ) {
         val prefix = prefix(
             when (withable.withType) {
@@ -693,21 +711,32 @@ class ScopedSqlBuilder(
         output.addIdentifier(scope.nameOf(window))
     }
 
+    private inline fun <T> scopedIn(query: PopulatesScope, block: ScopedSqlBuilder.() -> T): T {
+        return withScope(query).block()
+    }
+
+    fun compileReturning(
+        dml: BuiltReturning,
+        compileStmt: ScopedSqlBuilder.(BuiltStatement) -> Boolean,
+        compileExpr: ScopedSqlBuilder.(Expr<*>) -> Unit
+    ): Boolean = scopedIn(dml.stmt) {
+        val nonEmpty = compileStmt(dml.stmt)
+
+        addSql("\n")
+
+        returningClause(dml) { compileExpr(it) }
+
+        nonEmpty
+    }
+
     fun compile(
         dml: BuiltDml,
-        compileQuery: (BuiltQuery) -> Boolean,
-        compileInsert: (BuiltInsert) -> Boolean,
-        compileUpdate: (BuiltUpdate) -> Boolean,
-        compileDelete: (BuiltDelete) -> Boolean
+        compileQuery: ScopedSqlBuilder.(BuiltSubquery) -> Boolean,
+        compileStmt: ScopedSqlBuilder.(BuiltStatement) -> Boolean
     ): SqlText? {
         val nonEmpty = when (dml) {
-            is BuiltQuery -> compileQuery(dml)
-            is BuiltInsert -> compileInsert(dml)
-            is BuiltUpdate -> compileUpdate(dml)
-            is BuiltDelete -> {
-                compileDelete(dml)
-                true
-            }
+            is BuiltSubquery -> compileQuery(dml)
+            is BuiltStatement -> scopedIn(dml) { compileStmt(dml) }
         }
 
         return if (nonEmpty) {

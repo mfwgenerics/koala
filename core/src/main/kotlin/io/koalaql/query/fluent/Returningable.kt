@@ -1,55 +1,24 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.expr.Column
-import io.koalaql.query.BlockingPerformer
-import io.koalaql.query.GeneratingKey
-import io.koalaql.query.Inserted
-import io.koalaql.query.SqlPerformer
-import io.koalaql.query.built.BuiltGeneratesKeysInsert
-import io.koalaql.query.built.BuiltInsert
-import io.koalaql.query.built.InsertBuilder
-import io.koalaql.sql.SqlText
-import io.koalaql.values.RowIterator
-import io.koalaql.values.RowSequence
+import io.koalaql.expr.SelectOperand
+import io.koalaql.query.*
+import io.koalaql.values.ResultRow
 
-interface Returningable: Inserted {
-    private class InsertedGeneratingKey<T : Any>(
-        val inserted: InsertBuilder,
-        val returning: Column<T>
-    ): GeneratingKey<T> {
-        override fun buildQuery(): BuiltGeneratesKeysInsert {
-            val built = BuiltInsert.from(inserted)
+interface Returningable {
+    fun returning(references: List<SelectOperand<*>>): ExpectableSubqueryable<ResultRow>
 
-            return BuiltGeneratesKeysInsert(
-                built,
-                returning
-            )
-        }
+    fun <A : Any> returning(
+        first: SelectOperand<A>
+    ) = returning(listOf(first)).expecting(first)
 
-        override fun perform(ds: BlockingPerformer): RowSequence<T> {
-            val rows = ds.query(buildQuery())
+    fun <A : Any, B : Any> returning(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>
+    ) = returning(listOf(first, second)).expecting(first, second)
 
-            return object : RowSequence<T> {
-                override val columns get() = rows.columns
-
-                override fun rowIterator(): RowIterator<T> {
-                    val it = rows.rowIterator()
-
-                    return object : RowIterator<T> {
-                        override val row: T get() = it.row.getValue(returning)
-                        override fun takeRow(): T = row
-
-                        override fun next(): Boolean = it.next()
-
-                        override fun close() = it.close()
-                    }
-                }
-            }
-        }
-
-        override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
-    }
-
-    fun <T : Any> generatingKey(reference: Column<T>): GeneratingKey<T> =
-        InsertedGeneratingKey(this, reference)
+    fun <A : Any, B : Any, C : Any> returning(
+        first: SelectOperand<A>,
+        second: SelectOperand<B>,
+        third: SelectOperand<C>
+    ) = returning(listOf(first, second, third)).expecting(first, second, third)
 }

@@ -6,6 +6,8 @@ import io.koalaql.LiteralAssignment
 import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
 import io.koalaql.query.Queryable
+import io.koalaql.query.Subqueryable
+import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.sql.RawSqlBuilder
 
@@ -44,10 +46,10 @@ fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(thi
 
 fun <T : Any> null_(): Expr<T> = OperationType.NULL()
 
-fun exists(query: Queryable<*>): Expr<Boolean> =
-    OperationType.EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
-fun notExists(query: Queryable<*>): Expr<Boolean> =
-    OperationType.NOT_EXISTS(SubqueryQuasiExpr(BuiltQuery.from(query)))
+fun exists(query: Subqueryable<*>): Expr<Boolean> =
+    OperationType.EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
+fun notExists(query: Subqueryable<*>): Expr<Boolean> =
+    OperationType.NOT_EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
 
 infix fun <T : Any> Expr<T>.inQuery(query: ExprQueryable<T>): Expr<Boolean> =
     OperationType.IN(this, query)
@@ -78,10 +80,10 @@ inline fun <reified T : Any> value(value: T?): Literal<T> =
     Literal(T::class, value)
 
 fun <T : Any> all(subquery: ExprQueryable<T>): ComparisonOperand<T> =
-    ComparedQuery(ComparedQueryType.ALL, BuiltQuery.from(subquery))
+    ComparedQuery(ComparedQueryType.ALL, with (subquery) { BuilderContext.buildQuery() })
 
 fun <T : Any> any(subquery: ExprQueryable<T>): ComparisonOperand<T> =
-    ComparedQuery(ComparedQueryType.ANY, BuiltQuery.from(subquery))
+    ComparedQuery(ComparedQueryType.ANY, with (subquery) { BuilderContext.buildQuery() })
 
 operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =
     OperationType.DIVIDE(this, rhs)

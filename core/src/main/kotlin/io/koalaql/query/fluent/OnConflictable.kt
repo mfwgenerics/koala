@@ -6,11 +6,11 @@ import io.koalaql.query.*
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
 
-interface OnConflictable: Returningable {
+interface OnConflictable: GeneratingKeys {
     private class OnConflict(
         val lhs: OnConflictable,
         val action: OnConflictOrDuplicateAction
-    ): Returningable {
+    ): GeneratingKeys {
         override fun BuiltInsert.buildIntoInsert(): InsertBuilder? {
             onConflict = action
             return lhs
@@ -19,16 +19,16 @@ interface OnConflictable: Returningable {
 
     fun onConflict(keys: BuiltNamedIndex): OnConflicted {
         return object : OnConflicted {
-            override fun ignore(): Returningable =
+            override fun ignore(): GeneratingKeys =
                 OnConflict(this@OnConflictable, OnConflictIgnore(keys))
 
-            override fun update(assignments: List<Assignment<*>>): Returningable =
+            override fun update(assignments: List<Assignment<*>>): GeneratingKeys =
                 OnConflict(this@OnConflictable, OnConflictUpdate(keys, assignments))
         }
     }
 
     fun onDuplicate(): OnDuplicated = object : OnDuplicated {
-        override fun update(assignments: List<Assignment<*>>): Returningable =
+        override fun update(assignments: List<Assignment<*>>): GeneratingKeys =
             OnConflict(this@OnConflictable, OnDuplicateUpdate(assignments))
     }
 }

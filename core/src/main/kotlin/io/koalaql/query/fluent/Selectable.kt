@@ -8,7 +8,7 @@ import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.values.*
 
-interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
+interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
     override fun BuiltQuery.buildInto(): QueryBuilder? =
         with (selectAll()) { buildInto() }
 
@@ -24,7 +24,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         val of: Selectable,
         val references: List<SelectArgument>,
         val includeAll: Boolean
-    ): QueryableResultsUnionOperand {
+    ): QueryableUnionOperand<ResultRow> {
         init {
             val checkedReferences = hashSetOf<Reference<*>>()
 
@@ -54,11 +54,11 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         }
 
         override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-            ds.query(BuiltQuery.from(this))
+            ds.query(with (this) { BuilderContext.buildQuery() })
 
         override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<ResultRow> {
             override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-                ds.query(BuiltQuery.from(this))
+                ds.query(with (this) { BuilderContext.buildQuery() })
 
             override fun BuiltQuery.buildInto(): QueryBuilder? {
                 withType = type
@@ -72,7 +72,7 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
     private fun select(
         distinctness: Distinctness,
         references: List<SelectArgument>
-    ): QueryableResultsUnionOperand = if (references.isEmpty()) {
+    ): QueryableUnionOperand<ResultRow> = if (references.isEmpty()) {
         val x = label<Int>()
 
         EmptyQueryableUnionOperand(select(distinctness, listOf(1 as_ x)))
@@ -80,13 +80,13 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
         Select(distinctness, this, references, false)
     }
 
-    fun select(references: List<SelectArgument>): QueryableResultsUnionOperand =
+    fun select(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> =
         select(Distinctness.ALL, references)
 
-    fun selectDistinct(references: List<SelectArgument>): QueryableResultsUnionOperand =
+    fun selectDistinct(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> =
         select(Distinctness.DISTINCT, references)
 
-    fun selectAll(vararg references: SelectArgument): QueryableResultsUnionOperand =
+    fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         Select(Distinctness.ALL, this, references.asList(), true)
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
@@ -97,12 +97,12 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
     ): CastQueryableUnionOperand<ResultRow>(
         of,
         { RowSequenceEmptyMask(it) }
-    ), QueryableResultsUnionOperand
+    ), QueryableUnionOperand<ResultRow>
 
-    fun select(vararg references: SelectArgument): QueryableResultsUnionOperand =
+    fun select(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         select(references.asList())
 
-    fun selectDistinct(vararg references: SelectArgument): QueryableResultsUnionOperand =
+    fun selectDistinct(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         selectDistinct(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =
@@ -169,13 +169,13 @@ interface Selectable: BuildsIntoQueryBody, QueryableResultsUnionOperand {
 
     private class Delete(
         val of: Selectable
-    ): Deleted {
+    ): WithableDelete {
         override fun BuiltDelete.buildInto(): BuildsIntoDelete? {
             query = BuiltQueryBody.from(of)
             return null
         }
     }
 
-    fun delete(): Deleted = Delete(this)
+    fun delete(): WithableDelete = Delete(this)
 }
 

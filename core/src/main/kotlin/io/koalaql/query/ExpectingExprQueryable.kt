@@ -7,7 +7,7 @@ import io.koalaql.values.RowOfOne
 import io.koalaql.values.RowSequence
 
 class ExpectingExprQueryable<T : Any>(
-    of: Queryable<*>,
+    of: ExpectableSubqueryable<*>,
     references: List<Reference<*>>,
     cast: (rows: RowSequence<RawResultRow>) -> RowSequence<RowOfOne<T>>
 ): ExprQueryable<T>, ExpectingQueryable<RowOfOne<T>>(

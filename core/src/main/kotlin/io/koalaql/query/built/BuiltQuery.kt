@@ -5,10 +5,9 @@ import io.koalaql.expr.Reference
 import io.koalaql.query.BackwardsList
 import io.koalaql.query.WithType
 import io.koalaql.sql.Scope
-import io.koalaql.unfoldBuilder
 
-class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
-    val columns: List<Reference<*>> get() = head.columns
+class BuiltQuery: BuiltSubquery, BuiltWithable {
+    override val columns: List<Reference<*>> get() = head.columns
 
     override var withType = WithType.NOT_RECURSIVE
     override var withs: List<BuiltWith> = emptyList()
@@ -22,9 +21,7 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
     var offset: Int = 0
     var limit: Int? = null
 
-    var expectedColumnOrder: List<Reference<*>>? = null
-
-    fun columnsUnnamed(): Boolean = head.columnsUnnamed()
+    override fun columnsUnnamed(): Boolean = head.columnsUnnamed()
 
     override fun populateScope(scope: Scope) {
         if (columnsUnnamed()) {
@@ -40,14 +37,13 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
         }
     }
 
-    private fun columnsAlreadyOrdered(): Boolean =
-        unioned.isEmpty() && expectedColumnOrder == null
-
-    fun finishBuild() {
+    fun finishBuild(expectedColumnOrder: List<Reference<*>>?) {
         head.computeColumns(withs)
         unioned.forEach { it.body.computeColumns(withs) }
 
-        if (columnsAlreadyOrdered()) return
+        val reorderRequired = unioned.isNotEmpty() || expectedColumnOrder != null
+
+        if (!reorderRequired) return
 
         val allReferences = linkedSetOf<Reference<*>>()
 
@@ -66,11 +62,5 @@ class BuiltQuery: BuiltDml, BuiltQueryable, BuiltWithable {
 
         head.changeColumnsToFit(reorderTo)
         unioned.forEach { it.body.changeColumnsToFit(reorderTo) }
-    }
-
-    companion object {
-        fun from(builder: QueryBuilder): BuiltQuery =
-            unfoldBuilder(builder, BuiltQuery()) { it.buildInto() }
-                .apply { finishBuild() }
     }
 }

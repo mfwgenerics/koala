@@ -169,7 +169,7 @@ class PostgresDialect: SqlDialect {
         addSql(type.toRawSql())
     }
 
-    fun ScopedSqlBuilder.compileQuery(query: BuiltQuery): Boolean {
+    fun ScopedSqlBuilder.compileFullQuery(query: BuiltQuery): Boolean {
         return scopedCtesIn(query) {
             compileFullQuery(
                 query = query,
@@ -184,6 +184,25 @@ class PostgresDialect: SqlDialect {
         }
     }
 
+    fun ScopedSqlBuilder.compileStmt(stmt: BuiltStatement): Boolean =
+        when (stmt) {
+            is BuiltInsert -> { compileInsert(stmt) }
+            is BuiltUpdate -> { compileUpdate(stmt) }
+            is BuiltDelete -> {
+                compileDelete(stmt)
+                true
+            }
+        }
+
+    fun ScopedSqlBuilder.compileQuery(query: BuiltSubquery): Boolean =
+        when (query) {
+            is BuiltQuery -> compileFullQuery(query)
+            is BuiltReturning -> compileReturning(query,
+                compileStmt = { compileStmt(it) },
+                compileExpr = { compileExpr(it, false) }
+            )
+        }
+
     fun ScopedSqlBuilder.compileQuery(query: BuiltUnionOperandQuery): Boolean {
         val compilation = withScope(query)
 
@@ -196,7 +215,7 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltQuery) {
+    fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltSubquery) {
         parenthesize {
             compileQuery(subquery)
         }
@@ -362,7 +381,7 @@ class PostgresDialect: SqlDialect {
             sql.compileReference(value)
         }
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltQuery) {
+        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) {
             sql.compileSubqueryExpr(subquery)
         }
 
@@ -386,13 +405,8 @@ class PostgresDialect: SqlDialect {
         )
 
         return sql.compile(dml,
-            compileQuery = { sql.compileQuery(it) },
-            compileInsert = { sql.scopedIn(it) { compileInsert(it) } },
-            compileUpdate = { sql.scopedIn(it) { compileUpdate(it) } },
-            compileDelete = {
-                sql.scopedIn(dml) { compileDelete(it) }
-                true
-            }
+            compileQuery = { compileQuery(it) },
+            compileStmt = { compileStmt(it) }
         )
     }
 }

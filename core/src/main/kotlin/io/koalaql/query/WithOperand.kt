@@ -1,5 +1,6 @@
 package io.koalaql.query
 
+import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltWith
 
@@ -11,7 +12,7 @@ interface WithOperand {
 
         return BuiltWith(
             cted.cte,
-            BuiltQuery.from(cted.queryable)
+            with (cted.queryable) { BuilderContext.buildQuery() }
         )
     }
 }

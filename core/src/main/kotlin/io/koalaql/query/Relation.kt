@@ -4,7 +4,7 @@ import io.koalaql.expr.Column
 import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.identifier.Unnamed
 import io.koalaql.query.built.*
-import io.koalaql.query.fluent.QueryableResultsUnionOperand
+import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.query.fluent.UnionedOrderable
 import io.koalaql.values.*
 
@@ -26,13 +26,13 @@ interface TableRelation: Relation {
 }
 
 class Subquery(
-    val of: BuiltQuery
+    val of: BuiltSubquery
 ): Relation
 
 class Values(
     override val columns: LabelList,
     private val impl: () -> ValuesIterator
-): QueryableResultsUnionOperand, ValuesSequence, UnionedOrderable {
+): QueryableUnionOperand<ResultRow>, ValuesSequence, UnionedOrderable {
     override fun valuesIterator(): ValuesIterator = impl()
 
     override fun BuiltQuery.buildInto(): QueryBuilder? {
@@ -49,11 +49,11 @@ class Values(
     }
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-        ds.query(BuiltQuery.from(this))
+        ds.query(with (this) { BuilderContext.buildQuery() })
 
     override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<ResultRow> {
         override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-            ds.query(BuiltQuery.from(this))
+            ds.query(with (this) { BuilderContext.buildQuery() })
 
         override fun BuiltQuery.buildInto(): QueryBuilder {
             withType = type

@@ -2,18 +2,18 @@ package io.koalaql.query.fluent
 
 import io.koalaql.query.BlockingPerformer
 import io.koalaql.query.Queryable
-import io.koalaql.query.QueryableResults
 import io.koalaql.query.WithType
+import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltWith
 import io.koalaql.query.built.QueryBuilder
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 
-interface UnionedQueryable: WithableQueryable<ResultRow>, QueryableResults {
+interface UnionedQueryable: WithableQueryable<ResultRow> {
     override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<ResultRow> {
         override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-            ds.query(BuiltQuery.from(this))
+            ds.query(with (this) { BuilderContext.buildQuery() })
 
         override fun BuiltQuery.buildInto(): QueryBuilder? {
             withType = type
@@ -24,5 +24,5 @@ interface UnionedQueryable: WithableQueryable<ResultRow>, QueryableResults {
     }
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
-        ds.query(BuiltQuery.from(this))
+        ds.query(with (this) { BuilderContext.buildQuery() })
 }

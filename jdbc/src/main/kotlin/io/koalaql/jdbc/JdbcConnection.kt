@@ -144,7 +144,7 @@ class JdbcConnection(
                     )
                 }
             }
-            is BuiltQuery -> {
+            is BuiltSubquery -> {
                 val sql = dialect.compile(queryable)
                     ?: return emptyRowSequence(queryable.columns)
 

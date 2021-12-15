@@ -174,11 +174,26 @@ class H2Dialect(
         }
     }
 
-    fun ScopedSqlBuilder.compileQuery(query: BuiltQuery): Boolean {
-        return compileFullQuery(query)
-    }
+    fun ScopedSqlBuilder.compileStmt(stmt: BuiltStatement): Boolean =
+        when (stmt) {
+            is BuiltInsert -> { compileInsert(stmt) }
+            is BuiltUpdate -> { compileUpdate(stmt) }
+            is BuiltDelete -> {
+                compileDelete(stmt)
+                true
+            }
+        }
 
-    fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltQuery) {
+    fun ScopedSqlBuilder.compileQuery(query: BuiltSubquery): Boolean =
+        when (query) {
+            is BuiltQuery -> compileFullQuery(query)
+            is BuiltReturning -> compileReturning(query,
+                compileStmt = { compileStmt(it) },
+                compileExpr = { compileExpr(it, false) }
+            )
+        }
+
+    fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltSubquery) {
         parenthesize {
             compileQuery(subquery)
         }
@@ -316,15 +331,9 @@ class H2Dialect(
         }
     )
 
-    fun ScopedSqlBuilder.compile(dml: BuiltDml): SqlText? = compile(
-        dml,
+    fun ScopedSqlBuilder.compile(dml: BuiltDml): SqlText? = compile(dml,
         compileQuery = { compileQuery(it) },
-        compileInsert = { scopedIn(dml) { compileInsert(it) } },
-        compileUpdate = { scopedIn(dml) { compileUpdate(it) } },
-        compileDelete = {
-            scopedIn(dml) { compileDelete(it) }
-            true
-        }
+        compileStmt = { compileStmt(it) }
     )
 
     fun ScopedSqlBuilder.compileWindow(window: BuiltWindow) = compileWindow(window,
@@ -363,7 +372,7 @@ class H2Dialect(
         override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
             sql.compileCastDataType(to)
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltQuery) =
+        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) =
             sql.compileSubqueryExpr(subquery)
     }
 

@@ -97,7 +97,7 @@ inline fun <T> values(
 fun values(
     rows: Iterable<ValuesRow>
 ): Values {
-    val labelSet = hashSetOf<Reference<*>>()
+    val labelSet = linkedSetOf<Reference<*>>()
 
     rows.forEach {
         labelSet.addAll(it.columns)

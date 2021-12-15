@@ -1,7 +1,7 @@
 package io.koalaql.expr
 
-import io.koalaql.query.built.BuiltQuery
+import io.koalaql.query.built.BuiltSubquery
 
 class SubqueryQuasiExpr(
-    val query: BuiltQuery
+    val query: BuiltSubquery
 ): QuasiExpr

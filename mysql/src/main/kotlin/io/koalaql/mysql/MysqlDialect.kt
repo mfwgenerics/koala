@@ -302,7 +302,7 @@ class MysqlDialect(): SqlDialect {
         }
     }
 
-    private fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltQuery) {
+    private fun ScopedSqlBuilder.compileSubqueryExpr(subquery: BuiltSubquery) {
         parenthesize {
             compileQuery(subquery)
         }
@@ -317,6 +317,40 @@ class MysqlDialect(): SqlDialect {
             compileRow(columns, row) { compileExpr(it, false) }
         }
     }
+
+    fun ScopedSqlBuilder.compileFullQuery(query: BuiltQuery): Boolean {
+        return scopedCtesIn(query) {
+            compileFullQuery(
+                query = query,
+                compileWiths = { compileWiths(it) },
+                compileSubquery = { compileQuery(it) },
+                compileOrderBy = {
+                    scopedIn(query) {
+                        compileOrderBy(it)
+                    }
+                }
+            )
+        }
+    }
+
+    fun ScopedSqlBuilder.compileStmt(stmt: BuiltStatement): Boolean =
+        when (stmt) {
+            is BuiltInsert -> { compileInsert(stmt) }
+            is BuiltUpdate -> { compileUpdate(stmt) }
+            is BuiltDelete -> {
+                compileDelete(stmt)
+                true
+            }
+        }
+
+    fun ScopedSqlBuilder.compileQuery(query: BuiltSubquery): Boolean =
+        when (query) {
+            is BuiltQuery -> compileFullQuery(query)
+            is BuiltReturning -> compileReturning(query,
+                compileStmt = { compileStmt(it) },
+                compileExpr = { compileExpr(it, false) }
+            )
+        }
 
     private fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
         val explicitLabels = when (val baseRelation = relation.relation) {
@@ -432,7 +466,7 @@ class MysqlDialect(): SqlDialect {
             sql.compileReference(value)
         }
 
-        override fun subquery(emitParens: Boolean, subquery: BuiltQuery) {
+        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) {
             sql.compileSubqueryExpr(subquery)
         }
 
@@ -466,13 +500,8 @@ class MysqlDialect(): SqlDialect {
         )
 
         return sql.compile(dml,
-            compileQuery = { sql.compileQuery(it) },
-            compileInsert = { sql.scopedIn(it) { compileInsert(it) } },
-            compileUpdate = { sql.scopedIn(it) { compileUpdate(it) } },
-            compileDelete = {
-                sql.scopedIn(dml) { compileDelete(it) }
-                true
-            }
+            compileQuery = { compileQuery(it) },
+            compileStmt = { compileStmt(it) }
         )
     }
 }

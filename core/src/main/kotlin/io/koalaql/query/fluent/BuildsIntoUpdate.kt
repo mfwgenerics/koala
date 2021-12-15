@@ -1,13 +1,12 @@
 package io.koalaql.query.fluent
 
-import io.koalaql.query.BlockingPerformer
-import io.koalaql.query.SqlPerformer
+import io.koalaql.query.built.BuilderContext
+import io.koalaql.query.built.BuiltStatement
 import io.koalaql.query.built.BuiltUpdate
-import io.koalaql.sql.SqlText
 
-fun interface BuildsIntoUpdate: PerformableBlocking<Int> {
+fun interface BuildsIntoUpdate: PerformableStatement {
     fun BuiltUpdate.buildInto(): BuildsIntoUpdate?
 
-    override fun perform(ds: BlockingPerformer): Int = ds.statement(BuiltUpdate.from(this))
-    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(BuiltUpdate.from(this))
+    override fun BuilderContext.buildStmt(): BuiltStatement =
+        BuiltUpdate.from(this@BuildsIntoUpdate)
 }

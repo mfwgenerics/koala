@@ -3,9 +3,18 @@ package io.koalaql.query
 import io.koalaql.expr.AsReference
 import io.koalaql.expr.ExprQueryable
 import io.koalaql.expr.Reference
+import io.koalaql.query.built.BuilderContext
+import io.koalaql.query.built.BuiltQuery
+import io.koalaql.query.built.BuiltSubquery
+import io.koalaql.query.built.QueryBuilder
+import io.koalaql.unfoldBuilder
 import io.koalaql.values.*
 
-interface QueryableResults: Queryable<ResultRow> {
+interface ExpectableSubqueryable<out T>: Subqueryable<T> {
+    fun BuilderContext.buildQuery(expectedColumns: List<Reference<*>>?): BuiltSubquery
+
+    override fun BuilderContext.buildQuery(): BuiltSubquery = buildQuery(null)
+
     private fun expectingListOf(vararg elements: Reference<*>): List<Reference<*>> {
         val references = hashSetOf<Reference<*>>()
 
@@ -28,7 +37,7 @@ interface QueryableResults: Queryable<ResultRow> {
     fun <A : Any, B : Any> expecting(
         first: AsReference<A>,
         second: AsReference<B>
-    ): Queryable<RowOfTwo<A, B>> =
+    ): Subqueryable<RowOfTwo<A, B>> =
         ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference())) {
             it.unsafeCastToTwoColumns()
         }
@@ -37,7 +46,7 @@ interface QueryableResults: Queryable<ResultRow> {
         first: AsReference<A>,
         second: AsReference<B>,
         third: AsReference<C>
-    ): Queryable<RowOfThree<A, B, C>> =
+    ): Subqueryable<RowOfThree<A, B, C>> =
         ExpectingQueryable(this, expectingListOf(first.asReference(), second.asReference(), third.asReference())) {
             it.unsafeCastToThreeColumns()
         }

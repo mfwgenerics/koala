@@ -1,20 +1,22 @@
 package io.koalaql.query
 
 import io.koalaql.expr.Reference
+import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltQuery
+import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.query.built.QueryBuilder
 import io.koalaql.values.RawResultRow
 import io.koalaql.values.RowSequence
 
 open class ExpectingQueryable<T>(
-    val of: Queryable<*>,
+    val of: ExpectableSubqueryable<*>,
     val references: List<Reference<*>>,
     val cast: (rows: RowSequence<RawResultRow>) -> RowSequence<T>
-): Queryable<T> {
+): Subqueryable<T> {
     init {
         /* prematurely build query so we can check columns here and throw from .expecting(...) callsite */
 
-        val query = BuiltQuery.from(of)
+        val query = with(of) { BuilderContext.buildQuery() }
 
         val columnSet = query.columns.toSet()
 
@@ -24,10 +26,9 @@ open class ExpectingQueryable<T>(
     }
 
     override fun perform(ds: BlockingPerformer): RowSequence<T> =
-        cast(ds.query(BuiltQuery.from(this)))
+        cast(ds.query(with (this) { BuilderContext.buildQuery() }))
 
-    override fun BuiltQuery.buildInto(): QueryBuilder {
-        expectedColumnOrder = references
-        return of
+    override fun BuilderContext.buildQuery(): BuiltSubquery = with (of) {
+        buildQuery(references)
     }
 }

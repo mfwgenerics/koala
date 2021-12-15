@@ -1,5 +1,6 @@
 package io.koalaql.query
 
+import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltWith
 import io.koalaql.query.built.QueryBuilder
@@ -12,7 +13,7 @@ open class CastQueryableUnionOperand<T>(
     val cast: (rows: RowSequence<RawResultRow>) -> RowSequence<T>
 ): QueryableUnionOperand<T> {
     override fun perform(ds: BlockingPerformer): RowSequence<T> =
-        cast(ds.query(BuiltQuery.from(this)))
+        cast(ds.query(with (this) { BuilderContext.buildQuery() }))
 
     override fun BuiltQuery.buildInto(): QueryBuilder = of
 
@@ -22,7 +23,7 @@ open class CastQueryableUnionOperand<T>(
 
     override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<T> {
         override fun perform(ds: BlockingPerformer): RowSequence<T> =
-            cast(ds.query(BuiltQuery.from(this)))
+            cast(ds.query(with (this) { BuilderContext.buildQuery() }))
 
         override fun BuiltQuery.buildInto(): QueryBuilder {
             withType = type

@@ -9,11 +9,11 @@ import io.koalaql.values.unsafeCastToOneColumn
 
 interface ExprQueryableUnionOperand<T : Any>: ExprQueryable<T>, QueryableUnionOperand<RowOfOne<T>> {
     override fun perform(ds: BlockingPerformer): RowSequence<RowOfOne<T>> =
-        ds.query(BuiltQuery.from(this)).unsafeCastToOneColumn()
+        ds.query(with (this) { BuilderContext.buildQuery() }).unsafeCastToOneColumn()
 
     override fun with(type: WithType, queries: List<BuiltWith>) = object : Queryable<RowOfOne<T>> {
         override fun perform(ds: BlockingPerformer): RowSequence<RowOfOne<T>> =
-            ds.query(BuiltQuery.from(this)).unsafeCastToOneColumn()
+            ds.query(with (this) { BuilderContext.buildQuery() }).unsafeCastToOneColumn()
 
         override fun BuiltQuery.buildInto(): QueryBuilder {
             withType = type
