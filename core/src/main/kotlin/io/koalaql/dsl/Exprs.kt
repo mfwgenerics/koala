@@ -14,6 +14,9 @@ import io.koalaql.sql.RawSqlBuilder
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
 
+inline fun <reified T : Any> Expr<T>.labeled(): SelectedExpr<T> =
+    as_(label())
+
 /* limiting T to Comparable to prevent shadowing of other as_ */
 inline infix fun <reified T : Comparable<*>> T.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(value(this), reference)
@@ -71,6 +74,11 @@ infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolea
 inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T?>): Expr<Boolean> =
     inExprs(values.map { value(it) })
 inline infix fun <reified T : Any> Expr<T>.notInValues(values: Collection<T?>): Expr<Boolean> =
+    notInExprs(values.map { value(it) })
+
+inline fun <reified T : Any> Expr<T>.inValues(vararg values: T?): Expr<Boolean> =
+    inExprs(values.map { value(it) })
+inline fun <reified T : Any> Expr<T>.notInValues(vararg values: T?): Expr<Boolean> =
     notInExprs(values.map { value(it) })
 
 fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =

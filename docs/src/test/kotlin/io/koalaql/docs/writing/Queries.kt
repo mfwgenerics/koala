@@ -757,6 +757,30 @@ class Limits {
 /* HIDE */
 
 class Locking {
+    @Test
+    fun forUpdateAndForUpdate() = testExampleDatabase {
+        /* SHOW */
+        /*
+        ### For update
+         */
+
+        ShopTable
+            .where(ShopTable.id.inValues(groceryStoreId, hardwareStoreId))
+            .forUpdate()
+            .perform(db)
+
+        assertGeneratedSql("""
+            SELECT T0."id" c0
+            , T0."name" c1
+            , T0."address" c2
+            , T0."established" c3
+            FROM "Shop" T0
+            WHERE T0."id" IN (2, 1)
+            FOR UPDATE
+        """)
+
+        /* HIDE */
+    }
 }
 
 /* SHOW */

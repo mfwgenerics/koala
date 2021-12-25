@@ -11,7 +11,10 @@ interface Whereable: Groupable {
         val where: Expr<Boolean>
     ): Whereable {
         override fun BuiltQueryBody.buildInto(): BuildsIntoQueryBody {
-            where = where?.and(this@Where.where)?:this@Where.where
+            where = where
+                ?.let { where -> this@Where.where.and(where) }
+                ?:this@Where.where
+
             return of
         }
     }
