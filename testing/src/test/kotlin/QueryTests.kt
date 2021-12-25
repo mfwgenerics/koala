@@ -828,13 +828,16 @@ abstract class QueryTests: ProvideTestDatabase {
             select(
                 (value("like") like "like") as_ label(),
                 (value("like") like "lik%") as_ label(),
-                (value("like") like "lik") as_ label()
+                (value("like") like "lik") as_ label(),
+                (value("like") notLike "like") as_ label(),
+                (value("like") notLike "lik%") as_ label(),
+                (value("like") notLike "lik") as_ label()
             )
             .perform(cxn)
             .map { row -> row.columns.map { row.getValue(it as Reference<Boolean>) } }
             .single()
 
-        assertListEquals(listOf(true, true, false), result)
+        assertListEquals(listOf(true, true, false, false, false, true), result)
     }
 
     @Test

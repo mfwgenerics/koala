@@ -149,6 +149,11 @@ infix fun Expr<String>.like(expr: Expr<String>): Expr<Boolean> =
 
 infix fun Expr<String>.like(expr: String) = like(value(expr))
 
+infix fun Expr<String>.notLike(expr: Expr<String>): Expr<Boolean> =
+    OperationType.NOT_LIKE(this, expr)
+
+infix fun Expr<String>.notLike(expr: String) = notLike(value(expr))
+
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
 
