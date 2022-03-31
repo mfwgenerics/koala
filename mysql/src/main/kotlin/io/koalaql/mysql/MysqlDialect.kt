@@ -151,7 +151,7 @@ class MysqlDialect(): SqlDialect {
     private fun ScopedSqlBuilder.compileIndexDef(name: String, def: BuiltIndexDef) {
         addSql(when (def.type) {
             IndexType.PRIMARY -> "PRIMARY KEY"
-            IndexType.UNIQUE -> "UNIQUE KEY"
+            IndexType.UNIQUE -> "CONSTRAINT UNIQUE KEY"
             IndexType.INDEX -> "INDEX"
         })
 

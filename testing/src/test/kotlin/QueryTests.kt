@@ -435,7 +435,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val result = select(
                 value(12) as_ n0,
-                coalesce(value(null), value("String")) as_ n1,
+                coalesce(cast(value<String>(null), VARCHAR(100)), value("String")) as_ n1,
                 valuesQuery as_ n3
             )
             .perform(cxn)
@@ -447,7 +447,7 @@ abstract class QueryTests: ProvideTestDatabase {
     }
 
     @Test
-    fun `deletion with cte`() = withExampleData { cxn ->
+    open fun `deletion with cte`() = withExampleData { cxn ->
         val cte = cte()
 
         PurchaseTable

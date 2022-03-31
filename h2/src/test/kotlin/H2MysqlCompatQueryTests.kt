@@ -9,6 +9,7 @@ import io.koalaql.test.table.VENUE_TYPE
 import io.koalaql.test.table.VenueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 class H2MysqlCompatQueryTests: QueryTests() {
     override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
@@ -17,18 +18,17 @@ class H2MysqlCompatQueryTests: QueryTests() {
             declareBy = declareBy
         )
 
-    override fun `values as expression in select`() {
-        /* H2 MYSQL mode specific bug prevents this test from passing */
-
-        try {
-            super.`values as expression in select`()
-            assert(false)
-        } catch (ex: IllegalStateException) { }
-    }
-
     @Test
     fun empty() {
         /* prevents test runner from skipping the base class tests */
+    }
+
+    override fun `deletion with cte`() {
+        /* a CTE regression in H2 2.x.x breaks this */
+
+        assertFails {
+            super.`deletion with cte`()
+        }
     }
 
     override fun `factorial recursive CTE`() {

@@ -12,7 +12,6 @@ import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.dialect.*
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
-import io.koalaql.identifier.Named
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.sql.*
@@ -81,15 +80,10 @@ class H2Dialect(
         }
     }
 
-    private fun ScopedSqlBuilder.compileIndexDef(name: String, def: BuiltIndexDef) {
-        addSql(when (def.type) {
-            IndexType.PRIMARY -> "PRIMARY KEY"
-            IndexType.UNIQUE -> "UNIQUE KEY"
-            IndexType.INDEX -> "INDEX"
-        })
-
-        addSql(" ")
+    private fun ScopedSqlBuilder.compileUniqueDef(name: String, def: BuiltIndexDef) {
+        addSql("CONSTRAINT ")
         addIdentifier(name)
+        addSql(" UNIQUE")
         parenthesize {
             prefix("", ", ").forEach(def.keys.keys) { key ->
                 compileDefaultExpr(key)
@@ -126,7 +120,7 @@ class H2Dialect(
             table.indexes.forEach { index ->
                 if (index.def.type != IndexType.INDEX) {
                     comma.next {
-                        compileIndexDef(index.name, index.def)
+                        compileUniqueDef(index.name, index.def)
                     }
                 }
             }

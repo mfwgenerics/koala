@@ -29,14 +29,15 @@ fun H2Database(
     declareBy: DeclareStrategy? = CreateIfNotExists
 ): JdbcDataSource {
     val url = when (mode) {
-        H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MV_STORE=false;MODE=MYSQL"
-        null -> "jdbc:h2:mem:$db;MV_STORE=false"
+        H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MODE=MYSQL"
+        null -> "jdbc:h2:mem:$db"
     }
 
     val keepAlive = DriverManager.getConnection(url)
 
     return H2DataSource(
         dialect = H2Dialect(mode),
+        declareStrategy = declareBy?:CreateIfNotExists,
         provider = object : JdbcProvider {
             override fun connect(): Connection =
                 DriverManager.getConnection(url)

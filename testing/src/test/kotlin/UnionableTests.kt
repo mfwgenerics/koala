@@ -125,10 +125,10 @@ abstract class UnionableTests: ProvideTestDatabase {
         val x = label<Int>()
 
         val result = select(castInt(10) as_ x)
-            .union(select(11 as_ x))
-            .intersect(select(10 as_ x))
-            .union(select(12 as_ x))
-            .except(select(10 as_ x))
+            .union(select(castInt(11) as_ x))
+            .intersect(select(castInt(10) as_ x))
+            .union(select(castInt(12) as_ x))
+            .except(select(castInt(10) as_ x))
             .perform(cxn)
             .map { it.getValue(x) }
             .single()

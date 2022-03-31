@@ -8,6 +8,7 @@ import io.koalaql.test.table.VENUE_TYPE
 import io.koalaql.test.table.VenueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 class H2QueryTests: QueryTests() {
     override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
@@ -18,31 +19,36 @@ class H2QueryTests: QueryTests() {
         /* prevents test runner from skipping the base class tests */
     }
 
+    override fun `deletion with cte`() {
+        /* a CTE regression in H2 2.x.x breaks this */
+
+        assertFails {
+            super.`deletion with cte`()
+        }
+    }
+
     override fun `factorial recursive CTE`() {
         /* CTE support is experimental in H2 and doesn't work with the example */
 
-        try {
+        assertFails {
             super.`factorial recursive CTE`()
-            assert(false)
-        } catch (ex: Exception) { }
+        }
     }
 
     override fun `on duplicate update with values`() {
         /* H2 does not support ON CONFLICT/ON DUPLICATE in its native dialect */
 
-        try {
+        assertFails {
             super.`on duplicate update with values`()
-            assert(false)
-        } catch (ex: Exception) { }
+        }
     }
 
     override fun `on duplicate update with select`() {
         /* H2 does not support ON CONFLICT/ON DUPLICATE in its native dialect */
 
-        try {
+        assertFails {
             super.`on duplicate update with values`()
-            assert(false)
-        } catch (ex: Exception) { }
+        }
     }
 
     @Test
