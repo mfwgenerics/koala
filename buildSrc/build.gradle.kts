@@ -7,6 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.10")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")
     implementation("com.palantir.gradle.gitversion:gradle-git-version:0.12.3")
 }
