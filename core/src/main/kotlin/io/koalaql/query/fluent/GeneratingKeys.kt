@@ -8,7 +8,7 @@ import io.koalaql.query.SqlPerformer
 import io.koalaql.query.built.BuiltGeneratesKeysInsert
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 import io.koalaql.values.RowIterator
 import io.koalaql.values.RowSequence
 
@@ -47,7 +47,7 @@ interface GeneratingKeys: Inserted {
             }
         }
 
-        override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(BuiltInsert.from(inserted))
+        override fun generateSql(ds: SqlPerformer): CompiledSql? = ds.generateSql(BuiltInsert.from(inserted))
     }
 
     fun <T : Any> generatingKey(reference: Column<T>): GeneratingKey<T> =

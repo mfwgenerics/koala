@@ -4,21 +4,20 @@ import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.setTo
-import io.koalaql.dsl.value
 import io.koalaql.dsl.values
 import io.koalaql.event.*
 import io.koalaql.h2.H2DataSource
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 import java.math.BigDecimal
 import java.sql.DriverManager
 import java.time.LocalDate
 import kotlin.random.Random
 
 private class SqlLogger: DataSourceEvent by DataSourceEvent.DISCARD {
-    val logged: MutableList<SqlText> = arrayListOf()
+    val logged: MutableList<CompiledSql> = arrayListOf()
 
     private val connection = object : ConnectionEventWriter {
-        override fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter {
+        override fun perform(type: ConnectionQueryType, sql: CompiledSql): QueryEventWriter {
             logged.add(sql)
             return QueryEventWriter.Discard
         }

@@ -2,7 +2,7 @@ package io.koalaql.ddl
 
 import kotlin.reflect.KClass
 
-abstract class DataType<F : Any, T : Any> {
+sealed class DataType<F : Any, T : Any> {
     abstract val type: KClass<T>
     abstract val dataType: UnmappedDataType<F>
 

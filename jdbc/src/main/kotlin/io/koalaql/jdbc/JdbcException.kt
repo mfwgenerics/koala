@@ -1,8 +1,8 @@
 package io.koalaql.jdbc
 
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 
 class JdbcException(
-    sql: SqlText,
+    sql: CompiledSql,
     cause: Throwable
 ): Exception("$sql", cause)

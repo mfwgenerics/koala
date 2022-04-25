@@ -65,7 +65,7 @@ class PostgresDialect: SqlDialect {
     private fun ScopedSqlBuilder.compileCreateTable(table: Table) {
         addSql("CREATE TABLE IF NOT EXISTS ")
 
-        addIdentifier(table.tableName)
+        addTableReference(table)
         parenthesize {
             val comma = prefix("\n", ",\n")
 
@@ -123,11 +123,11 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    override fun ddl(change: SchemaChange): List<SqlText> {
-        val results = mutableListOf<SqlText>()
+    override fun ddl(change: SchemaChange): List<CompiledSql> {
+        val results = mutableListOf<CompiledSql>()
 
         change.tables.created.forEach { (_, table) ->
-            val sql = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
+            val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
 
             ScopedSqlBuilder(
                 sql,
@@ -232,7 +232,7 @@ class PostgresDialect: SqlDialect {
     fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
         val explicitLabels = when (val baseRelation = relation.relation) {
             is TableRelation -> {
-                addIdentifier(baseRelation.tableName)
+                addTableReference(baseRelation)
                 null
             }
             is Subquery -> {
@@ -312,7 +312,7 @@ class PostgresDialect: SqlDialect {
         val insertAlias = Alias()
 
         compileInsertLine(insert) {
-            addIdentifier(relvar.tableName)
+            addTableReference(relvar)
             addSql(" AS ")
             addAlias(insertAlias)
         }
@@ -398,9 +398,9 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    override fun compile(dml: BuiltDml): SqlText? {
+    override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            SqlTextBuilder(IdentifierQuoteStyle.DOUBLE),
+            CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
             Scope(NameRegistry { "column${it + 1}" })
         )
 

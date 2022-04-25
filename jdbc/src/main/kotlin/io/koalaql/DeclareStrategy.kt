@@ -1,6 +1,9 @@
 package io.koalaql
 
 sealed interface DeclareStrategy {
+    object DoNothing: DeclareStrategy
+    object CreateIfNotExists: DeclareStrategy
+
     companion object {
         val EXPECT = ReconcileTables(
             create = ReconcileMode.EXPECT,

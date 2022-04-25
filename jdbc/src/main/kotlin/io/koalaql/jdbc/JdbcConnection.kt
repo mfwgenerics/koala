@@ -10,7 +10,7 @@ import io.koalaql.event.ConnectionQueryType
 import io.koalaql.expr.Column
 import io.koalaql.query.LabelListOf
 import io.koalaql.query.built.*
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 import io.koalaql.values.RawResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.emptyRowSequence
@@ -25,7 +25,7 @@ class JdbcConnection(
     private val typeMappings: JdbcTypeMappings,
     private val events: ConnectionEventWriter
 ): DataConnection {
-    fun prepare(sql: SqlText, generatedKeys: Boolean): PreparedStatement {
+    fun prepare(sql: CompiledSql, generatedKeys: Boolean): PreparedStatement {
         val result = if (generatedKeys) {
             jdbc.prepareStatement(sql.parameterizedSql, Statement.RETURN_GENERATED_KEYS)
         } else {
@@ -34,7 +34,7 @@ class JdbcConnection(
 
         sql.parameters.forEachIndexed { ix, literal ->
             @Suppress("unchecked_cast")
-            val mapping = typeMappings.mappingFor(literal.type) as JdbcMappedType<Any>
+            val mapping = typeMappings.deriveFor(literal.type, sql.mappings) as JdbcMappedType<Any>
 
             literal.value
                 ?.let { mapping.writeJdbc(result, ix + 1, it) }
@@ -45,7 +45,7 @@ class JdbcConnection(
     }
 
     inline fun <R> prepareAndThen(
-        sql: SqlText,
+        sql: CompiledSql,
         generatedKeys: Boolean = false,
         block: PreparedStatement.() -> R
     ): R {
@@ -58,7 +58,7 @@ class JdbcConnection(
 
     private fun prepareAndUpdate(
         type: ConnectionQueryType,
-        sql: SqlText
+        sql: CompiledSql
     ): Int = prepareAndThen(sql) {
         use {
             val event = events.perform(type, sql)
@@ -140,6 +140,7 @@ class JdbcConnection(
                         offset = ix,
                         event,
                         typeMappings,
+                        sql.mappings,
                         generatedKeys
                     )
                 }
@@ -165,6 +166,7 @@ class JdbcConnection(
                         offset = 1,
                         event,
                         typeMappings,
+                        sql.mappings,
                         results
                     )
                 }
@@ -211,5 +213,5 @@ class JdbcConnection(
         jdbc.close()
     }
 
-    override fun generateSql(dml: BuiltDml): SqlText? = dialect.compile(dml)
+    override fun generateSql(dml: BuiltDml): CompiledSql? = dialect.compile(dml)
 }

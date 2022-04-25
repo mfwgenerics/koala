@@ -2,9 +2,11 @@ package io.koalaql.sql
 
 import io.koalaql.expr.Literal
 
-data class SqlText(
+data class CompiledSql(
     private val abridgements: List<Abridgement>,
     val parameterizedSql: String,
+
+    val mappings: TypeMappings,
     val parameters: List<Literal<*>>
 ) {
     fun toAbridgedSql(): String {

@@ -4,6 +4,7 @@ import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.event.QueryEventWriter
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
+import io.koalaql.sql.TypeMappings
 import io.koalaql.values.*
 import java.sql.ResultSet
 
@@ -11,7 +12,8 @@ class ResultSetRowSequence(
     override val columns: LabelList,
     private val offset: Int,
     private val event: QueryEventWriter,
-    private val typeMappings: JdbcTypeMappings,
+    sharedMappings: JdbcTypeMappings,
+    localMappings: TypeMappings,
     private val resultSet: ResultSet
 ):
     RowSequence<RawResultRow>,
@@ -21,7 +23,7 @@ class ResultSetRowSequence(
     private var alreadyIterated = false
     private var readCount = 0
 
-    private val columnMappings = columns.map { typeMappings.mappingFor(it.type) }
+    private val columnMappings = columns.map { sharedMappings.deriveFor(it.type, localMappings) }
 
     override val row: RawResultRow get() = this
 

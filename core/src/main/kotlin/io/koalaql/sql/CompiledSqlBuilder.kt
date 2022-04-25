@@ -1,16 +1,22 @@
 package io.koalaql.sql
 
+import io.koalaql.ddl.DataType
+import io.koalaql.ddl.MappedDataType
+import io.koalaql.ddl.TypeMapping
 import io.koalaql.expr.Literal
 import io.koalaql.identifier.Unquoted
 import io.koalaql.identifier.Named
 import io.koalaql.identifier.SqlIdentifier
+import kotlin.reflect.KClass
 
-class SqlTextBuilder(
+class CompiledSqlBuilder(
     private val quoteStyle: IdentifierQuoteStyle
 ) {
     private val contents = StringBuilder()
     private val params = arrayListOf<Literal<*>>()
     private var errored = false
+
+    private val mappings = hashMapOf<KClass<*>, MappedDataType<*, *>>()
 
     private val abridgements = arrayListOf<Abridgement>()
 
@@ -59,6 +65,10 @@ class SqlTextBuilder(
         addSql("/* ERROR: $error */")
     }
 
+    fun addMapping(type: DataType<*, *>) {
+        if (type is MappedDataType) mappings.putIfAbsent(type.type, type)
+    }
+
     fun addSql(sql: StandardSql) { addSql(sql.sql) }
 
     fun addLiteral(value: Literal<*>?) {
@@ -70,12 +80,13 @@ class SqlTextBuilder(
         }
     }
 
-    fun toSql(): SqlText {
+    fun toSql(): CompiledSql {
         if (errored) throw GeneratedSqlException("Unable to generate SQL. See incomplete SQL below:\n$contents")
 
-        return SqlText(
+        return CompiledSql(
             abridgements,
             "$contents",
+            TypeMappings(mappings),
             params
         )
     }

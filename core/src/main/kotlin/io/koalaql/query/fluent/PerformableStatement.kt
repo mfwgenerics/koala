@@ -7,7 +7,7 @@ import io.koalaql.query.ReturningQueryable
 import io.koalaql.query.SqlPerformer
 import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltStatement
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 import io.koalaql.values.ResultRow
 
 interface PerformableStatement: PerformableBlocking<Int>, Returningable {
@@ -17,5 +17,5 @@ interface PerformableStatement: PerformableBlocking<Int>, Returningable {
         ReturningQueryable(with (BuilderContext) { buildStmt() }, references)
 
     override fun perform(ds: BlockingPerformer): Int = ds.statement(with (BuilderContext) { buildStmt() })
-    override fun generateSql(ds: SqlPerformer): SqlText? = ds.generateSql(with (BuilderContext) { buildStmt() })
+    override fun generateSql(ds: SqlPerformer): CompiledSql? = ds.generateSql(with (BuilderContext) { buildStmt() })
 }

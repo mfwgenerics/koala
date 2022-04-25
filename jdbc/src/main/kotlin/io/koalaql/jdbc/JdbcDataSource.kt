@@ -8,7 +8,7 @@ import io.koalaql.dialect.SqlDialect
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.DataSourceEvent
 import io.koalaql.query.built.BuiltDml
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 import java.sql.Connection
 
 class JdbcDataSource(
@@ -18,7 +18,7 @@ class JdbcDataSource(
     val typeMappings: JdbcTypeMappings,
     val declareBy: DeclareStrategy,
     val events: DataSourceEvent
-): SchemaDataSource {
+): SchemaDataSource, AutoCloseable {
     override fun detectChanges(tables: List<Table>): SchemaChange = provider.connect().use { jdbc ->
         jdbc.autoCommit = true
 
@@ -28,7 +28,7 @@ class JdbcDataSource(
         schema.detectChanges(dbName, jdbc.metaData, tables)
     }
 
-    private fun applyDdl(ddl: List<SqlText>) {
+    private fun applyDdl(ddl: List<CompiledSql>) {
         provider.connect().use { jdbc ->
             jdbc.autoCommit = true
 
@@ -56,15 +56,9 @@ class JdbcDataSource(
     }
 
     override fun declareTables(tables: List<Table>) {
-        tables.forEach { table ->
-            table.columns.forEach {
-                typeMappings.register(it.builtDef.columnType)
-            }
-        }
-
         when (declareBy) {
-            DeclareOnly -> return
-            CreateIfNotExists -> {
+            DeclareStrategy.DoNothing -> return
+            DeclareStrategy.CreateIfNotExists -> {
                 val diff = SchemaChange()
 
                 tables.forEach {
@@ -86,7 +80,7 @@ class JdbcDataSource(
 
                 val appliedEvent = events.changes(filtered, ddl)
 
-                check (ddl.unexpected.isEmpty()) {
+                check(ddl.unexpected.isEmpty()) {
                     val ddlLines = ddl.unexpected
                         .asSequence()
                         .map { "$it".trim() }
@@ -125,9 +119,9 @@ class JdbcDataSource(
         )
     }
 
-    override fun generateSql(dml: BuiltDml): SqlText? = dialect.compile(dml)
+    override fun generateSql(dml: BuiltDml): CompiledSql? = dialect.compile(dml)
 
-    fun close() {
+    override fun close() {
         provider.close()
     }
 }

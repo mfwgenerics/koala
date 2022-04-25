@@ -1,7 +1,8 @@
 package io.koalaql.data
 
-import io.koalaql.ddl.DataType
+import io.koalaql.ddl.MappedDataType
 import io.koalaql.ddl.TypeMapping
+import io.koalaql.sql.TypeMappings
 import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -11,12 +12,11 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
 import java.time.format.DateTimeFormatterBuilder
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 @Suppress("RemoveExplicitTypeArguments")
 class JdbcTypeMappings {
-    private val mappings = ConcurrentHashMap<KClass<*>, JdbcMappedType<*>>()
+    private val mappings = hashMapOf<KClass<*>, JdbcMappedType<*>>()
 
     private val localDateTime = DateTimeFormatterBuilder()
         .parseCaseInsensitive()
@@ -116,11 +116,8 @@ class JdbcTypeMappings {
         mappings[type] = mapping
     }
 
-    fun <F : Any, T : Any> register(from: KClass<F>, mapped: TypeMapping<F, T>) {
-        val baseTypeMapping = mappingFor(from)
-
-        mappings.putIfAbsent(mapped.type, baseTypeMapping.derive(mapped))
-    }
+    private fun <F : Any, T : Any> derived(from: KClass<F>, mapped: TypeMapping<F, T>): JdbcMappedType<T> =
+        mappingFor(from).derive(mapped)
 
     inline fun <reified T : Any> register(
         crossinline writeJdbc: (stmt: PreparedStatement, index: Int, value: T) -> Unit,
@@ -132,21 +129,16 @@ class JdbcTypeMappings {
         override fun readJdbc(rs: ResultSet, index: Int): T? = readJdbc(rs, index)
     })
 
-    inline fun <reified F : Any, reified T : Any> register(
-        crossinline to: (F) -> T,
-        crossinline from: (T) -> F
-    ) = register<F, T>(F::class, object : TypeMapping<F, T> {
-        override val type: KClass<T> = T::class
-
-        override fun convert(value: F): T = to(value)
-        override fun unconvert(value: T): F = from(value)
-    })
-
-    fun <F : Any, T : Any> register(mappedDataType: DataType<F, T>) {
-        mappedDataType.mapping?.let { register(mappedDataType.dataType.type, it) }
-    }
+    @Suppress("unchecked_cast")
+    private fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
+        checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
 
     @Suppress("unchecked_cast")
-    fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
-        checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
+    fun <T : Any> deriveFor(type: KClass<T>, mappings: TypeMappings): JdbcMappedType<T> {
+        val mapping = mappings[type] ?: return mappingFor(type)
+
+        mapping as MappedDataType<Any, T>
+
+        return derived(mapping.dataType.type, mapping.mapping)
+    }
 }

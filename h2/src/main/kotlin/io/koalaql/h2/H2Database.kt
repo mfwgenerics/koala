@@ -1,6 +1,5 @@
 package io.koalaql.h2
 
-import io.koalaql.CreateIfNotExists
 import io.koalaql.DeclareStrategy
 import io.koalaql.JdbcSchemaDetection
 import io.koalaql.event.DataSourceEvent
@@ -11,7 +10,7 @@ import java.sql.DriverManager
 
 fun H2DataSource(
     provider: JdbcProvider,
-    declareStrategy: DeclareStrategy = CreateIfNotExists,
+    declareStrategy: DeclareStrategy = DeclareStrategy.CreateIfNotExists,
     dialect: H2Dialect = H2Dialect(),
     events: DataSourceEvent = DataSourceEvent.DISCARD
 ): JdbcDataSource = JdbcDataSource(
@@ -26,7 +25,7 @@ fun H2DataSource(
 fun H2Database(
     db: String,
     mode: H2CompatibilityMode? = null,
-    declareBy: DeclareStrategy? = CreateIfNotExists
+    declareBy: DeclareStrategy? = DeclareStrategy.CreateIfNotExists
 ): JdbcDataSource {
     val url = when (mode) {
         H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MODE=MYSQL"
@@ -37,7 +36,7 @@ fun H2Database(
 
     return H2DataSource(
         dialect = H2Dialect(mode),
-        declareStrategy = declareBy?:CreateIfNotExists,
+        declareStrategy = declareBy ?: DeclareStrategy.CreateIfNotExists,
         provider = object : JdbcProvider {
             override fun connect(): Connection =
                 DriverManager.getConnection(url)

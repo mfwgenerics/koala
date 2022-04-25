@@ -1,6 +1,7 @@
 package io.koalaql.sql
 
 import io.koalaql.Assignment
+import io.koalaql.ddl.TableColumn
 import io.koalaql.dialect.ExpressionCompiler
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
@@ -13,7 +14,7 @@ import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
 
 class ScopedSqlBuilder(
-    val output: SqlTextBuilder,
+    val output: CompiledSqlBuilder,
     val scope: Scope
 ) {
     fun addSql(sql: String) {
@@ -427,7 +428,7 @@ class ScopedSqlBuilder(
     fun compileInsertLine(
         insert: BuiltInsert,
         table: TableRelation = insert.unwrapTable(),
-        compileName: () -> Unit = { addIdentifier(table.tableName) }
+        compileName: () -> Unit = { addTableReference(table) }
     ) {
         val columns = insert.query.columns
 
@@ -562,7 +563,16 @@ class ScopedSqlBuilder(
         }
     }
 
+    fun addColumnMappings(columns: List<TableColumn<*>>) {
+        columns.forEach { output.addMapping(it.builtDef.columnType) }
+    }
+
     fun addIdentifier(id: String) = output.addIdentifier(Named(id))
+
+    fun addTableReference(table: TableRelation) {
+        addColumnMappings(table.columns)
+        addIdentifier(table.tableName)
+    }
 
     fun compileOnConflict(
         onConflict: OnConflictOrDuplicateAction?,
@@ -733,7 +743,7 @@ class ScopedSqlBuilder(
         dml: BuiltDml,
         compileQuery: ScopedSqlBuilder.(BuiltSubquery) -> Boolean,
         compileStmt: ScopedSqlBuilder.(BuiltStatement) -> Boolean
-    ): SqlText? {
+    ): CompiledSql? {
         val nonEmpty = when (dml) {
             is BuiltSubquery -> compileQuery(dml)
             is BuiltStatement -> scopedIn(dml) { compileStmt(dml) }

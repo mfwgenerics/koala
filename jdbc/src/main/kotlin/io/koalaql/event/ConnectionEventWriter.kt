@@ -1,9 +1,9 @@
 package io.koalaql.event
 
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 
 interface ConnectionEventWriter {
-    fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter
+    fun perform(type: ConnectionQueryType, sql: CompiledSql): QueryEventWriter
 
     fun committed(failed: Throwable?)
     fun rollbacked(failed: Throwable?)
@@ -14,7 +14,7 @@ interface ConnectionEventWriter {
         CombinedConnectionEventWriter(this, other)
 
     object Discard : ConnectionEventWriter {
-        override fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter =
+        override fun perform(type: ConnectionQueryType, sql: CompiledSql): QueryEventWriter =
             QueryEventWriter.Discard
 
         override fun committed(failed: Throwable?) { }

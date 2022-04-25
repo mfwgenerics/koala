@@ -1,5 +1,6 @@
 package io.koalaql.query
 
+import io.koalaql.ddl.TableColumn
 import io.koalaql.expr.Column
 import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.identifier.Unnamed
@@ -22,7 +23,7 @@ object EmptyRelation: Relation
 interface TableRelation: Relation {
     val tableName: String
 
-    val columns: List<Column<*>>
+    val columns: List<TableColumn<*>>
 }
 
 class Subquery(

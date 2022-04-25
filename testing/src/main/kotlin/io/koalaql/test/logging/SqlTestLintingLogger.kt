@@ -3,7 +3,7 @@ package io.koalaql.test.logging
 import io.koalaql.event.ConnectionEventWriter
 import io.koalaql.event.ConnectionQueryType
 import io.koalaql.event.QueryEventWriter
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 
 object SqlTestLintingLogger: ConnectionEventWriter {
     private fun lintSql(sql: String) {
@@ -17,7 +17,7 @@ object SqlTestLintingLogger: ConnectionEventWriter {
         }
     }
 
-    override fun perform(type: ConnectionQueryType, sql: SqlText): QueryEventWriter {
+    override fun perform(type: ConnectionQueryType, sql: CompiledSql): QueryEventWriter {
         lintSql(sql.parameterizedSql)
 
         return QueryEventWriter.Discard

@@ -18,7 +18,7 @@ import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
 class MysqlDialect(): SqlDialect {
-    override fun ddl(change: SchemaChange): List<SqlText> {
+    override fun ddl(change: SchemaChange): List<CompiledSql> {
         val results = mutableListOf<(ScopedSqlBuilder) -> Unit>()
 
         change.tables.created.forEach { (_, table) ->
@@ -31,7 +31,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.created.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.tableName)
+                    sql.addTableReference(table.newTable)
                     sql.addSql(" ADD COLUMN ")
 
                     sql.compileColumnDef(column)
@@ -41,7 +41,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.altered.forEach { (_, column) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.tableName)
+                    sql.addTableReference(table.newTable)
                     sql.addSql(" MODIFY COLUMN ")
 
                     sql.compileColumnDef(column.newColumn)
@@ -51,7 +51,7 @@ class MysqlDialect(): SqlDialect {
             table.columns.dropped.forEach { column ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.tableName)
+                    sql.addTableReference(table.newTable)
                     sql.addSql(" DROP COLUMN ")
                     sql.addIdentifier(column)
                 }
@@ -60,7 +60,7 @@ class MysqlDialect(): SqlDialect {
             table.indexes.created.forEach { (name, index) ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.tableName)
+                    sql.addTableReference(table.newTable)
                     sql.addSql(" ADD ")
 
                     sql.compileIndexDef(name, index)
@@ -70,7 +70,7 @@ class MysqlDialect(): SqlDialect {
             table.indexes.dropped.forEach { name ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
-                    sql.addIdentifier(table.newTable.tableName)
+                    sql.addTableReference(table.newTable)
                     sql.addSql(" DROP INDEX ")
                     sql.addIdentifier(name)
                 }
@@ -86,7 +86,7 @@ class MysqlDialect(): SqlDialect {
 
         return results.map {
             ScopedSqlBuilder(
-                SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS),
+                CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
                 Scope(NameRegistry { "column_$it" })
             ).also(it).toSql()
         }
@@ -167,7 +167,7 @@ class MysqlDialect(): SqlDialect {
     private fun ScopedSqlBuilder.compileCreateTable(table: Table) {
         addSql("CREATE TABLE IF NOT EXISTS ")
 
-        addSql(table.tableName)
+        addTableReference(table)
         parenthesize {
             val comma = prefix("\n", ",\n")
 
@@ -355,7 +355,7 @@ class MysqlDialect(): SqlDialect {
     private fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
         val explicitLabels = when (val baseRelation = relation.relation) {
             is TableRelation -> {
-                addIdentifier(baseRelation.tableName)
+                addTableReference(baseRelation)
                 null
             }
             is Subquery -> {
@@ -493,9 +493,9 @@ class MysqlDialect(): SqlDialect {
         }
     }
 
-    override fun compile(dml: BuiltDml): SqlText? {
+    override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            SqlTextBuilder(IdentifierQuoteStyle.BACKTICKS),
+            CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
             Scope(NameRegistry { "column_$it" })
         )
 

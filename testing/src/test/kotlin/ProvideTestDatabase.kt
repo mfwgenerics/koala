@@ -6,15 +6,11 @@ import java.security.SecureRandom
 import kotlin.math.absoluteValue
 
 interface ProvideTestDatabase {
-    fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource
+    fun connect(db: String, declareBy: DeclareStrategy = DeclareStrategy.CreateIfNotExists): JdbcDataSource
 
-    fun withDb(declareBy: DeclareStrategy = CreateIfNotExists, block: (JdbcDataSource) -> Unit) {
-        val testDb = connect("db${SecureRandom().nextLong().absoluteValue}", declareBy)
-
-        try {
+    fun withDb(declareBy: DeclareStrategy = DeclareStrategy.CreateIfNotExists, block: (JdbcDataSource) -> Unit) {
+        connect("db${SecureRandom().nextLong().absoluteValue}", declareBy).use { testDb ->
             block(testDb)
-        } finally {
-            testDb.close()
         }
     }
 

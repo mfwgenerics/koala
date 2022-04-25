@@ -1,8 +1,8 @@
 package io.koalaql.query
 
 import io.koalaql.query.built.BuiltDml
-import io.koalaql.sql.SqlText
+import io.koalaql.sql.CompiledSql
 
 interface SqlPerformer {
-    fun generateSql(dml: BuiltDml): SqlText?
+    fun generateSql(dml: BuiltDml): CompiledSql?
 }

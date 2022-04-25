@@ -22,11 +22,11 @@ import kotlin.reflect.KClass
 class H2Dialect(
     private val compatibilityMode: H2CompatibilityMode? = null
 ): SqlDialect {
-    override fun ddl(change: SchemaChange): List<SqlText> {
-        val results = mutableListOf<SqlText>()
+    override fun ddl(change: SchemaChange): List<CompiledSql> {
+        val results = mutableListOf<CompiledSql>()
 
         change.tables.created.forEach { (_, table) ->
-            val sql = SqlTextBuilder(IdentifierQuoteStyle.DOUBLE)
+            val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
 
             ScopedSqlBuilder(
                 sql,
@@ -94,7 +94,7 @@ class H2Dialect(
     fun ScopedSqlBuilder.compileCreateTable(table: Table) {
         addSql("CREATE TABLE IF NOT EXISTS ")
 
-        addIdentifier(table.tableName)
+        addTableReference(table)
         parenthesize {
             val comma = prefix("\n", ",\n")
 
@@ -219,7 +219,7 @@ class H2Dialect(
     fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
         val explicitLabels = when (val baseRelation = relation.relation) {
             is TableRelation -> {
-                addIdentifier(baseRelation.tableName)
+                addTableReference(baseRelation)
                 null
             }
             is Subquery -> {
@@ -325,7 +325,7 @@ class H2Dialect(
         }
     )
 
-    fun ScopedSqlBuilder.compile(dml: BuiltDml): SqlText? = compile(dml,
+    fun ScopedSqlBuilder.compile(dml: BuiltDml): CompiledSql? = compile(dml,
         compileQuery = { compileQuery(it) },
         compileStmt = { compileStmt(it) }
     )
@@ -370,9 +370,9 @@ class H2Dialect(
             sql.compileSubqueryExpr(subquery)
     }
 
-    override fun compile(dml: BuiltDml): SqlText? {
+    override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            SqlTextBuilder(IdentifierQuoteStyle.DOUBLE),
+            CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
             Scope(NameRegistry { "C${it + 1}" })
         )
 

@@ -1,4 +1,3 @@
-import io.koalaql.CreateIfNotExists
 import io.koalaql.DeclareStrategy
 import io.koalaql.JdbcSchemaDetection
 import io.koalaql.data.JdbcTypeMappings
@@ -29,7 +28,7 @@ fun PgTestDatabase(db: String, declareBy: DeclareStrategy): JdbcDataSource {
             }
         },
         JdbcTypeMappings(),
-        CreateIfNotExists,
+        DeclareStrategy.CreateIfNotExists,
         DataSourceEvent.DISCARD
     )
 }
