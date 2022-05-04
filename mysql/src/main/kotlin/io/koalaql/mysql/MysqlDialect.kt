@@ -107,7 +107,10 @@ class MysqlDialect(): SqlDialect {
     }
 
     private fun UnmappedDataType<*>.rawSql(): String = when (this) {
-        TIMESTAMP -> "DATETIME"
+        is TIMESTAMP -> {
+            val suffix = precision?.let { "($precision)" } ?: ""
+            "DATETIME$suffix"
+        }
         is DATETIME -> {
             val suffix = precision?.let { "($precision)" } ?: ""
             "DATETIME$suffix"

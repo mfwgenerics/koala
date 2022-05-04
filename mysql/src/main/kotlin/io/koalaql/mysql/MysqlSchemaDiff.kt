@@ -19,6 +19,13 @@ class MysqlSchemaDiff(
         val decimalDigits: Int
     )
 
+    /* discontinuity due to '.' being included at precision >= 1 */
+    private fun timeLength(precision: Int): Int =
+        if (precision == 0) 0 else precision + 1
+
+    private fun diffDatetime(precision: Int?, info: ColumnTypeInfo): Boolean =
+        info.tag != Types.TIMESTAMP || (precision != null && info.columnSize != 19 + timeLength(precision))
+
     private fun diffColumnType(dataType: UnmappedDataType<*>, info: ColumnTypeInfo): Boolean {
         return when (dataType) {
             BOOLEAN -> info.tag != Types.BIT
@@ -27,17 +34,13 @@ class MysqlSchemaDiff(
             TEXT -> info.tag != Types.LONGVARCHAR
             is VARCHAR -> info.tag != Types.VARCHAR
                 || info.columnSize != dataType.maxLength
-            is DATETIME -> info.tag != Types.TIMESTAMP
-                || (dataType.precision != null
-                && info.decimalDigits != dataType.precision)
+            is DATETIME -> diffDatetime(dataType.precision, info)
+            is TIMESTAMP -> diffDatetime(dataType.precision, info)
             is DECIMAL -> { info.tag != Types.DECIMAL
                 || info.columnSize != dataType.precision
                 || info.decimalDigits != dataType.scale
             }
             DATE -> info.tag != Types.DATE
-            is TIMESTAMP -> info.tag != Types.TIMESTAMP
-                || (dataType.precision != null
-                && info.decimalDigits != dataType.precision)
             TINYINT -> info.tag != Types.TINYINT || info.name != "TINYINT"
             SMALLINT -> info.tag != Types.SMALLINT || info.name != "SMALLINT"
             INTEGER -> info.tag != Types.INTEGER || info.name != "INT"
@@ -46,10 +49,9 @@ class MysqlSchemaDiff(
             SMALLINT.UNSIGNED -> info.tag != Types.SMALLINT || info.name != "SMALLINT UNSIGNED"
             INTEGER.UNSIGNED -> info.tag != Types.INTEGER || info.name != "INT UNSIGNED"
             BIGINT.UNSIGNED -> info.tag != Types.BIGINT || info.name != "BIGINT UNSIGNED"
-            /* precision in TIME affects column size */
-            is TIME -> info.tag != Types.TIME
+            is TIME -> (info.tag != Types.TIME
                 || (dataType.precision != null
-                && info.columnSize != 9 + dataType.precision!!)
+                && info.columnSize != 8 + timeLength(dataType.precision!!)))
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
             is RAW -> false
