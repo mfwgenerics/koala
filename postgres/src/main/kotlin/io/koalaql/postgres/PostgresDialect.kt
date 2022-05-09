@@ -22,9 +22,40 @@ private fun UnmappedDataType<*>.toRawSql(): String = when (this) {
 }
 
 class PostgresDialect: SqlDialect {
+    private val compiler = object : Compiler {
+        override fun excluded(builder: ScopedSqlBuilder, reference: Reference<*>) {
+            builder.addSql("EXCLUDED.")
+
+            when (reference) {
+                is Column<*> -> builder.addIdentifier(reference.symbol)
+                else -> builder.compileReference(reference)
+            }
+        }
+
+        override fun <T : Any> reference(builder: ScopedSqlBuilder, emitParens: Boolean, value: Reference<T>) {
+            builder.compileReference(value)
+        }
+
+        override fun subquery(builder: ScopedSqlBuilder, emitParens: Boolean, subquery: BuiltSubquery) {
+            builder.compileSubqueryExpr(subquery)
+        }
+
+        override fun aggregatable(builder: ScopedSqlBuilder, emitParens: Boolean, aggregatable: BuiltAggregatable) {
+            builder.compileAggregatable(aggregatable)
+        }
+
+        override fun <T : Any> dataTypeForCast(builder: ScopedSqlBuilder, to: UnmappedDataType<T>) {
+            builder.compileCastDataType(to)
+        }
+
+        override fun window(builder: ScopedSqlBuilder, window: BuiltWindow) {
+            builder.compileWindow(window)
+        }
+    }
+
     private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {
         when (expr) {
-            is Literal -> addLiteral(expr)
+            is Literal -> compiler.addLiteral(this, expr)
             is Column<*> -> addIdentifier(expr.symbol)
             else -> error("not implemented")
         }
@@ -131,7 +162,8 @@ class PostgresDialect: SqlDialect {
 
             ScopedSqlBuilder(
                 sql,
-                Scope(NameRegistry { "column${it + 1}" })
+                Scope(NameRegistry { "column${it + 1}" }),
+                compiler
             ).compileCreateTable(table)
 
             results.add(sql.toSql())
@@ -226,7 +258,7 @@ class PostgresDialect: SqlDialect {
     }
 
     fun ScopedSqlBuilder.compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-        compileExpr(expr, emitParens, Expressions(this))
+        compiler.compileExpr(this, expr, emitParens)
     }
 
     fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
@@ -321,10 +353,10 @@ class PostgresDialect: SqlDialect {
 
         val nonEmpty = compileQuery(insert.query)
 
-        val updateCtx = Expressions(withColumns(relvar.columns, insertAlias))
+        val builder = withColumns(relvar.columns, insertAlias)
 
         compileOnConflict(insert.onConflict) { assignment ->
-            updateCtx.sql.compileAssignment(assignment)
+            builder.compileAssignment(assignment)
         }
 
         return nonEmpty
@@ -365,43 +397,11 @@ class PostgresDialect: SqlDialect {
         compileExpr = { compileExpr(it, false) }
     )
 
-    private inner class Expressions(
-        val sql: ScopedSqlBuilder
-    ) : ExpressionCompiler {
-        override fun excluded(reference: Reference<*>) {
-            sql.addSql("EXCLUDED.")
-
-            when (reference) {
-                is Column<*> -> sql.addIdentifier(reference.symbol)
-                else -> sql.compileReference(reference)
-            }
-        }
-
-        override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
-            sql.compileReference(value)
-        }
-
-        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) {
-            sql.compileSubqueryExpr(subquery)
-        }
-
-        override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) {
-            sql.compileAggregatable(aggregatable)
-        }
-
-        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
-            sql.compileCastDataType(to)
-        }
-
-        override fun window(window: BuiltWindow) {
-            sql.compileWindow(window)
-        }
-    }
-
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
             CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
-            Scope(NameRegistry { "column${it + 1}" })
+            Scope(NameRegistry { "column${it + 1}" }),
+            compiler
         )
 
         return sql.compile(dml,

@@ -1,10 +1,7 @@
 package io.koalaql.h2
 
 import io.koalaql.Assignment
-import io.koalaql.ddl.IndexType
-import io.koalaql.ddl.Table
-import io.koalaql.ddl.TableColumn
-import io.koalaql.ddl.UnmappedDataType
+import io.koalaql.ddl.*
 import io.koalaql.ddl.built.BuiltIndexDef
 import io.koalaql.ddl.built.ColumnDefaultExpr
 import io.koalaql.ddl.built.ColumnDefaultValue
@@ -22,6 +19,47 @@ import kotlin.reflect.KClass
 class H2Dialect(
     private val compatibilityMode: H2CompatibilityMode? = null
 ): SqlDialect {
+    private val compiler = object : Compiler {
+        override fun addLiteral(builder: ScopedSqlBuilder, value: Literal<*>?) {
+            builder.output.addLiteral(value)
+
+            if (value?.type == JsonData::class && value.value != null) {
+                builder.output.addSql(" FORMAT JSON")
+            }
+        }
+
+        override fun excluded(builder: ScopedSqlBuilder, reference: Reference<*>) {
+            when (compatibilityMode) {
+                H2CompatibilityMode.MYSQL -> {
+                    builder.addSql("VALUES")
+                    builder.parenthesize {
+                        when (reference) {
+                            is Column<*> -> builder.addIdentifier(reference.symbol)
+                            else -> builder.compileReference(reference)
+                        }
+                    }
+                }
+                null -> builder.addError("Excluded[] is not supported by this dialect")
+            }
+        }
+
+        override fun <T : Any> reference(builder: ScopedSqlBuilder, emitParens: Boolean, value: Reference<T>) =
+            builder.compileReference(value)
+
+        override fun aggregatable(builder: ScopedSqlBuilder, emitParens: Boolean, aggregatable: BuiltAggregatable) =
+            builder.compileAggregatable(aggregatable)
+
+        override fun window(builder: ScopedSqlBuilder, window: BuiltWindow) {
+            builder.compileWindow(window)
+        }
+
+        override fun <T : Any> dataTypeForCast(builder: ScopedSqlBuilder, to: UnmappedDataType<T>) =
+            builder.compileCastDataType(to)
+
+        override fun subquery(builder: ScopedSqlBuilder, emitParens: Boolean, subquery: BuiltSubquery) =
+            builder.compileSubqueryExpr(subquery)
+    }
+
     override fun ddl(change: SchemaChange): List<CompiledSql> {
         val results = mutableListOf<CompiledSql>()
 
@@ -30,7 +68,8 @@ class H2Dialect(
 
             ScopedSqlBuilder(
                 sql,
-                Scope(NameRegistry { "C${it + 1}" })
+                Scope(NameRegistry { "C${it + 1}" }),
+                compiler
             ).compileCreateTable(table)
 
             results.add(sql.toSql())
@@ -43,15 +82,15 @@ class H2Dialect(
         addSql(type.defaultRawSql())
     }
 
-    fun ScopedSqlBuilder.compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-        compileExpr(expr, emitParens, Expressions(this))
+    private fun ScopedSqlBuilder.compileExpr(expr: Expr<*>, emitParens: Boolean) {
+        compiler.compileExpr(this, expr, emitParens)
     }
 
     private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {
         when (expr) {
-            is Literal -> addLiteral(expr)
+            is Literal -> compiler.addLiteral(this, expr)
             is Column<*> -> addIdentifier(expr.symbol)
-            else -> compileExpr(expr)
+            else -> compileExpr(expr, true)
         }
     }
 
@@ -286,7 +325,7 @@ class H2Dialect(
     private fun ScopedSqlBuilder.compileAssignment(assignment: Assignment<*>) {
         compileExpr(assignment.reference, false)
         addSql(" = ")
-        compileExpr(assignment.expr)
+        compileExpr(assignment.expr, true)
     }
 
     fun ScopedSqlBuilder.compileInsert(insert: BuiltInsert): Boolean = compileInsert(
@@ -335,45 +374,11 @@ class H2Dialect(
         compileOrderBy = { compileOrderBy(it) }
     )
 
-    private inner class Expressions(
-        val sql: ScopedSqlBuilder
-    ) : ExpressionCompiler {
-        override fun excluded(reference: Reference<*>) {
-            when (compatibilityMode) {
-                H2CompatibilityMode.MYSQL -> {
-                    sql.addSql("VALUES")
-                    sql.parenthesize {
-                        when (reference) {
-                            is Column<*> -> sql.addIdentifier(reference.symbol)
-                            else -> sql.compileReference(reference)
-                        }
-                    }
-                }
-                null -> sql.addError("Excluded[] is not supported by this dialect")
-            }
-        }
-
-        override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) =
-            sql.compileReference(value)
-
-        override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) =
-            sql.compileAggregatable(aggregatable)
-
-        override fun window(window: BuiltWindow) {
-            sql.compileWindow(window)
-        }
-
-        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) =
-            sql.compileCastDataType(to)
-
-        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) =
-            sql.compileSubqueryExpr(subquery)
-    }
-
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
             CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
-            Scope(NameRegistry { "C${it + 1}" })
+            Scope(NameRegistry { "C${it + 1}" }),
+            compiler
         )
 
         return sql.compile(dml)

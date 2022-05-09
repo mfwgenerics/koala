@@ -80,6 +80,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
         this[VARCHAR(100)] = smallStrings
         this[VARBINARY(200)] = smallStrings.map { it.toByteArray() }
         this[RAW<BigDecimal>("DECIMAL(5, 4)")] = this[DECIMAL(5, 4)]
+        this[JSON] = listOf(JsonData("""{"items":[{"test":{}}]}"""))
 
         compatibilityAdjustment(this)
     }

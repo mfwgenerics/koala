@@ -55,6 +55,7 @@ class MysqlSchemaDiff(
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
             is RAW -> false
+            is JSON -> error("$info")
         }
     }
 

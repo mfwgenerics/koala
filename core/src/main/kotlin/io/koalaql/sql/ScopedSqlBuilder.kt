@@ -2,10 +2,8 @@ package io.koalaql.sql
 
 import io.koalaql.Assignment
 import io.koalaql.ddl.TableColumn
-import io.koalaql.dialect.ExpressionCompiler
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
-import io.koalaql.expr.built.BuiltAggregatedExpr
 import io.koalaql.identifier.Named
 import io.koalaql.query.*
 import io.koalaql.query.built.*
@@ -15,7 +13,8 @@ import io.koalaql.window.built.BuiltWindow
 
 class ScopedSqlBuilder(
     val output: CompiledSqlBuilder,
-    val scope: Scope
+    val scope: Scope,
+    val compiler: Compiler
 ) {
     fun addSql(sql: String) {
         output.addSql(sql)
@@ -46,7 +45,6 @@ class ScopedSqlBuilder(
     }
 
     fun addError(error: String) = output.addError(error)
-    fun addLiteral(value: Literal<*>?) = output.addLiteral(value)
 
     fun selectFields(
         fields: List<SelectedExpr<*>>,
@@ -213,12 +211,12 @@ class ScopedSqlBuilder(
 
         query.limit?.let {
             addSql("\nLIMIT ")
-            addLiteral(value(it))
+            compiler.addLiteral(this, value(it))
         }
 
         if (query.offset != 0) {
             addSql("\nOFFSET ")
-            addLiteral(value(query.offset))
+            compiler.addLiteral(this, value(query.offset))
         }
 
         return nonEmptyHead || query.unioned.isNotEmpty()
@@ -265,145 +263,6 @@ class ScopedSqlBuilder(
         }
 
         return wasNonEmpty
-    }
-
-    fun compileExpr(
-        expr: QuasiExpr,
-        emitParens: Boolean,
-        impl: ExpressionCompiler
-    ) {
-        val forceExhaustiveWhen = when (expr) {
-            is AggregatedExpr<*> -> {
-                val aggregated = BuiltAggregatedExpr.from(expr)
-
-                addSql(aggregated.expr.type.sql)
-                parenthesize {
-                    if (aggregated.expr.args.isNotEmpty()) {
-                        prefix("", ", ").forEach(aggregated.expr.args) {
-                            impl.aggregatable(false, it)
-                        }
-                    } else if (aggregated.expr.type == OperationType.COUNT) {
-                        addSql("*")
-                    }
-                }
-
-                aggregated.filter?.let { filter ->
-                    addSql(" FILTER(WHERE ")
-
-                    compileExpr(filter, false, impl)
-
-                    addSql(")")
-                }
-
-                aggregated.over?.let { window ->
-                    addSql(" OVER (")
-                    impl.window(window)
-                    addSql(")")
-                }
-            }
-            is CastExpr<*> -> {
-                addSql("CAST")
-                parenthesize {
-                    compileExpr(expr.of, false, impl)
-                    addSql(" AS ")
-                    impl.dataTypeForCast(expr.type)
-                }
-            }
-            is ComparedQuery<*> -> {
-                addSql(expr.type.sql)
-                impl.subquery(false, expr.subquery)
-            }
-            is ExprListExpr<*> -> {
-                parenthesize {
-                    prefix("", ", ").forEach(expr.exprs) {
-                        compileExpr(it, false, impl)
-                    }
-                }
-            }
-            is Literal<*> -> addLiteral(expr)
-            is OperationExpr<*> -> {
-                when (expr.type.fixity) {
-                    OperationFixity.NAME -> addSql(expr.type.sql)
-                    OperationFixity.PREFIX -> parenthesize(emitParens) {
-                        addSql(expr.type.sql)
-                        addSql(" ")
-
-                        compileExpr(expr.args.single(), false, impl)
-                    }
-                    OperationFixity.POSTFIX -> parenthesize(emitParens) {
-                        compileExpr(expr.args.single(), false, impl)
-                        addSql(" ")
-                        addSql(expr.type.sql)
-                    }
-                    OperationFixity.INFIX -> parenthesize(emitParens) {
-                        prefix("", " ${expr.type.sql} ").forEach(expr.args) {
-                            compileExpr(it, true, impl)
-                        }
-                    }
-                    OperationFixity.APPLY -> {
-                        addSql(expr.type.sql)
-                        parenthesize {
-                            prefix("", ", ").forEach(expr.args) {
-                                compileExpr(it, false, impl)
-                            }
-                        }
-                    }
-                }
-            }
-            is AsReference<*> -> {
-                val reference = expr.asReference()
-                val excluded = reference.excludedReference()
-
-                if (excluded != null) {
-                    impl.excluded(excluded)
-                } else {
-                    impl.reference(false, reference)
-                }
-            }
-            is SubqueryQuasiExpr -> {
-                impl.subquery(false, expr.query)
-            }
-            is ExprQueryable<*> -> {
-                impl.subquery(false, with (expr) { BuilderContext.buildQuery() })
-            }
-            is BuiltCaseExpr<*> -> parenthesize(emitParens) {
-                addSql("CASE")
-
-                expr.onExpr?.let {
-                    addSql(" ")
-                    compileExpr(it, true, impl)
-                }
-
-                expr.whens.forEach { whenThen ->
-                    addSql("\nWHEN ")
-                    compileExpr(whenThen.whenExpr, false, impl)
-                    addSql(" THEN ")
-                    compileExpr(whenThen.thenExpr, true, impl)
-                }
-
-                expr.elseExpr?.let {
-                    addSql("\nELSE ")
-                    compileExpr(it, false, impl)
-                }
-
-                addSql("\nEND")
-            }
-            is RawExpr<*> -> {
-                val build = expr.build
-
-                object : RawSqlBuilder {
-                    override fun sql(value: String) { addSql(value) }
-                    override fun expr(expr: QuasiExpr) { compileExpr(expr, true, impl) }
-                }.build()
-            }
-            is BetweenExpr<*> -> {
-                compileExpr(expr.value, false, impl)
-                addSql(" BETWEEN ")
-                compileExpr(expr.low, true, impl)
-                addSql(" AND ")
-                compileExpr(expr.high, true, impl)
-            }
-        }
     }
 
     fun compileOrderBy(
@@ -497,12 +356,12 @@ class ScopedSqlBuilder(
 
         body.limit?.let {
             addSql("\nLIMIT ")
-            addLiteral(value(it))
+            compiler.addLiteral(this, value(it))
         }
 
         if (body.offset != 0) {
             addSql("\nOFFSET ")
-            addLiteral(value(body.offset))
+            compiler.addLiteral(this, value(body.offset))
         }
 
         body.locking?.let { locking ->
@@ -667,7 +526,7 @@ class ScopedSqlBuilder(
     }
 
     fun transformScope(operation: (Scope) -> Scope) =
-        ScopedSqlBuilder(output, operation(scope))
+        ScopedSqlBuilder(output, operation(scope), compiler)
 
     fun withScope(query: PopulatesScope) = transformScope { scope ->
         val innerScope = scope.innerScope()

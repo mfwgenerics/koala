@@ -32,6 +32,7 @@ sealed class UnmappedDataType<T : Any>(
             val suffix = precision?.let { "($precision)" }?:""
             "TIMESTAMP$suffix WITH TIME ZONE"
         }
+        JSON -> "JSON"
         TINYINT -> "TINYINT"
         SMALLINT -> "SMALLINT"
         INTEGER -> "INTEGER"
@@ -164,3 +165,4 @@ class RAW<T : Any>(
     override fun hashCode(): Int = sql.hashCode()
 }
 
+object JSON: PrimitiveDataType<JsonData>(JsonData::class)
