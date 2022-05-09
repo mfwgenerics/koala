@@ -4,7 +4,6 @@ import io.koalaql.Assignment
 import io.koalaql.ddl.TableColumn
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
-import io.koalaql.expr.built.BuiltAggregatedExpr
 import io.koalaql.identifier.Named
 import io.koalaql.query.*
 import io.koalaql.query.built.*
