@@ -2,6 +2,7 @@ package io.koalaql.mysql
 
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
+import io.koalaql.ddl.JsonData
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.Instant
@@ -19,6 +20,15 @@ fun MysqlTypeMappings(): JdbcTypeMappings {
         override fun readJdbc(rs: ResultSet, index: Int): Instant? {
             return (rs.getObject(index) as? LocalDateTime)?.toInstant(ZoneOffset.UTC)
         }
+    })
+
+    result.register(JsonData::class, object : JdbcMappedType<JsonData> {
+        override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
+            stmt.setString(index, value.asString)
+        }
+
+        override fun readJdbc(rs: ResultSet, index: Int): JsonData? =
+            rs.getString(index)?.let { JsonData(it) }
     })
 
     return result

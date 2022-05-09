@@ -1,9 +1,9 @@
 import io.koalaql.DeclareStrategy
-import io.koalaql.ddl.BIGINT
-import io.koalaql.ddl.INTEGER
-import io.koalaql.ddl.SMALLINT
-import io.koalaql.ddl.TINYINT
+import io.koalaql.ddl.*
+import io.koalaql.dsl.*
+import io.koalaql.expr.Label
 import io.koalaql.h2.H2Database
+import io.koalaql.identifier.Unnamed
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.data.DataTypeValuesMap
 import org.junit.Test
@@ -21,5 +21,34 @@ class H2DataTypesTests: DataTypesTest() {
         values.remove(SMALLINT.UNSIGNED)
         values.remove(INTEGER.UNSIGNED)
         values.remove(BIGINT.UNSIGNED)
+    }
+
+    object JsonTable: Table("JsonTable") {
+        val json = column("json", JSON)
+    }
+
+    @Test
+    fun `json works`() = withCxn(JsonTable) { cxn ->
+        val label = label<JsonData>()
+        val casted = cast(label, JSON)
+
+        val rows = values(listOf(JsonData(""""""""))) { this[label] = it }
+            .subquery()
+            .select(casted as_ label)
+            .also { println(it.generateSql(cxn)) }
+            .perform(cxn)
+            .map { it.getValue(label) }
+            .toList()
+
+        JsonTable
+            .insert(rowOf(JsonTable.json setTo JsonData("{}")))
+            .perform(cxn)
+
+        val result = JsonTable
+            .select(JsonTable.json, cast(JsonTable.json, JSON) as_ label)
+            .perform(cxn)
+            .first()
+
+        println("${result.first()}, ${result.second()}")
     }
 }
