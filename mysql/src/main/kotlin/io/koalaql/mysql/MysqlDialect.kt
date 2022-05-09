@@ -17,7 +17,52 @@ import io.koalaql.window.LabeledWindow
 import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KClass
 
-class MysqlDialect(): SqlDialect {
+class MysqlDialect: SqlDialect {
+    private val compiler = object : Compiler {
+        override fun <T : Any> reference(builder: ScopedSqlBuilder, emitParens: Boolean, value: Reference<T>) {
+            builder.compileReference(value)
+        }
+
+        override fun subquery(builder: ScopedSqlBuilder, emitParens: Boolean, subquery: BuiltSubquery) {
+            builder.compileSubqueryExpr(subquery)
+        }
+
+        override fun aggregatable(builder: ScopedSqlBuilder, emitParens: Boolean, aggregatable: BuiltAggregatable) {
+            builder.compileAggregatable(aggregatable)
+        }
+
+        override fun <T : Any> dataTypeForCast(builder: ScopedSqlBuilder, to: UnmappedDataType<T>) {
+            builder.addSql(to.rawCastSql())
+        }
+
+        override fun window(builder: ScopedSqlBuilder, window: BuiltWindow) {
+            builder.compileWindow(window)
+        }
+
+        override fun excluded(builder: ScopedSqlBuilder, reference: Reference<*>) {
+            builder.addSql("VALUES")
+            builder.parenthesize {
+                when (reference) {
+                    is Column<*> -> builder.addIdentifier(reference.symbol)
+                    else -> builder.compileReference(reference)
+                }
+            }
+        }
+
+        override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
+            when {
+                expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+                    check(expr.args.isEmpty())
+
+                    builder.parenthesize(emitParens) {
+                        builder.addSql("UTC_TIMESTAMP")
+                    }
+                }
+                else -> super.compileExpr(builder, expr, emitParens)
+            }
+        }
+    }
+
     override fun ddl(change: SchemaChange): List<CompiledSql> {
         val results = mutableListOf<(ScopedSqlBuilder) -> Unit>()
 
@@ -87,7 +132,8 @@ class MysqlDialect(): SqlDialect {
         return results.map {
             ScopedSqlBuilder(
                 CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
-                Scope(NameRegistry { "column_$it" })
+                Scope(NameRegistry { "column_$it" }),
+                compiler
             ).also(it).toSql()
         }
     }
@@ -95,12 +141,12 @@ class MysqlDialect(): SqlDialect {
     private fun ScopedSqlBuilder.compileAssignment(assignment: Assignment<*>) {
         compileExpr(assignment.reference, false)
         addSql(" = ")
-        compileExpr(assignment.expr)
+        compileExpr(assignment.expr, true)
     }
 
     private fun ScopedSqlBuilder.compileDdlExpr(expr: Expr<*>) {
         when (expr) {
-            is Literal -> addLiteral(expr)
+            is Literal -> compiler.addLiteral(this, expr)
             is Column<*> -> addIdentifier(expr.symbol)
             else -> compileExpr(expr, true)
         }
@@ -243,14 +289,14 @@ class MysqlDialect(): SqlDialect {
 
     private fun ScopedSqlBuilder.compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
         when {
-            expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+            /*expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
                 check(expr.args.isEmpty())
 
                 parenthesize(emitParens) {
                     addSql("UTC_TIMESTAMP")
                 }
-            }
-            else -> compileExpr(expr, emitParens, Expressions(this))
+            }*/
+            else -> compiler.compileExpr(this, expr, emitParens)
         }
     }
 
@@ -462,44 +508,11 @@ class MysqlDialect(): SqlDialect {
         }
     )
 
-    private inner class Expressions(
-        val sql: ScopedSqlBuilder
-    ) : ExpressionCompiler {
-        override fun <T : Any> reference(emitParens: Boolean, value: Reference<T>) {
-            sql.compileReference(value)
-        }
-
-        override fun subquery(emitParens: Boolean, subquery: BuiltSubquery) {
-            sql.compileSubqueryExpr(subquery)
-        }
-
-        override fun aggregatable(emitParens: Boolean, aggregatable: BuiltAggregatable) {
-            sql.compileAggregatable(aggregatable)
-        }
-
-        override fun <T : Any> dataTypeForCast(to: UnmappedDataType<T>) {
-            sql.addSql(to.rawCastSql())
-        }
-
-        override fun window(window: BuiltWindow) {
-            sql.compileWindow(window)
-        }
-
-        override fun excluded(reference: Reference<*>) {
-            sql.addSql("VALUES")
-            sql.parenthesize {
-                when (reference) {
-                    is Column<*> -> sql.addIdentifier(reference.symbol)
-                    else -> sql.compileReference(reference)
-                }
-            }
-        }
-    }
-
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
             CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
-            Scope(NameRegistry { "column_$it" })
+            Scope(NameRegistry { "column_$it" }),
+            compiler
         )
 
         return sql.compile(dml,
