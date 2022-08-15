@@ -1188,4 +1188,25 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals(row[CustomDataLowercase.column].normalized, "abc")
         assertEquals(row[CustomDataUppercase.column].normalized, "abc")
     }
+
+    @Test
+    fun `labeled reference with custom type`() = withCxn(
+        CustomDataLowercase
+    ) { cxn ->
+        val data1 = CustomData("abc")
+
+        val label = label<CustomData>()
+
+        CustomDataLowercase
+            .insert(rowOf(CustomDataLowercase.column setTo data1))
+            .perform(cxn)
+
+        val (x, y) = CustomDataLowercase
+            .select(CustomDataLowercase.column, value(data1) as_ label)
+            .perform(cxn)
+            .single()
+
+        assertEquals(data1.normalized, x.normalized)
+        assertEquals(data1.normalized, y.normalized)
+    }
 }
