@@ -1138,4 +1138,75 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals(distinct, 3)
         assertEquals(distinctColumn, 2)
     }
+
+    class CustomData(
+        asString: String
+    ) {
+        val normalized = asString.lowercase()
+    }
+
+    object CustomDataLowercase: Table("CustomData1") {
+        val column = column("column", VARCHAR(150).map(
+            to = {
+                check (it == it.lowercase())
+                CustomData(it)
+            },
+            from = { it.normalized }
+        ))
+    }
+
+    object CustomDataUppercase: Table("CustomData2") {
+        val column = column("column", VARCHAR(150).map(
+            to = {
+                check (it == it.uppercase())
+                CustomData(it)
+            },
+            from = { it.normalized.uppercase() }
+        ))
+    }
+
+    @Test
+    fun `conflicting data mapping resolution`() = withCxn(
+        CustomDataLowercase,
+        CustomDataUppercase
+    ) { cxn ->
+        val data1 = CustomData("abc")
+
+        CustomDataLowercase
+            .insert(rowOf(CustomDataLowercase.column setTo data1))
+            .perform(cxn)
+
+        CustomDataUppercase
+            .insert(rowOf(CustomDataUppercase.column setTo data1))
+            .perform(cxn)
+
+        val row = CustomDataLowercase
+            .innerJoin(CustomDataUppercase, value(true))
+            .perform(cxn)
+            .single()
+
+        assertEquals(row[CustomDataLowercase.column].normalized, "abc")
+        assertEquals(row[CustomDataUppercase.column].normalized, "abc")
+    }
+
+    @Test
+    fun `labeled reference with custom type`() = withCxn(
+        CustomDataLowercase
+    ) { cxn ->
+        val data1 = CustomData("abc")
+
+        val label = label<CustomData>()
+
+        CustomDataLowercase
+            .insert(rowOf(CustomDataLowercase.column setTo data1))
+            .perform(cxn)
+
+        val (x, y) = CustomDataLowercase
+            .select(CustomDataLowercase.column, value(data1) as_ label)
+            .perform(cxn)
+            .single()
+
+        assertEquals(data1.normalized, x.normalized)
+        assertEquals(data1.normalized, y.normalized)
+    }
 }

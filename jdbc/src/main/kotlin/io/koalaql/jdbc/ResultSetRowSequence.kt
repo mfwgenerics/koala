@@ -23,7 +23,9 @@ class ResultSetRowSequence(
     private var alreadyIterated = false
     private var readCount = 0
 
-    private val columnMappings = columns.map { sharedMappings.deriveFor(it.type, localMappings) }
+    private val columnMappings = columns.map {
+        sharedMappings.deriveForReference(it, localMappings)
+    }
 
     override val row: RawResultRow get() = this
 

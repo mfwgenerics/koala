@@ -1,7 +1,9 @@
 package io.koalaql.data
 
 import io.koalaql.ddl.MappedDataType
+import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.TypeMapping
+import io.koalaql.expr.Reference
 import io.koalaql.sql.TypeMappings
 import java.math.BigDecimal
 import java.sql.PreparedStatement
@@ -136,6 +138,25 @@ class JdbcTypeMappings {
     @Suppress("unchecked_cast")
     fun <T : Any> deriveFor(type: KClass<T>, mappings: TypeMappings): JdbcMappedType<T> {
         val mapping = mappings[type] ?: return mappingFor(type)
+
+        mapping as MappedDataType<Any, T>
+
+        return derived(mapping.dataType.type, mapping.mapping)
+    }
+
+    /*
+    specialized deriveFor uses TableColumn's data mapping directly.
+    allows simple queries to work even when there are multiple
+    MappedDataTypes in scope for the same type
+    */
+    @Suppress("unchecked_cast")
+    fun <T : Any> deriveForReference(
+        reference: Reference<T>,
+        mappings: TypeMappings
+    ): JdbcMappedType<T> {
+        val mapping = (reference as? TableColumn<*>)?.builtDef?.columnType
+
+        if (mapping !is MappedDataType<*, *>) return deriveFor(reference.type, mappings)
 
         mapping as MappedDataType<Any, T>
 
