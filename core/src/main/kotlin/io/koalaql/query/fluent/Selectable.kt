@@ -86,8 +86,11 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
     fun selectDistinct(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> =
         select(Distinctness.DISTINCT, references)
 
+    fun selectAll(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> =
+        Select(Distinctness.ALL, this, references, true)
+
     fun selectAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
-        Select(Distinctness.ALL, this, references.asList(), true)
+        selectAll(references.asList())
 
     override fun perform(ds: BlockingPerformer): RowSequence<ResultRow> =
         selectAll().perform(ds)
@@ -104,6 +107,12 @@ interface Selectable: BuildsIntoQueryBody, QueryableUnionOperand<ResultRow> {
 
     fun selectDistinct(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
         selectDistinct(references.asList())
+
+    fun selectDistinctAll(references: List<SelectArgument>): QueryableUnionOperand<ResultRow> =
+        Select(Distinctness.DISTINCT, this, references, true)
+
+    fun selectDistinctAll(vararg references: SelectArgument): QueryableUnionOperand<ResultRow> =
+        selectDistinctAll(references.asList())
 
     fun <A : Any> select(labeled: SelectOperand<A>): ExprQueryableUnionOperand<A> =
         CastExprQueryableUnionOperand(select(listOf(labeled))) {

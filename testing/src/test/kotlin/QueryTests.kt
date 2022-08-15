@@ -1076,4 +1076,66 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertListEquals(results, listOf(3, 6))
     }
+
+    private object DuplicatesTable: Table("Duplicates") {
+        val from = column("from", INTEGER)
+        val to = column("to", VARCHAR(150))
+    }
+
+    @Test
+    fun `select distinct`() = withCxn(SingleIntTable, DuplicatesTable) { cxn ->
+        SingleIntTable
+            .insert(values(
+                rowOf(SingleIntTable.value setTo 10),
+                rowOf(SingleIntTable.value setTo 5),
+                rowOf(SingleIntTable.value setTo 3)
+            ))
+            .perform(cxn)
+
+        DuplicatesTable
+            .insert(values(
+                rowOf(
+                    DuplicatesTable.from setTo 10,
+                    DuplicatesTable.to setTo "A"
+                ),
+                rowOf(
+                    DuplicatesTable.from setTo 10,
+                    DuplicatesTable.to setTo "A"
+                ),
+                rowOf(
+                    DuplicatesTable.from setTo 10,
+                    DuplicatesTable.to setTo "A"
+                ),
+                rowOf(
+                    DuplicatesTable.from setTo 5,
+                    DuplicatesTable.to setTo "A"
+                ),
+                rowOf(
+                    DuplicatesTable.from setTo 5,
+                    DuplicatesTable.to setTo "B"
+                )
+            ))
+            .perform(cxn)
+
+        val undistinct = SingleIntTable
+            .innerJoin(DuplicatesTable, SingleIntTable.value eq DuplicatesTable.from)
+            .perform(cxn)
+            .count()
+
+        val distinct = SingleIntTable
+            .innerJoin(DuplicatesTable, SingleIntTable.value eq DuplicatesTable.from)
+            .selectDistinctAll()
+            .perform(cxn)
+            .count()
+
+        val distinctColumn = SingleIntTable
+            .innerJoin(DuplicatesTable, SingleIntTable.value eq DuplicatesTable.from)
+            .selectDistinct(DuplicatesTable.to)
+            .perform(cxn)
+            .count()
+
+        assertEquals(undistinct, 5)
+        assertEquals(distinct, 3)
+        assertEquals(distinctColumn, 2)
+    }
 }
