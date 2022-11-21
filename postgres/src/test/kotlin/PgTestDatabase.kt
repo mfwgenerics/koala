@@ -4,6 +4,7 @@ import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.event.DataSourceEvent
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.jdbc.JdbcProvider
+import io.koalaql.postgres.PostgresDataSource
 import io.koalaql.postgres.PostgresDialect
 import io.koalaql.test.retrying
 import java.sql.Connection
@@ -16,9 +17,7 @@ fun PgTestDatabase(db: String, declareBy: DeclareStrategy): JdbcDataSource {
 
     outerCxn.prepareStatement("CREATE DATABASE $db").execute()
 
-    return JdbcDataSource(
-        JdbcSchemaDetection.NotSupported,
-        PostgresDialect(),
+    return PostgresDataSource(
         object : JdbcProvider {
             override fun connect(): Connection =
                 DriverManager.getConnection("jdbc:postgresql://localhost:5432/$db", "postgres", "mysecretpassword")
@@ -27,8 +26,7 @@ fun PgTestDatabase(db: String, declareBy: DeclareStrategy): JdbcDataSource {
                 outerCxn.prepareStatement("DROP DATABASE $db").execute()
             }
         },
-        JdbcTypeMappings(),
-        DeclareStrategy.CreateIfNotExists,
+        declareBy,
         DataSourceEvent.DISCARD
     )
 }
