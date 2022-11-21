@@ -15,7 +15,7 @@ fun PostgresDataSource(
     JdbcSchemaDetection.NotSupported,
     PostgresDialect(),
     provider,
-    JdbcTypeMappings(),
+    PostgresTypeMappings(),
     declareBy,
     events
 )

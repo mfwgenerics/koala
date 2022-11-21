@@ -2,7 +2,7 @@ import io.koalaql.DeclareStrategy
 import io.koalaql.jdbc.JdbcDataSource
 import org.junit.Test
 
-/*class PostgresDateTimeTests: DateTimeTests() {
+class PostgresDateTimeTests: DateTimeTests() {
     override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
         PgTestDatabase(db, declareBy)
 
@@ -10,4 +10,4 @@ import org.junit.Test
     fun empty() {
         /* prevents test runner from skipping the base class tests */
     }
-}*/
+}

@@ -51,6 +51,19 @@ class PostgresDialect: SqlDialect {
         override fun window(builder: ScopedSqlBuilder, window: BuiltWindow) {
             builder.compileWindow(window)
         }
+
+        override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
+            when {
+                expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+                    check(expr.args.isEmpty())
+
+                    builder.parenthesize(emitParens) {
+                        builder.addSql("NOW()")
+                    }
+                }
+                else -> super.compileExpr(builder, expr, emitParens)
+            }
+        }
     }
 
     private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {
