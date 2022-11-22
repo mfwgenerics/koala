@@ -16,9 +16,6 @@ class PostgresDataTypeTests: DataTypesTest() {
         values.remove(INTEGER.UNSIGNED)
         values.remove(BIGINT.UNSIGNED)
         values.remove(VARBINARY(200))
-
-        /* JSON is not yet supported by koala postgres */
-        values.remove(JSON)
     }
 
     @Test

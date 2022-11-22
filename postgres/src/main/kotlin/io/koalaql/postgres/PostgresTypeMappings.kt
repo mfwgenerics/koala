@@ -23,7 +23,7 @@ fun PostgresTypeMappings(): JdbcTypeMappings {
 
     result.register(JsonData::class, object : JdbcMappedType<JsonData> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
-            stmt.setString(index, value.asString)
+            stmt.setObject(index, value.asString, java.sql.Types.OTHER)
         }
 
         override fun readJdbc(rs: ResultSet, index: Int): JsonData? =

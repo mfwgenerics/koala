@@ -41,7 +41,14 @@ abstract class DataTypesTest : ProvideTestDatabase {
 
         val rows = values(values.values) { this[label] = it }
             .subquery()
-            .orderBy(casted)
+            .let {
+                /* some types like JSON won't support ordering */
+                if (values.values.size > 1) {
+                    it.orderBy(casted)
+                } else {
+                    it
+                }
+            }
             .select(casted as_ label)
             .perform(cxn)
             .map { it.getValue(label) }
@@ -105,8 +112,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
                 })
                 .perform(cxn)
 
-                val rows = this
-                    .orderBy(column)
+                val rows = (if (case.values.size > 1) this.orderBy(column) else this)
                     .select(column)
                     .perform(cxn)
                     .map { it.first() }
