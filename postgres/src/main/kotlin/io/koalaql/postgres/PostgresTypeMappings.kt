@@ -2,6 +2,7 @@ package io.koalaql.postgres
 
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.data.JdbcTypeMappings
+import io.koalaql.ddl.JsonData
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -16,8 +17,17 @@ fun PostgresTypeMappings(): JdbcTypeMappings {
         }
 
         override fun readJdbc(rs: ResultSet, index: Int): Instant? {
-            return rs.getTimestamp(index).toInstant()
+            return rs.getTimestamp(index)?.toInstant()
         }
+    })
+
+    result.register(JsonData::class, object : JdbcMappedType<JsonData> {
+        override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
+            stmt.setString(index, value.asString)
+        }
+
+        override fun readJdbc(rs: ResultSet, index: Int): JsonData? =
+            rs.getString(index)?.let { JsonData(it) }
     })
 
     return result
