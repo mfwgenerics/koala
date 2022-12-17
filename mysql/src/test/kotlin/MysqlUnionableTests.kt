@@ -1,5 +1,6 @@
 import io.koalaql.DeclareStrategy
 import io.koalaql.jdbc.JdbcException
+import java.sql.SQLException
 import kotlin.test.Test
 
 class MysqlUnionableTests: UnionableTests() {
@@ -7,20 +8,16 @@ class MysqlUnionableTests: UnionableTests() {
         declareBy = declareBy
     )
 
-    @Test
-    fun empty() { }
-
-    @Test
     override fun `order by on values`() {
+        /* as of mysql 8.0.31 there is a regression that breaks usage of ORDER BY on VALUES clauses */
         try {
-            /*
-            bug in mysql prevents the values from actually being re-ordered so order by on values is a no-op
-            still, the SQL should run so we expect an assertion failure rather than an exception
-             */
             super.`order by on values`()
             assert(false)
-        } catch (ex: AssertionError) {
+        } catch (_: AssertionError) {
 
         }
     }
+
+    @Test
+    fun empty() { }
 }
