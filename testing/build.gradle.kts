@@ -9,7 +9,7 @@ dependencies {
 configurations.register(
     "testArchive"
 ) {
-    extendsFrom(configurations.testCompile.get())
+    extendsFrom(configurations.testImplementation.get())
 }
 
 tasks.register<Jar>(
