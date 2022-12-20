@@ -6,7 +6,9 @@ import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltWith
 import io.koalaql.query.built.QueryBuilder
 import io.koalaql.query.fluent.QueryableUnionOperand
-import io.koalaql.values.*
+import io.koalaql.values.RawResultRow
+import io.koalaql.values.RowOfOne
+import io.koalaql.values.RowSequence
 
 class CastExprQueryableUnionOperand<T : Any>(
     val of: QueryableUnionOperand<*>,

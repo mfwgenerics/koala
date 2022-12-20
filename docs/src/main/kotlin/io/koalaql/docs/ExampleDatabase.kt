@@ -5,7 +5,10 @@ import io.koalaql.docs.tables.ShopTable
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.setTo
 import io.koalaql.dsl.values
-import io.koalaql.event.*
+import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.event.ConnectionQueryType
+import io.koalaql.event.DataSourceEvent
+import io.koalaql.event.QueryEventWriter
 import io.koalaql.h2.H2DataSource
 import io.koalaql.sql.CompiledSql
 import java.math.BigDecimal

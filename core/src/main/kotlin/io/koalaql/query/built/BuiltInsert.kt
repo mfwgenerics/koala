@@ -1,7 +1,8 @@
 package io.koalaql.query.built
 
 import io.koalaql.identifier.Named
-import io.koalaql.query.*
+import io.koalaql.query.OnConflictOrDuplicateAction
+import io.koalaql.query.TableRelation
 import io.koalaql.sql.Scope
 import io.koalaql.unfoldBuilder
 

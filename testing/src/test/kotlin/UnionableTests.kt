@@ -3,7 +3,6 @@ import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
 import io.koalaql.dsl.*
 import io.koalaql.query.Tableless
-import io.koalaql.sql.GeneratedSqlException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

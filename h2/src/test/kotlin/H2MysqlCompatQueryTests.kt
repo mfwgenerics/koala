@@ -1,22 +1,18 @@
 import io.koalaql.DeclareStrategy
-import io.koalaql.ddl.*
-import io.koalaql.dsl.currentTimestamp
-import io.koalaql.dsl.eq
+import io.koalaql.event.DataSourceEvent
 import io.koalaql.h2.H2CompatibilityMode
 import io.koalaql.h2.H2Database
 import io.koalaql.jdbc.JdbcDataSource
-import io.koalaql.test.table.VENUE_TYPE
-import io.koalaql.test.table.VenueType
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 class H2MysqlCompatQueryTests: QueryTests() {
-    override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
-        H2Database(db,
-            mode = H2CompatibilityMode.MYSQL,
-            declareBy = declareBy
-        )
+    override fun connect(
+        db: String,
+        declareBy: DeclareStrategy,
+        events: DataSourceEvent
+    ): JdbcDataSource =
+        H2Database(db, mode = H2CompatibilityMode.MYSQL, declareBy = declareBy, events = events)
 
     @Test
     fun empty() {

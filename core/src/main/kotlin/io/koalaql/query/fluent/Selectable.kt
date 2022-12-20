@@ -3,7 +3,10 @@ package io.koalaql.query.fluent
 import io.koalaql.Assignment
 import io.koalaql.dsl.as_
 import io.koalaql.dsl.label
-import io.koalaql.expr.*
+import io.koalaql.expr.ExprQueryableUnionOperand
+import io.koalaql.expr.Reference
+import io.koalaql.expr.SelectArgument
+import io.koalaql.expr.SelectOperand
 import io.koalaql.query.*
 import io.koalaql.query.built.*
 import io.koalaql.values.*
