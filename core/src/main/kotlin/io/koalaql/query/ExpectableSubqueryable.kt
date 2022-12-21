@@ -4,10 +4,7 @@ import io.koalaql.expr.AsReference
 import io.koalaql.expr.ExprQueryable
 import io.koalaql.expr.Reference
 import io.koalaql.query.built.BuilderContext
-import io.koalaql.query.built.BuiltQuery
 import io.koalaql.query.built.BuiltSubquery
-import io.koalaql.query.built.QueryBuilder
-import io.koalaql.unfoldBuilder
 import io.koalaql.values.*
 
 interface ExpectableSubqueryable<out T>: Subqueryable<T> {

@@ -1,10 +1,6 @@
-import io.koalaql.DeclareStrategy
 import kotlin.test.Test
 
-class PostgresQueryTests: QueryTests() {
-    override fun connect(db: String, declareBy: DeclareStrategy) =
-        PgTestDatabase(db, declareBy)
-
+class PostgresQueryTests: QueryTests(), PostgresTestProvider {
     override val requiresOnConflictKey get() = true
 
     @Test

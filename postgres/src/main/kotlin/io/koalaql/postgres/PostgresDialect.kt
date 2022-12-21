@@ -87,7 +87,7 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    private fun ScopedSqlBuilder.compileIndexDef(name: String, def: BuiltIndexDef) {
+    private fun ScopedSqlBuilder.compileIndexConstraint(name: String, def: BuiltIndexDef) {
         addSql("CONSTRAINT ")
 
         addIdentifier(name)
@@ -97,6 +97,23 @@ class PostgresDialect: SqlDialect {
             IndexType.UNIQUE -> " UNIQUE"
             IndexType.INDEX -> " INDEX"
         })
+
+        addSql(" ")
+        parenthesize {
+            prefix("", ", ").forEach(def.keys.keys) { key ->
+                compileDefaultExpr(key)
+            }
+        }
+    }
+
+    private fun ScopedSqlBuilder.compileIndexDef(table: Table, name: String, def: BuiltIndexDef) {
+        addSql("CREATE INDEX IF NOT EXISTS ")
+
+        addIdentifier(name)
+
+        addSql(" ON ")
+
+        addTableReference(table)
 
         addSql(" ")
         parenthesize {
@@ -158,8 +175,8 @@ class PostgresDialect: SqlDialect {
             }
 
             table.indexes.forEach { index ->
-                comma.next {
-                    compileIndexDef(index.name, index.def)
+                if (index.def.type == IndexType.UNIQUE) comma.next {
+                    compileIndexConstraint(index.name, index.def)
                 }
             }
 
@@ -180,6 +197,24 @@ class PostgresDialect: SqlDialect {
             ).compileCreateTable(table)
 
             results.add(sql.toSql())
+        }
+
+        change.tables.created.forEach { (_, table) ->
+            table.indexes.forEach { index ->
+                if (index.def.type == IndexType.INDEX) {
+                    val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
+
+                    ScopedSqlBuilder(
+                        sql,
+                        Scope(NameRegistry { "column${it + 1}" }),
+                        compiler
+                    ).apply {
+                        compileIndexDef(table, index.name, index.def)
+                    }
+
+                    results.add(sql.toSql())
+                }
+            }
         }
 
         return results

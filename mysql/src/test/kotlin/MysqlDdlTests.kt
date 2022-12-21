@@ -1,12 +1,7 @@
-import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.UnmappedDataType
 import kotlin.test.Test
 
-class MysqlDdlTests: DdlTests() {
-    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
-        declareBy = declareBy
-    )
-
+class MysqlDdlTests: DdlTests(), MysqlTestProvider {
     override fun supportedColumnTypes(type: UnmappedDataType<*>): Boolean {
         return true
     }

@@ -1,15 +1,10 @@
-import io.koalaql.DeclareStrategy
 import io.koalaql.dsl.rowOf
-import io.koalaql.dsl.values
 import io.koalaql.dsl.setTo
+import io.koalaql.dsl.values
 import io.koalaql.jdbc.JdbcException
 import kotlin.test.Test
 
-class MysqlQueryTests: QueryTests() {
-    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
-        declareBy = declareBy
-    )
-
+class MysqlQueryTests: QueryTests(), MysqlTestProvider {
     @Test
     fun empty() {
 

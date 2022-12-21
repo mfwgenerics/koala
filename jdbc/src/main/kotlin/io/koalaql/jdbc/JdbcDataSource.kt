@@ -55,6 +55,28 @@ class JdbcDataSource(
         applyDdl(ddl)
     }
 
+    private fun applyDdlFromChanges(reconciled: ReconciledChanges) {
+        val ddl = ReconciledDdl(
+            applied = dialect.ddl(reconciled.applied),
+            unexpected = dialect.ddl(reconciled.unexpected),
+            ignored = dialect.ddl(reconciled.ignored)
+        )
+
+        val appliedEvent = events.changes(reconciled, ddl)
+
+        check(ddl.unexpected.isEmpty()) {
+            val ddlLines = ddl.unexpected
+                .asSequence()
+                .map { "$it".trim() }
+                .joinToString("\n")
+
+            "Unexpected DDL:\n$ddlLines"
+        }
+
+        applyDdl(ddl.applied)
+        appliedEvent.applied(ddl.applied)
+    }
+
     override fun declareTables(tables: List<Table>) {
         when (declareBy) {
             DeclareStrategy.DoNothing -> return
@@ -65,33 +87,13 @@ class JdbcDataSource(
                     diff.tables.created[it.tableName] = it
                 }
 
-                changeSchema(diff)
+                applyDdlFromChanges(ReconciledChanges(
+                    applied = diff
+                ))
             }
-            is ReconcileTables -> {
-                val filtered = declareBy.filterChanges(
-                    detectChanges(tables)
-                )
-
-                val ddl = ReconciledDdl(
-                    applied = dialect.ddl(filtered.applied),
-                    unexpected = dialect.ddl(filtered.unexpected),
-                    ignored = dialect.ddl(filtered.ignored)
-                )
-
-                val appliedEvent = events.changes(filtered, ddl)
-
-                check(ddl.unexpected.isEmpty()) {
-                    val ddlLines = ddl.unexpected
-                        .asSequence()
-                        .map { "$it".trim() }
-                        .joinToString("\n")
-
-                    "Unexpected DDL:\n$ddlLines"
-                }
-
-                applyDdl(ddl.applied)
-                appliedEvent.applied(ddl.applied)
-            }
+            is ReconcileTables -> applyDdlFromChanges(declareBy.filterChanges(
+                changes = detectChanges(tables)
+            ))
         }
     }
 

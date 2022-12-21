@@ -1,7 +1,7 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.expr.SelectOperand
-import io.koalaql.query.*
+import io.koalaql.query.ExpectableSubqueryable
 import io.koalaql.values.ResultRow
 
 interface Returningable {

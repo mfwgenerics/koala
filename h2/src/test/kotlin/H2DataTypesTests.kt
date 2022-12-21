@@ -1,17 +1,9 @@
-import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
-import io.koalaql.expr.Label
-import io.koalaql.h2.H2Database
-import io.koalaql.identifier.Unnamed
-import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.data.DataTypeValuesMap
 import org.junit.Test
 
-class H2DataTypesTests: DataTypesTest() {
-    override fun connect(db: String, declareBy: DeclareStrategy): JdbcDataSource =
-        H2Database(db, declareBy = declareBy)
-
+class H2DataTypesTests: DataTypesTest(), H2TestProvider {
     @Test
     fun empty() { }
 

@@ -2,11 +2,10 @@ package io.koalaql.sql
 
 import io.koalaql.ddl.DataType
 import io.koalaql.ddl.MappedDataType
-import io.koalaql.ddl.TypeMapping
 import io.koalaql.expr.Literal
-import io.koalaql.identifier.Unquoted
 import io.koalaql.identifier.Named
 import io.koalaql.identifier.SqlIdentifier
+import io.koalaql.identifier.Unquoted
 import kotlin.reflect.KClass
 
 class CompiledSqlBuilder(

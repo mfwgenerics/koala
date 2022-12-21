@@ -1,13 +1,6 @@
-import io.koalaql.DeclareStrategy
-import io.koalaql.jdbc.JdbcException
-import java.sql.SQLException
 import kotlin.test.Test
 
-class MysqlUnionableTests: UnionableTests() {
-    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
-        declareBy = declareBy
-    )
-
+class MysqlUnionableTests: UnionableTests(), MysqlTestProvider {
     override fun `order by on values`() {
         /* as of mysql 8.0.31 there is a regression that breaks usage of ORDER BY on VALUES clauses */
         try {

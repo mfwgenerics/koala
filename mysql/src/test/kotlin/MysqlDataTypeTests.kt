@@ -1,15 +1,10 @@
-import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.FLOAT
 import io.koalaql.ddl.JSON
 import io.koalaql.ddl.JsonData
 import io.koalaql.test.data.DataTypeValuesMap
 import kotlin.test.Test
 
-class MysqlDataTypeTests: DataTypesTest() {
-    override fun connect(db: String, declareBy: DeclareStrategy) = MysqlTestDatabase(db,
-        declareBy = declareBy
-    )
-
+class MysqlDataTypeTests: DataTypesTest(), MysqlTestProvider {
     override fun compatibilityAdjustment(values: DataTypeValuesMap) {
         /*
         float MAX values are incorrectly treated as doubles by mysql connector.

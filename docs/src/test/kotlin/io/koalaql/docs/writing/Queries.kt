@@ -8,7 +8,10 @@ import io.koalaql.dsl.*
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowOfTwo
 import java.math.BigDecimal
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 /* SHOW */
 /*

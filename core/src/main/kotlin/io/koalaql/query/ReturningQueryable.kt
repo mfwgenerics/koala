@@ -3,7 +3,10 @@ package io.koalaql.query
 import io.koalaql.expr.Reference
 import io.koalaql.expr.SelectOperand
 import io.koalaql.expr.SelectionBuilder
-import io.koalaql.query.built.*
+import io.koalaql.query.built.BuilderContext
+import io.koalaql.query.built.BuiltReturning
+import io.koalaql.query.built.BuiltStatement
+import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.values.ResultRow
 import io.koalaql.values.RowSequence
 

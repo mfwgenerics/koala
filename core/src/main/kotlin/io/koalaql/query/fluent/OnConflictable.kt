@@ -2,7 +2,10 @@ package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
 import io.koalaql.ddl.built.BuiltNamedIndex
-import io.koalaql.query.*
+import io.koalaql.query.OnConflictIgnore
+import io.koalaql.query.OnConflictOrDuplicateAction
+import io.koalaql.query.OnConflictUpdate
+import io.koalaql.query.OnDuplicateUpdate
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
 

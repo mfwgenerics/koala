@@ -1,13 +1,15 @@
 package io.koalaql.query
 
 import io.koalaql.ddl.TableColumn
-import io.koalaql.expr.Column
 import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.identifier.Unnamed
 import io.koalaql.query.built.*
 import io.koalaql.query.fluent.QueryableUnionOperand
 import io.koalaql.query.fluent.UnionedOrderable
-import io.koalaql.values.*
+import io.koalaql.values.ResultRow
+import io.koalaql.values.RowSequence
+import io.koalaql.values.ValuesIterator
+import io.koalaql.values.ValuesSequence
 
 sealed interface Relation: AliasableRelation {
     override fun as_(alias: Alias): Aliased = Aliased(this, alias)

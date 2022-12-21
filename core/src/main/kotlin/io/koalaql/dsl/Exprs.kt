@@ -5,10 +5,8 @@ import io.koalaql.ExprAssignment
 import io.koalaql.LiteralAssignment
 import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
-import io.koalaql.query.Queryable
 import io.koalaql.query.Subqueryable
 import io.koalaql.query.built.BuilderContext
-import io.koalaql.query.built.BuiltQuery
 import io.koalaql.sql.RawSqlBuilder
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =

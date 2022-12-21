@@ -25,7 +25,8 @@ fun H2DataSource(
 fun H2Database(
     db: String,
     mode: H2CompatibilityMode? = null,
-    declareBy: DeclareStrategy? = DeclareStrategy.CreateIfNotExists
+    declareBy: DeclareStrategy? = DeclareStrategy.CreateIfNotExists,
+    events: DataSourceEvent = DataSourceEvent.DISCARD
 ): JdbcDataSource {
     val url = when (mode) {
         H2CompatibilityMode.MYSQL -> "jdbc:h2:mem:$db;MODE=MYSQL"
@@ -44,6 +45,7 @@ fun H2Database(
             override fun close() {
                 keepAlive.close()
             }
-        }
+        },
+        events = events
     )
 }
