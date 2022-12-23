@@ -29,4 +29,28 @@ class MysqlCreateIfNotExistsTests: CreateIfNotExistsTests(), MysqlTestProvider {
             appliedDdl.single().toAbridgedSql()
         )
     }
+
+    @Test
+    fun `table with mapped defaults`() {
+        val appliedDdl = AppliedDdlListener()
+
+        withDb(
+            declareBy = DeclareStrategy.CreateIfNotExists,
+            events = appliedDdl
+        ) { db ->
+            db.declareTables(ExampleTable)
+        }
+
+        assertEquals(
+            """
+                CREATE TABLE IF NOT EXISTS `Example`(
+                `id` INTEGER NOT NULL,
+                `asInt` INTEGER NOT NULL DEFAULT ?,
+                `asString` INTEGER NOT NULL DEFAULT ?,
+                CONSTRAINT `Example_id_pkey` PRIMARY KEY (`id`)
+                )
+            """.trimIndent(),
+            appliedDdl.single().toAbridgedSql()
+        )
+    }
 }

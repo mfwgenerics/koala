@@ -16,4 +16,18 @@ abstract class CreateIfNotExistsTests: ProvideTestDatabase {
             index("reverseNameIndex", lastName, firstName)
         }
     }
+
+    enum class ExampleEnum {
+        CASE_A,
+        CASE_B
+    }
+
+    object ExampleTable : Table("Example") {
+        val id = column("id", INTEGER.primaryKey())
+
+        val asInt = column("asInt", INTEGER.mapToEnum<ExampleEnum> { it.ordinal }
+            .default(ExampleEnum.CASE_A))
+        val asString = column("asString", INTEGER.mapToEnum<ExampleEnum> { it.ordinal }
+            .default(ExampleEnum.CASE_B))
+    }
 }
