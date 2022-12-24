@@ -10,7 +10,7 @@ import io.koalaql.sql.token.*
 import kotlin.reflect.KClass
 
 class CompiledSqlBuilder(
-    private val quoteStyle: IdentifierQuoteStyle
+    private val escapes: SqlEscapes
 ) {
     private val tokens = arrayListOf<SqlToken>()
 
@@ -86,11 +86,7 @@ class CompiledSqlBuilder(
                     is Unquoted -> {
                         contents.append(id.id)
                     }
-                    is Named -> {
-                        contents.append(quoteStyle.quote)
-                        contents.append(id.name)
-                        contents.append(quoteStyle.quote)
-                    }
+                    is Named -> escapes.identifier(contents, id)
                 }
                 is LiteralToken -> {
                     val value = token.value
@@ -98,8 +94,7 @@ class CompiledSqlBuilder(
                         ?.unconvertLiteralUnchecked(value)
                         ?: value
 
-                    contents.append("?")
-                    params.add(mappedValue)
+                    escapes.literal(contents, params, mappedValue)
                 }
                 is RawSqlToken -> {
                     contents.append(token.sql)
