@@ -68,8 +68,6 @@ class CompiledSqlBuilder(
         if (type is MappedDataType) mappings.putIfAbsent(type.type, type)
     }
 
-    fun addSql(sql: StandardSql) { addSql(sql.sql) }
-
     fun addLiteral(value: Literal<*>?) {
         if (value == null) {
             addSql("NULL")
@@ -93,25 +91,5 @@ class CompiledSqlBuilder(
     inline fun <T> withResult(result: SqlResult<T>, block: (T) -> Unit) = when (result) {
         is SqlResult.Error -> addError(result.message)
         is SqlResult.Value -> block(result.value)
-    }
-
-    fun parenthesize(emitParens: Boolean = true, block: () -> Unit) {
-        if (!emitParens) return block()
-
-        addSql("(")
-        block()
-        addSql(")")
-    }
-
-    fun prefix(initial: String, after: String): SqlPrefix {
-        var pref = initial
-
-        return object : SqlPrefix {
-            override fun next(block: () -> Unit) {
-                addSql(pref)
-                block()
-                pref = after
-            }
-        }
     }
 }
