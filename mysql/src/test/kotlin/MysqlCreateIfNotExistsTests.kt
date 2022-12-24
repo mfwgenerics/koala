@@ -46,7 +46,6 @@ class MysqlCreateIfNotExistsTests: CreateIfNotExistsTests(), MysqlTestProvider {
                 CREATE TABLE IF NOT EXISTS `Example`(
                 `id` INTEGER NOT NULL,
                 `asInt` INTEGER NOT NULL DEFAULT ?,
-                `asString` INTEGER NOT NULL DEFAULT ?,
                 CONSTRAINT `Example_id_pkey` PRIMARY KEY (`id`)
                 )
             """.trimIndent(),

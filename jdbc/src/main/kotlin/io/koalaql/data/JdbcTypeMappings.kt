@@ -132,7 +132,7 @@ class JdbcTypeMappings {
     })
 
     @Suppress("unchecked_cast")
-    private fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
+    fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
         checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
 
     @Suppress("unchecked_cast")

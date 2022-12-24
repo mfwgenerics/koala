@@ -27,7 +27,5 @@ abstract class CreateIfNotExistsTests: ProvideTestDatabase {
 
         val asInt = column("asInt", INTEGER.mapToEnum<ExampleEnum> { it.ordinal }
             .default(ExampleEnum.CASE_A))
-        val asString = column("asString", INTEGER.mapToEnum<ExampleEnum> { it.ordinal }
-            .default(ExampleEnum.CASE_B))
     }
 }

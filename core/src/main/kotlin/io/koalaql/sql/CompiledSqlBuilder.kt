@@ -93,8 +93,13 @@ class CompiledSqlBuilder(
                     }
                 }
                 is LiteralToken -> {
+                    val value = token.value
+                    val mappedValue = mappings[value.type]
+                        ?.unconvertLiteralUnchecked(value)
+                        ?: value
+
                     contents.append("?")
-                    params.add(token.value)
+                    params.add(mappedValue)
                 }
                 is RawSqlToken -> {
                     contents.append(token.sql)
