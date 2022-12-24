@@ -64,7 +64,7 @@ class H2Dialect(
         val results = mutableListOf<CompiledSql>()
 
         change.tables.created.forEach { (_, table) ->
-            val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
+            val sql = CompiledSqlBuilder(H2Escapes)
 
             ScopedSqlBuilder(
                 sql,
@@ -376,7 +376,7 @@ class H2Dialect(
 
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
+            CompiledSqlBuilder(H2Escapes),
             Scope(NameRegistry { "C${it + 1}" }),
             compiler
         )

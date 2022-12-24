@@ -188,7 +188,7 @@ class PostgresDialect: SqlDialect {
         val results = mutableListOf<CompiledSql>()
 
         change.tables.created.forEach { (_, table) ->
-            val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
+            val sql = CompiledSqlBuilder(PostgresDdlEscapes)
 
             ScopedSqlBuilder(
                 sql,
@@ -202,7 +202,7 @@ class PostgresDialect: SqlDialect {
         change.tables.created.forEach { (_, table) ->
             table.indexes.forEach { index ->
                 if (index.def.type == IndexType.INDEX) {
-                    val sql = CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE)
+                    val sql = CompiledSqlBuilder(PostgresDdlEscapes)
 
                     ScopedSqlBuilder(
                         sql,
@@ -447,7 +447,7 @@ class PostgresDialect: SqlDialect {
 
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            CompiledSqlBuilder(IdentifierQuoteStyle.DOUBLE),
+            CompiledSqlBuilder(PostgresDmlEscapes),
             Scope(NameRegistry { "column${it + 1}" }),
             compiler
         )

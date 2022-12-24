@@ -11,6 +11,7 @@ import io.koalaql.expr.Column
 import io.koalaql.query.LabelListOf
 import io.koalaql.query.built.*
 import io.koalaql.sql.CompiledSql
+import io.koalaql.sql.TypeMappings
 import io.koalaql.values.RawResultRow
 import io.koalaql.values.RowSequence
 import io.koalaql.values.emptyRowSequence
@@ -34,7 +35,7 @@ class JdbcConnection(
 
         sql.parameters.forEachIndexed { ix, literal ->
             @Suppress("unchecked_cast")
-            val mapping = typeMappings.deriveFor(literal.type, sql.mappings) as JdbcMappedType<Any>
+            val mapping = typeMappings.mappingFor(literal.type) as JdbcMappedType<Any>
 
             literal.value
                 ?.let { mapping.writeJdbc(result, ix + 1, it) }

@@ -6,49 +6,30 @@ import io.koalaql.expr.Literal
 import io.koalaql.identifier.Named
 import io.koalaql.identifier.SqlIdentifier
 import io.koalaql.identifier.Unquoted
+import io.koalaql.sql.token.*
 import kotlin.reflect.KClass
 
 class CompiledSqlBuilder(
-    private val quoteStyle: IdentifierQuoteStyle
+    private val escapes: SqlEscapes
 ) {
-    private val contents = StringBuilder()
-    private val params = arrayListOf<Literal<*>>()
-    private var errored = false
+    private val tokens = arrayListOf<SqlToken>()
 
     private val mappings = hashMapOf<KClass<*>, MappedDataType<*, *>>()
 
-    private val abridgements = arrayListOf<Abridgement>()
-
-    private var abridgeFrom: Int = 0
-    private var abridgeDepth: Int = 0
-
     fun beginAbridgement() {
-        if (abridgeDepth++ == 0) abridgeFrom = contents.length
+        tokens.add(BeginAbridgement)
     }
 
     fun endAbridgement(summary: String) {
-        if (--abridgeDepth == 0) abridgements.add(Abridgement(
-            abridgeFrom,
-            contents.length,
-            summary
-        ))
+        tokens.add(EndAbridgement(summary))
     }
     
     fun addSql(sql: String) {
-        contents.append(sql)
+        tokens.add(RawSqlToken(sql))
     }
 
     fun addIdentifier(id: SqlIdentifier) {
-        val exhaustive = when (id) {
-            is Unquoted -> {
-                addSql(id.id)
-            }
-            is Named -> {
-                addSql(quoteStyle.quote)
-                addSql(id.name)
-                addSql(quoteStyle.quote)
-            }
-        }
+        tokens.add(IdentifierToken(id))
     }
 
     fun addResolved(resolved: Resolved) {
@@ -60,8 +41,7 @@ class CompiledSqlBuilder(
     }
 
     fun addError(error: String) {
-        errored = true
-        addSql("/* ERROR: $error */")
+        tokens.add(ErrorToken(error))
     }
 
     fun addMapping(type: DataType<*, *>) {
@@ -72,12 +52,56 @@ class CompiledSqlBuilder(
         if (value == null) {
             addSql("NULL")
         } else {
-            contents.append("?")
-            params.add(value)
+            tokens.add(LiteralToken(value))
         }
     }
 
     fun toSql(): CompiledSql {
+        val contents = StringBuilder()
+        val params = arrayListOf<Literal<*>>()
+        var errored = false
+
+        val abridgements = arrayListOf<Abridgement>()
+
+        var abridgeFrom = 0
+        var abridgeDepth = 0
+
+        tokens.forEach { token ->
+            when (token) {
+                BeginAbridgement -> {
+                    if (abridgeDepth++ == 0) abridgeFrom = contents.length
+                }
+                is EndAbridgement -> {
+                    if (--abridgeDepth == 0) abridgements.add(Abridgement(
+                        abridgeFrom,
+                        contents.length,
+                        token.summary
+                    ))
+                }
+                is ErrorToken -> {
+                    errored = true
+                    contents.append("/* ERROR: ${token.message} */")
+                }
+                is IdentifierToken -> when (val id = token.identifier) {
+                    is Unquoted -> {
+                        contents.append(id.id)
+                    }
+                    is Named -> escapes.identifier(contents, id)
+                }
+                is LiteralToken -> {
+                    val value = token.value
+                    val mappedValue = mappings[value.type]
+                        ?.unconvertLiteralUnchecked(value)
+                        ?: value
+
+                    escapes.literal(contents, params, mappedValue)
+                }
+                is RawSqlToken -> {
+                    contents.append(token.sql)
+                }
+            }
+        }
+
         if (errored) throw GeneratedSqlException("Unable to generate SQL. See incomplete SQL below:\n$contents")
 
         return CompiledSql(

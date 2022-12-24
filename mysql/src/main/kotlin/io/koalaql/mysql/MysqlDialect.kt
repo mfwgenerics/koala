@@ -131,7 +131,7 @@ class MysqlDialect: SqlDialect {
 
         return results.map {
             ScopedSqlBuilder(
-                CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
+                CompiledSqlBuilder(MysqlEscapes),
                 Scope(NameRegistry { "column_$it" }),
                 compiler
             ).also(it).toSql()
@@ -510,7 +510,7 @@ class MysqlDialect: SqlDialect {
 
     override fun compile(dml: BuiltDml): CompiledSql? {
         val sql = ScopedSqlBuilder(
-            CompiledSqlBuilder(IdentifierQuoteStyle.BACKTICKS),
+            CompiledSqlBuilder(MysqlEscapes),
             Scope(NameRegistry { "column_$it" }),
             compiler
         )

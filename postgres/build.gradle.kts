@@ -4,8 +4,7 @@ plugins {
 
 dependencies {
     implementation(project(":jdbc"))
-
-    testImplementation("org.postgresql:postgresql:42.2.23")
+    api("org.postgresql:postgresql:42.5.1")
 
     testImplementation(project(":testing"))
     testImplementation(project(":testing", "testArchive"))
