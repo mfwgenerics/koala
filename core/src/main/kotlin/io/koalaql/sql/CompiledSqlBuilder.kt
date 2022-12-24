@@ -14,52 +14,22 @@ class CompiledSqlBuilder(
 ) {
     private val tokens = arrayListOf<SqlToken>()
 
-    private val contents = StringBuilder()
-    private val params = arrayListOf<Literal<*>>()
-    private var errored = false
-
     private val mappings = hashMapOf<KClass<*>, MappedDataType<*, *>>()
-
-    private val abridgements = arrayListOf<Abridgement>()
-
-    private var abridgeFrom: Int = 0
-    private var abridgeDepth: Int = 0
 
     fun beginAbridgement() {
         tokens.add(BeginAbridgement)
-
-        if (abridgeDepth++ == 0) abridgeFrom = contents.length
     }
 
     fun endAbridgement(summary: String) {
         tokens.add(EndAbridgement(summary))
-
-        if (--abridgeDepth == 0) abridgements.add(Abridgement(
-            abridgeFrom,
-            contents.length,
-            summary
-        ))
     }
     
     fun addSql(sql: String) {
         tokens.add(RawSqlToken(sql))
-
-        contents.append(sql)
     }
 
     fun addIdentifier(id: SqlIdentifier) {
         tokens.add(IdentifierToken(id))
-
-        val exhaustive = when (id) {
-            is Unquoted -> {
-                addSql(id.id)
-            }
-            is Named -> {
-                addSql(quoteStyle.quote)
-                addSql(id.name)
-                addSql(quoteStyle.quote)
-            }
-        }
     }
 
     fun addResolved(resolved: Resolved) {
@@ -72,9 +42,6 @@ class CompiledSqlBuilder(
 
     fun addError(error: String) {
         tokens.add(ErrorToken(error))
-
-        errored = true
-        addSql("/* ERROR: $error */")
     }
 
     fun addMapping(type: DataType<*, *>) {
@@ -86,13 +53,55 @@ class CompiledSqlBuilder(
             addSql("NULL")
         } else {
             tokens.add(LiteralToken(value))
-
-            contents.append("?")
-            params.add(value)
         }
     }
 
     fun toSql(): CompiledSql {
+        val contents = StringBuilder()
+        val params = arrayListOf<Literal<*>>()
+        var errored = false
+
+        val abridgements = arrayListOf<Abridgement>()
+
+        var abridgeFrom = 0
+        var abridgeDepth = 0
+
+        tokens.forEach { token ->
+            when (token) {
+                BeginAbridgement -> {
+                    if (abridgeDepth++ == 0) abridgeFrom = contents.length
+                }
+                is EndAbridgement -> {
+                    if (--abridgeDepth == 0) abridgements.add(Abridgement(
+                        abridgeFrom,
+                        contents.length,
+                        token.summary
+                    ))
+                }
+                is ErrorToken -> {
+                    errored = true
+                    contents.append("/* ERROR: ${token.message} */")
+                }
+                is IdentifierToken -> when (val id = token.identifier) {
+                    is Unquoted -> {
+                        contents.append(id.id)
+                    }
+                    is Named -> {
+                        contents.append(quoteStyle.quote)
+                        contents.append(id.name)
+                        contents.append(quoteStyle.quote)
+                    }
+                }
+                is LiteralToken -> {
+                    contents.append("?")
+                    params.add(token.value)
+                }
+                is RawSqlToken -> {
+                    contents.append(token.sql)
+                }
+            }
+        }
+
         if (errored) throw GeneratedSqlException("Unable to generate SQL. See incomplete SQL below:\n$contents")
 
         return CompiledSql(
