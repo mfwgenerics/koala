@@ -6,11 +6,14 @@ import io.koalaql.expr.Literal
 import io.koalaql.identifier.Named
 import io.koalaql.identifier.SqlIdentifier
 import io.koalaql.identifier.Unquoted
+import io.koalaql.sql.token.*
 import kotlin.reflect.KClass
 
 class CompiledSqlBuilder(
     private val quoteStyle: IdentifierQuoteStyle
 ) {
+    private val tokens = arrayListOf<SqlToken>()
+
     private val contents = StringBuilder()
     private val params = arrayListOf<Literal<*>>()
     private var errored = false
@@ -23,10 +26,14 @@ class CompiledSqlBuilder(
     private var abridgeDepth: Int = 0
 
     fun beginAbridgement() {
+        tokens.add(BeginAbridgement)
+
         if (abridgeDepth++ == 0) abridgeFrom = contents.length
     }
 
     fun endAbridgement(summary: String) {
+        tokens.add(EndAbridgement(summary))
+
         if (--abridgeDepth == 0) abridgements.add(Abridgement(
             abridgeFrom,
             contents.length,
@@ -35,10 +42,14 @@ class CompiledSqlBuilder(
     }
     
     fun addSql(sql: String) {
+        tokens.add(RawSqlToken(sql))
+
         contents.append(sql)
     }
 
     fun addIdentifier(id: SqlIdentifier) {
+        tokens.add(IdentifierToken(id))
+
         val exhaustive = when (id) {
             is Unquoted -> {
                 addSql(id.id)
@@ -60,6 +71,8 @@ class CompiledSqlBuilder(
     }
 
     fun addError(error: String) {
+        tokens.add(ErrorToken(error))
+
         errored = true
         addSql("/* ERROR: $error */")
     }
@@ -72,6 +85,8 @@ class CompiledSqlBuilder(
         if (value == null) {
             addSql("NULL")
         } else {
+            tokens.add(LiteralToken(value))
+
             contents.append("?")
             params.add(value)
         }
