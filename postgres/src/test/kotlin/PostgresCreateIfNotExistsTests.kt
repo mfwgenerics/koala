@@ -1,7 +1,7 @@
 import io.koalaql.DeclareStrategy
 import io.koalaql.test.AppliedDdlListener
-import kotlin.test.assertEquals
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PostgresCreateIfNotExistsTests: CreateIfNotExistsTests(),  PostgresTestProvider {
     @Test
@@ -33,6 +33,30 @@ class PostgresCreateIfNotExistsTests: CreateIfNotExistsTests(),  PostgresTestPro
                 CREATE INDEX IF NOT EXISTS "reverseNameIndex" ON "Customer" ("lastName", "firstName")
             """.trimIndent(),
             appliedDdl[1].toAbridgedSql()
+        )
+    }
+
+    @Test
+    fun `table with mapped defaults`() {
+        val appliedDdl = AppliedDdlListener()
+
+        withDb(
+            declareBy = DeclareStrategy.CreateIfNotExists,
+            events = appliedDdl
+        ) { db ->
+            createAndCheckExample(db)
+        }
+
+        assertEquals(
+            """
+                CREATE TABLE IF NOT EXISTS "Example"(
+                "id" INTEGER NOT NULL,
+                "asString" VARCHAR(100) NOT NULL DEFAULT 'CASE_B',
+                "trickyDefault" VARCHAR(100) NOT NULL DEFAULT '''"\$`''"$',
+                CONSTRAINT "Example_id_pkey" PRIMARY KEY ("id")
+                )
+            """.trimIndent(),
+            appliedDdl.single().toAbridgedSql()
         )
     }
 }

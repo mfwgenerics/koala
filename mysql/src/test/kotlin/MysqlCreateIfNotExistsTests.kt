@@ -38,14 +38,15 @@ class MysqlCreateIfNotExistsTests: CreateIfNotExistsTests(), MysqlTestProvider {
             declareBy = DeclareStrategy.CreateIfNotExists,
             events = appliedDdl
         ) { db ->
-            db.declareTables(ExampleTable)
+            createAndCheckExample(db)
         }
 
         assertEquals(
             """
                 CREATE TABLE IF NOT EXISTS `Example`(
                 `id` INTEGER NOT NULL,
-                `asInt` INTEGER NOT NULL DEFAULT ?,
+                `asString` VARCHAR(100) NOT NULL DEFAULT ?,
+                `trickyDefault` VARCHAR(100) NOT NULL DEFAULT ?,
                 CONSTRAINT `Example_id_pkey` PRIMARY KEY (`id`)
                 )
             """.trimIndent(),
