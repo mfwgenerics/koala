@@ -127,10 +127,12 @@ abstract class DdlTests: ProvideTestDatabase {
             VARBINARY(200)
         )
 
-        val cases = columnTypes
+        val filteredColumnTypes = columnTypes
             .filter { supportedColumnTypes(it) }
+
+        val cases = filteredColumnTypes
             .mapIndexed { ix, it ->
-                listOf(it, columnTypes[(ix + 1) % columnTypes.size], columnTypes[(ix + 3) % columnTypes.size])
+                listOf(it, filteredColumnTypes[(ix + 1) % filteredColumnTypes.size], filteredColumnTypes[(ix + 3) % filteredColumnTypes.size])
             }
             .withIndex()
             .associateBy({ "${it.index}" }) { it.value }

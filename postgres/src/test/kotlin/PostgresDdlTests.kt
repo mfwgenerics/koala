@@ -1,9 +1,12 @@
-import io.koalaql.ddl.UnmappedDataType
+import io.koalaql.ddl.*
 import kotlin.test.Test
 
 class PostgresDdlTests: DdlTests(), PostgresTestProvider {
     override fun supportedColumnTypes(type: UnmappedDataType<*>): Boolean {
-        return true
+        return when (type) {
+            TINYINT, TINYINT.UNSIGNED, SMALLINT.UNSIGNED, INTEGER.UNSIGNED, BIGINT.UNSIGNED, is VARBINARY -> false
+            else -> true
+        }
     }
 
     @Test
