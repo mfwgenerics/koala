@@ -26,7 +26,11 @@ class PostgresSchemaDiff(
     private fun diffDatetime(precision: Int?, info: ColumnTypeInfo): Boolean =
         info.tag != Types.TIMESTAMP || (precision != null && info.columnSize != 19 + timeLength(precision))
 
-    private fun diffColumnType(dataType: UnmappedDataType<*>, info: ColumnTypeInfo): Boolean {
+    private fun diffColumnType(
+        isAutoIncrement: Boolean,
+        dataType: UnmappedDataType<*>,
+        info: ColumnTypeInfo
+    ): Boolean {
         return when (dataType) {
             BOOLEAN -> info.tag != Types.BIT
             DOUBLE -> info.tag != Types.DOUBLE
@@ -41,21 +45,28 @@ class PostgresSchemaDiff(
                 || info.decimalDigits != dataType.scale
             }
             DATE -> info.tag != Types.DATE
-            TINYINT -> info.tag != Types.TINYINT || info.name != "TINYINT"
-            SMALLINT -> info.tag != Types.SMALLINT || info.name != "SMALLINT"
-            INTEGER -> info.tag != Types.INTEGER || info.name != "INT"
-            BIGINT -> info.tag != Types.BIGINT || info.name != "BIGINT"
-            TINYINT.UNSIGNED -> info.tag != Types.TINYINT || info.name != "TINYINT UNSIGNED"
-            SMALLINT.UNSIGNED -> info.tag != Types.SMALLINT || info.name != "SMALLINT UNSIGNED"
-            INTEGER.UNSIGNED -> info.tag != Types.INTEGER || info.name != "INT UNSIGNED"
-            BIGINT.UNSIGNED -> info.tag != Types.BIGINT || info.name != "BIGINT UNSIGNED"
+            SMALLINT -> if (isAutoIncrement) {
+                info.tag != Types.SMALLINT || info.name != "smallserial"
+            } else {
+                info.tag != Types.SMALLINT || info.name != "smallint"
+            }
+            INTEGER -> if (isAutoIncrement) {
+                info.tag != Types.INTEGER || info.name != "serial"
+            } else {
+                info.tag != Types.INTEGER || info.name != "integer"
+            }
+            BIGINT -> if (isAutoIncrement) {
+                info.tag != Types.BIGINT || info.name != "bigserial"
+            } else {
+                info.tag != Types.BIGINT || info.name != "bigint"
+            }
             is TIME -> (info.tag != Types.TIME
                 || (dataType.precision != null
                 && info.columnSize != 8 + timeLength(dataType.precision!!)))
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
             is RAW -> false
-            is JSON -> error("$info")
+            else -> error("Unsupported type $dataType")
         }
     }
 
@@ -96,7 +107,7 @@ class PostgresSchemaDiff(
 
             val diff = ColumnDiff(
                 newColumn = expected,
-                type = if (diffColumnType(def.columnType.dataType, typeInfo)) {
+                type = if (diffColumnType(isAutoincrement, def.columnType.dataType, typeInfo)) {
                     BaseColumnType(def.columnType.dataType)
                 } else null,
                 notNull = when (columns.getString("IS_NULLABLE")) {
