@@ -23,8 +23,9 @@ class PostgresSchemaDiff(
     private fun timeLength(precision: Int): Int =
         if (precision == 0) 0 else precision + 1
 
-    private fun diffDatetime(precision: Int?, info: ColumnTypeInfo): Boolean =
-        info.tag != Types.TIMESTAMP || (precision != null && info.decimalDigits != precision)
+    private fun diffDatetime(name: String, precision: Int?, info: ColumnTypeInfo): Boolean {
+        return info.name != name || info.tag != Types.TIMESTAMP || (precision != null && info.decimalDigits != precision)
+    }
 
     private fun diffColumnType(
         isAutoIncrement: Boolean,
@@ -38,8 +39,8 @@ class PostgresSchemaDiff(
             TEXT -> info.tag != Types.VARCHAR
             is VARCHAR -> info.tag != Types.VARCHAR
                 || info.columnSize != dataType.maxLength
-            is DATETIME -> diffDatetime(dataType.precision, info)
-            is TIMESTAMP -> diffDatetime(dataType.precision, info)
+            is DATETIME -> diffDatetime("timestamp", dataType.precision, info)
+            is TIMESTAMP -> diffDatetime("timestamptz", dataType.precision, info)
             is DECIMAL -> info.tag != Types.NUMERIC
                 || info.columnSize != dataType.precision
                 || info.decimalDigits != dataType.scale
