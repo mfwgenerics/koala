@@ -18,6 +18,7 @@ import kotlin.reflect.KClass
 
 private fun UnmappedDataType<*>.toRawSql(): String = when (this) {
     DOUBLE -> "DOUBLE PRECISION"
+    FLOAT -> "REAL" /* "FLOAT" type in postgres is double precision/float8 */
     else -> defaultRawSql()
 }
 

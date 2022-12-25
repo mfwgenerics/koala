@@ -24,7 +24,7 @@ class PostgresSchemaDiff(
         if (precision == 0) 0 else precision + 1
 
     private fun diffDatetime(precision: Int?, info: ColumnTypeInfo): Boolean =
-        info.tag != Types.TIMESTAMP || (precision != null && info.columnSize != 19 + timeLength(precision))
+        info.tag != Types.TIMESTAMP || (precision != null && info.decimalDigits != precision)
 
     private fun diffColumnType(
         isAutoIncrement: Boolean,
@@ -35,30 +35,29 @@ class PostgresSchemaDiff(
             BOOLEAN -> info.tag != Types.BIT
             DOUBLE -> info.tag != Types.DOUBLE
             FLOAT -> info.tag != Types.REAL
-            TEXT -> info.tag != Types.LONGVARCHAR
+            TEXT -> info.tag != Types.VARCHAR
             is VARCHAR -> info.tag != Types.VARCHAR
                 || info.columnSize != dataType.maxLength
             is DATETIME -> diffDatetime(dataType.precision, info)
             is TIMESTAMP -> diffDatetime(dataType.precision, info)
-            is DECIMAL -> { info.tag != Types.DECIMAL
+            is DECIMAL -> info.tag != Types.NUMERIC
                 || info.columnSize != dataType.precision
                 || info.decimalDigits != dataType.scale
-            }
             DATE -> info.tag != Types.DATE
             SMALLINT -> if (isAutoIncrement) {
                 info.tag != Types.SMALLINT || info.name != "smallserial"
             } else {
-                info.tag != Types.SMALLINT || info.name != "smallint"
+                info.tag != Types.SMALLINT || info.name != "int2"
             }
             INTEGER -> if (isAutoIncrement) {
                 info.tag != Types.INTEGER || info.name != "serial"
             } else {
-                info.tag != Types.INTEGER || info.name != "integer"
+                info.tag != Types.INTEGER || info.name != "int4"
             }
             BIGINT -> if (isAutoIncrement) {
                 info.tag != Types.BIGINT || info.name != "bigserial"
             } else {
-                info.tag != Types.BIGINT || info.name != "bigint"
+                info.tag != Types.BIGINT || info.name != "int8"
             }
             is TIME -> (info.tag != Types.TIME
                 || (dataType.precision != null
