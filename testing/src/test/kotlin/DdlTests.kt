@@ -1,10 +1,14 @@
 import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.*
+import io.koalaql.ddl.Table.Companion.default
+import io.koalaql.ddl.Table.Companion.using
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.Diff
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.ddl.diff.TableDiff
 import io.koalaql.dsl.keys
+import io.koalaql.dsl.value
+import io.koalaql.expr.Literal
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.assertMatch
 import kotlin.test.Test
@@ -140,7 +144,13 @@ abstract class DdlTests: ProvideTestDatabase {
         class TestTable(ix: Int): Table("Test") {
             init {
                 cases.forEach { (name, cases) ->
-                    column(name, cases[ix])
+                    @Suppress("unchecked_cast")
+                    val dataType = cases[ix] as UnmappedDataType<Any>
+
+                    column(name, dataType.using {
+                        /* to make this work with postgres we need to include a `using null` to avoid AoT cast/convert error */
+                        Literal(dataType.type, null)
+                    })
                 }
             }
         }

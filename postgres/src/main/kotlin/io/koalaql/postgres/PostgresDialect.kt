@@ -238,18 +238,14 @@ class PostgresDialect: SqlDialect {
 
                     sql.compileColumnType(column.newColumn)
 
-                    /*sql.addSql(" USING CAST(")
-                    sql.addIdentifier(cname)
-                    sql.addSql(" AS ")
-                    sql.compileColumnType(column.newColumn)
-                    sql.addSql(")")*/
+                    val using = column.newColumn.builtDef.using
 
-                    /*sql.addSql(" USING ")
-                    sql.addIdentifier(cname)
-                    sql.addSql("::")
-                    sql.compileColumnType(column.newColumn)*/
+                    if (using != null) {
+                        val usingExpr = using(RawExpr<Any> { identifier(cname) })
 
-                    /*sql.addSql(" USING NULL")*/
+                        sql.addSql(" USING ")
+                        sql.compileDefaultExpr(usingExpr)
+                    }
                 }
             }
 
