@@ -40,7 +40,9 @@ abstract class DdlTests: ProvideTestDatabase {
 
         db.changeSchema(diff)
 
-        assert(db.detectChanges(listOf(table)).isEmpty())
+        val changes = db.detectChanges(listOf(table))
+
+        assert(changes.isEmpty()) { "unexpected changes: $changes" }
     }
 
     @Test

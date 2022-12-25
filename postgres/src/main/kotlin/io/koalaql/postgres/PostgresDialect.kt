@@ -134,15 +134,8 @@ class PostgresDialect: SqlDialect {
         }
     }
 
-    private fun ScopedSqlBuilder.compileColumnDef(column: TableColumn<*>) {
-        addIdentifier(column.symbol)
-        addSql(" ")
-
-        compileColumnType(column)
-
+    private fun ScopedSqlBuilder.compileColumnDefault(column: TableColumn<*>) {
         val def = column.builtDef
-
-        if (def.notNull) addSql(" NOT NULL")
 
         def.default?.let { default ->
             @Suppress("unchecked_cast")
@@ -157,6 +150,19 @@ class PostgresDialect: SqlDialect {
             addSql(" DEFAULT ")
             compileDefaultExpr(finalExpr)
         }
+    }
+
+    private fun ScopedSqlBuilder.compileColumnDef(column: TableColumn<*>) {
+        addIdentifier(column.symbol)
+        addSql(" ")
+
+        compileColumnType(column)
+
+        val def = column.builtDef
+
+        if (def.notNull) addSql(" NOT NULL")
+
+        compileColumnDefault(column)
     }
 
     private fun ScopedSqlBuilder.compileCreateTable(table: Table) {
@@ -195,6 +201,50 @@ class PostgresDialect: SqlDialect {
         }
     }
 
+    private fun ScopedSqlBuilder.compileAlterColumnType(
+        table: Table,
+        column: TableColumn<*>
+    ) {
+        val cname = column.symbol
+
+        addSql("ALTER TABLE ")
+        addTableReference(table)
+        addSql(" ALTER COLUMN ")
+        addIdentifier(cname)
+
+        addSql(" TYPE ")
+
+        compileColumnType(column)
+
+        val using = column.builtDef.using
+
+        if (using != null) {
+            val usingExpr = using(RawExpr<Any> { identifier(cname) })
+
+            addSql(" USING ")
+            compileDefaultExpr(usingExpr)
+        }
+    }
+
+    private fun ScopedSqlBuilder.compileAlterColumnDefault(
+        table: Table,
+        column: TableColumn<*>
+    ) {
+        addSql("ALTER TABLE ")
+        addTableReference(table)
+        addSql(" ALTER COLUMN ")
+        addIdentifier(column.symbol)
+
+        val newDefault = column.builtDef.default
+
+        if (newDefault == null) {
+            addSql(" DROP DEFAULT")
+        } else {
+            addSql(" SET")
+            compileColumnDefault(column)
+        }
+    }
+
     override fun ddl(change: SchemaChange): List<CompiledSql> {
         val results = mutableListOf<(ScopedSqlBuilder) -> Unit>()
 
@@ -226,27 +276,8 @@ class PostgresDialect: SqlDialect {
             }
 
             table.columns.altered.forEach { (_, column) ->
-                results.add { sql ->
-                    val cname = column.newColumn.symbol
-
-                    sql.addSql("ALTER TABLE ")
-                    sql.addTableReference(table.newTable)
-                    sql.addSql(" ALTER COLUMN ")
-
-                    sql.addIdentifier(cname)
-                    sql.addSql(" TYPE ")
-
-                    sql.compileColumnType(column.newColumn)
-
-                    val using = column.newColumn.builtDef.using
-
-                    if (using != null) {
-                        val usingExpr = using(RawExpr<Any> { identifier(cname) })
-
-                        sql.addSql(" USING ")
-                        sql.compileDefaultExpr(usingExpr)
-                    }
-                }
+                if (column.type != null) results.add { it.compileAlterColumnType(table.newTable, column.newColumn) }
+                if (column.changedDefault != null) results.add { it.compileAlterColumnDefault(table.newTable, column.newColumn) }
             }
 
             table.columns.dropped.forEach { column ->
@@ -259,16 +290,41 @@ class PostgresDialect: SqlDialect {
             }
 
             table.indexes.created.forEach { (name, index) ->
-                results.add { sql ->
-                    sql.compileIndexDef(table.newTable, name, index)
+                when (index.type) {
+                    IndexType.UNIQUE -> results.add { sql ->
+                        sql.addSql("ALTER TABLE")
+                        sql.addTableReference(table.newTable)
+                        sql.addSql(" ADD CONSTRAINT ")
+                        sql.addIdentifier(name)
+                        sql.addSql(" UNIQUE ")
+
+                        sql.parenthesize {
+                            sql.prefix("", ", ").forEach(index.keys.keys) { key ->
+                                sql.compileDefaultExpr(key)
+                            }
+                        }
+                    }
+                    IndexType.INDEX -> results.add { sql ->
+                        sql.compileIndexDef(table.newTable, name, index)
+                    }
+                    else -> { }
                 }
+            }
+
+            table.indexes.altered.forEach {
+                error("Altering an existing index/key is not supported")
             }
 
             table.indexes.dropped.forEach { name ->
                 results.add { sql ->
                     sql.addSql("ALTER TABLE ")
                     sql.addTableReference(table.newTable)
-                    sql.addSql(" DROP INDEX ")
+                    sql.addSql(" DROP CONSTRAINT IF EXISTS ")
+                    sql.addIdentifier(name)
+                }
+
+                results.add { sql ->
+                    sql.addSql("DROP INDEX IF EXISTS ")
                     sql.addIdentifier(name)
                 }
             }
