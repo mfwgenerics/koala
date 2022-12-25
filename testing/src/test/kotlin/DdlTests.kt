@@ -1,10 +1,14 @@
 import io.koalaql.DeclareStrategy
 import io.koalaql.ddl.*
+import io.koalaql.ddl.Table.Companion.default
+import io.koalaql.ddl.Table.Companion.using
 import io.koalaql.ddl.diff.ColumnDiff
 import io.koalaql.ddl.diff.Diff
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.ddl.diff.TableDiff
 import io.koalaql.dsl.keys
+import io.koalaql.dsl.value
+import io.koalaql.expr.Literal
 import io.koalaql.jdbc.JdbcDataSource
 import io.koalaql.test.assertMatch
 import kotlin.test.Test
@@ -36,7 +40,9 @@ abstract class DdlTests: ProvideTestDatabase {
 
         db.changeSchema(diff)
 
-        assert(db.detectChanges(listOf(table)).isEmpty())
+        val changes = db.detectChanges(listOf(table))
+
+        assert(changes.isEmpty()) { "unexpected changes: $changes" }
     }
 
     @Test
@@ -127,10 +133,12 @@ abstract class DdlTests: ProvideTestDatabase {
             VARBINARY(200)
         )
 
-        val cases = columnTypes
+        val filteredColumnTypes = columnTypes
             .filter { supportedColumnTypes(it) }
+
+        val cases = filteredColumnTypes
             .mapIndexed { ix, it ->
-                listOf(it, columnTypes[(ix + 1) % columnTypes.size], columnTypes[(ix + 3) % columnTypes.size])
+                listOf(it, filteredColumnTypes[(ix + 1) % filteredColumnTypes.size], filteredColumnTypes[(ix + 3) % filteredColumnTypes.size])
             }
             .withIndex()
             .associateBy({ "${it.index}" }) { it.value }
@@ -138,7 +146,13 @@ abstract class DdlTests: ProvideTestDatabase {
         class TestTable(ix: Int): Table("Test") {
             init {
                 cases.forEach { (name, cases) ->
-                    column(name, cases[ix])
+                    @Suppress("unchecked_cast")
+                    val dataType = cases[ix] as UnmappedDataType<Any>
+
+                    column(name, dataType.using {
+                        /* to make this work with postgres we need to include a `using null` to avoid AoT cast/convert error */
+                        Literal(dataType.type, null)
+                    })
                 }
             }
         }

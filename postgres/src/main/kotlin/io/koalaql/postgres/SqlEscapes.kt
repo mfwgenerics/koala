@@ -11,6 +11,11 @@ object PostgresDdlEscapes: SqlEscapes {
     }
 
     override fun literal(sql: StringBuilder, params: MutableList<Literal<*>>, literal: Literal<*>) {
+        if (literal.value == null) {
+            sql.append("NULL")
+            return
+        }
+
         when (literal.type) {
             Byte::class -> sql.append("${literal.value as Byte}")
             Short::class -> sql.append("${literal.value as Short}")

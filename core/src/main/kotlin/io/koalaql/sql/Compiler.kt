@@ -146,6 +146,7 @@ interface Compiler {
                 val build = expr.build
 
                 object : RawSqlBuilder {
+                    override fun identifier(value: String) { addIdentifier(value) }
                     override fun sql(value: String) { addSql(value) }
                     override fun expr(expr: QuasiExpr) { compiler.compileExpr(this@with, expr, true) }
                 }.build()
