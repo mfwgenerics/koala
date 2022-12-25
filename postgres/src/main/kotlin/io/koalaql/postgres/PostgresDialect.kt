@@ -124,6 +124,41 @@ class PostgresDialect: SqlDialect {
         }
     }
 
+    private fun ScopedSqlBuilder.compileColumnType(column: TableColumn<*>) {
+        val def = column.builtDef
+
+        if (def.autoIncrement) {
+            compileSerialType(def.columnType.dataType)
+        } else {
+            compileDataType(def.columnType.dataType)
+        }
+    }
+
+    private fun ScopedSqlBuilder.compileColumnDef(column: TableColumn<*>) {
+        addIdentifier(column.symbol)
+        addSql(" ")
+
+        compileColumnType(column)
+
+        val def = column.builtDef
+
+        if (def.notNull) addSql(" NOT NULL")
+
+        def.default?.let { default ->
+            @Suppress("unchecked_cast")
+            val finalExpr = when (default) {
+                is ColumnDefaultExpr -> default.expr
+                is ColumnDefaultValue -> Literal(
+                    def.columnType.type as KClass<Any>,
+                    default.value
+                )
+            }
+
+            addSql(" DEFAULT ")
+            compileDefaultExpr(finalExpr)
+        }
+    }
+
     private fun ScopedSqlBuilder.compileCreateTable(table: Table) {
         addSql("CREATE TABLE IF NOT EXISTS ")
 
@@ -132,32 +167,7 @@ class PostgresDialect: SqlDialect {
             val comma = prefix("\n", ",\n")
 
             comma.forEach(table.columns.includingUnused()) {
-                val def = it.builtDef
-
-                addIdentifier(it.symbol)
-                addSql(" ")
-
-                if (def.autoIncrement) {
-                    compileSerialType(def.columnType.dataType)
-                } else {
-                    compileDataType(def.columnType.dataType)
-                }
-
-                if (def.notNull) addSql(" NOT NULL")
-
-                def.default?.let { default ->
-                    @Suppress("unchecked_cast")
-                    val finalExpr = when (default) {
-                        is ColumnDefaultExpr -> default.expr
-                        is ColumnDefaultValue -> Literal(
-                            def.columnType.type as KClass<Any>,
-                            default.value
-                        )
-                    }
-
-                    addSql(" DEFAULT ")
-                    compileDefaultExpr(finalExpr)
-                }
+                compileColumnDef(it)
             }
 
             table.primaryKey?.let { pk ->
@@ -186,39 +196,95 @@ class PostgresDialect: SqlDialect {
     }
 
     override fun ddl(change: SchemaChange): List<CompiledSql> {
-        val results = mutableListOf<CompiledSql>()
+        val results = mutableListOf<(ScopedSqlBuilder) -> Unit>()
 
         change.tables.created.forEach { (_, table) ->
-            val sql = CompiledSqlBuilder(PostgresDdlEscapes)
-
-            ScopedSqlBuilder(
-                sql,
-                Scope(NameRegistry { "column${it + 1}" }),
-                compiler
-            ).compileCreateTable(table)
-
-            results.add(sql.toSql())
+            results.add { sql ->
+                sql.compileCreateTable(table)
+            }
         }
 
         change.tables.created.forEach { (_, table) ->
             table.indexes.forEach { index ->
                 if (index.def.type == IndexType.INDEX) {
-                    val sql = CompiledSqlBuilder(PostgresDdlEscapes)
-
-                    ScopedSqlBuilder(
-                        sql,
-                        Scope(NameRegistry { "column${it + 1}" }),
-                        compiler
-                    ).apply {
-                        compileIndexDef(table, index.name, index.def)
+                    results.add { sql ->
+                        sql.compileIndexDef(table, index.name, index.def)
                     }
-
-                    results.add(sql.toSql())
                 }
             }
         }
 
-        return results
+        change.tables.altered.forEach { (_, table) ->
+            table.columns.created.forEach { (_, column) ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addTableReference(table.newTable)
+                    sql.addSql(" ADD COLUMN ")
+
+                    sql.compileColumnDef(column)
+                }
+            }
+
+            table.columns.altered.forEach { (_, column) ->
+                results.add { sql ->
+                    val cname = column.newColumn.symbol
+
+                    sql.addSql("ALTER TABLE ")
+                    sql.addTableReference(table.newTable)
+                    sql.addSql(" ALTER COLUMN ")
+
+                    sql.addIdentifier(cname)
+                    sql.addSql(" TYPE ")
+
+                    sql.compileColumnType(column.newColumn)
+
+                    /*sql.addSql(" USING CAST(")
+                    sql.addIdentifier(cname)
+                    sql.addSql(" AS ")
+                    sql.compileColumnType(column.newColumn)
+                    sql.addSql(")")*/
+
+                    /*sql.addSql(" USING ")
+                    sql.addIdentifier(cname)
+                    sql.addSql("::")
+                    sql.compileColumnType(column.newColumn)*/
+
+                    /*sql.addSql(" USING NULL")*/
+                }
+            }
+
+            table.columns.dropped.forEach { column ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addTableReference(table.newTable)
+                    sql.addSql(" DROP COLUMN ")
+                    sql.addIdentifier(column)
+                }
+            }
+
+            table.indexes.created.forEach { (name, index) ->
+                results.add { sql ->
+                    sql.compileIndexDef(table.newTable, name, index)
+                }
+            }
+
+            table.indexes.dropped.forEach { name ->
+                results.add { sql ->
+                    sql.addSql("ALTER TABLE ")
+                    sql.addTableReference(table.newTable)
+                    sql.addSql(" DROP INDEX ")
+                    sql.addIdentifier(name)
+                }
+            }
+        }
+
+        return results.map {
+            ScopedSqlBuilder(
+                CompiledSqlBuilder(PostgresDdlEscapes),
+                Scope(NameRegistry { "column${it + 1}" }),
+                compiler
+            ).also(it).toSql()
+        }
     }
 
 
