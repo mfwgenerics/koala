@@ -11,6 +11,7 @@ import io.koalaql.expr.Expr
 import io.koalaql.query.Alias
 import io.koalaql.query.TableRelation
 import io.koalaql.query.built.BuiltRelation
+import kotlin.reflect.jvm.jvmName
 
 abstract class Table protected constructor(
     override val tableName: String
@@ -33,7 +34,7 @@ abstract class Table protected constructor(
     private val usedNames: HashSet<String> = hashSetOf()
 
     private fun takeName(name: String) {
-        check(usedNames.add(name)) { "field name $name is already in use" }
+        check(usedNames.add(name)) { "${this::class.jvmName}: field name \"$name\" is already in use" }
     }
 
     private fun registerColumn(column: TableColumn<*>) {
@@ -87,7 +88,7 @@ abstract class Table protected constructor(
         .map {
             when (it) {
                 is Column -> it.symbol
-                else -> error("$it can not be named")
+                else -> error("${this::class.jvmName}: key component $it can not be named")
             }
         }
         .joinToString("_")
@@ -96,7 +97,9 @@ abstract class Table protected constructor(
         "${tableName}_${nameKeys(keys)}_$suffix"
 
     protected fun primaryKey(name: String, keys: KeyList): BuiltNamedIndex {
-        check(primaryKey == null) { "multiple primary keys $name, $keys" }
+        check(primaryKey == null) {
+            "${this::class.jvmName}: could not create the primary key $name because there is already a primary key ${primaryKey?.name}"
+        }
 
         takeName(name)
 
