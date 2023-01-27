@@ -1,11 +1,15 @@
 ---
-title: Expressions
-sidebar_position: 6
+sidebar_position: 2
 ---
+
+# Expressions
+
 ## Case Expressions
+
 ### Case
 
-Case expressions are created by calling `case`.
+Case expressions are created by calling `case`
+
 ````mdx-code-block
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -14,7 +18,8 @@ import TabItem from '@theme/TabItem';
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val shopType = case(ShopTable.id,
+val shopType = case(
+    ShopTable.id,
     when_(hardwareStoreId).then("HARDWARE"),
     when_(groceryStoreId).then("GROCERIES"),
     else_ = value("OTHER")
@@ -27,11 +32,11 @@ val type = ShopTable
     .single()
     .getValue(shopType)
 
-assertEquals(type, "GROCERIES")
+check(type == "GROCERIES")
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="sql" label="Sql">
 
 ```sql
 SELECT CASE T0."id"
@@ -46,10 +51,16 @@ WHERE T0."id" = 2
 </TabItem>
 </Tabs>
 ````
+
 ### Empty case
 
 The subject of a case expression can be omitted.
-The case expression will then match the first true condition
+The case expression will then match the first true condition.
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val shopType = case(
     when_(ShopTable.id eq hardwareStoreId).then("HARDWARE"),
@@ -63,12 +74,30 @@ val type = ShopTable
     .single()
     .getValue(shopType)
 
-assertEquals(type, "GROCERIES")
+check(type == "GROCERIES")
 ```
-## String Operations
-### Like
-````mdx-code-block
 
+</TabItem>
+<TabItem value="sql" label="Sql">
+
+```sql
+SELECT CASE
+WHEN T0."id" = 1 THEN 'HARDWARE'
+WHEN T0."id" = 2 THEN 'GROCERIES'
+END c0
+FROM "Shop" T0
+WHERE T0."id" = 2
+```
+
+</TabItem>
+</Tabs>
+````
+
+## String Operations
+
+### Like
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -79,11 +108,11 @@ val row = ShopTable
     .perform(db)
     .single()
 
-assertEquals(hardwareStoreId, row.getValue(ShopTable.id))
+check(hardwareStoreId == row.getValue(ShopTable.id))
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="sql" label="Sql">
 
 ```sql
 SELECT T0."id" c0
@@ -97,9 +126,10 @@ WHERE (T0."name" LIKE '%Hardware%') AND (T0."name" NOT LIKE '%Groceries%')
 </TabItem>
 </Tabs>
 ````
-### Upper and lower
-````mdx-code-block
 
+### Upper and lower
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -113,12 +143,12 @@ val (lowerName, upperName) = ShopTable
     .perform(db)
     .single()
 
-assertEquals("helen's hardware", lowerName)
-assertEquals("HELEN'S HARDWARE", upperName)
+check("helen's hardware" == lowerName)
+check("HELEN'S HARDWARE" == upperName)
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="sql" label="Sql">
 
 ```sql
 SELECT LOWER(T0."name") c0

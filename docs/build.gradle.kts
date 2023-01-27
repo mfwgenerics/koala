@@ -1,9 +1,15 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("conventions")
 
     id("io.koalaql.markout") version "0.0.6"
     id("io.koalaql.kapshot-plugin") version "0.1.1"
 }
+
+val compileKotlin: KotlinCompile by tasks
+
+compileKotlin.kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 
 markout {
     mainClass = "MainKt"
