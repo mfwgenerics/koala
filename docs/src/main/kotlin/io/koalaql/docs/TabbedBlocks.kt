@@ -1,6 +1,7 @@
 package io.koalaql.docs
 
 import io.koalaql.kapshot.CapturedBlock
+import io.koalaql.markout.MarkoutDsl
 import io.koalaql.markout.md.Markdown
 import io.koalaql.markout.md.markdownString
 
@@ -8,7 +9,7 @@ interface TabBuilder {
     fun tab(label: String, lang: String, block: String)
 
     fun kotlin(block: String) = tab("Kotlin", "kotlin", block)
-    fun sql(block: String) = tab("Sql", "sql", block)
+    fun sql(block: String) = tab("SQL", "sql", block)
 }
 
 class TabbedBlocks {
@@ -51,7 +52,7 @@ ${tabs.joinToString("\n")}
     }
 
     context(Markdown, ExampleData)
-    fun withGeneratedSql(block: CapturedBlock<*>) {
+    fun withGeneratedSql(block: CapturedBlock<Unit>) {
         val kotlin = execBlock(block)
 
         tabs {

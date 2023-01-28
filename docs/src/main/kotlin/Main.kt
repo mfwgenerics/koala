@@ -4,6 +4,7 @@ import io.koalaql.docs.execBlock
 import io.koalaql.docs.executing.resultSets
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.writing.expressions
+import io.koalaql.docs.writing.queries
 import io.koalaql.markout.docusaurus.docusaurus
 import io.koalaql.markout.markout
 import kotlin.io.path.Path
@@ -34,6 +35,8 @@ fun main() = markout(Path("site/docs")) {
 
         directory("writing") {
             label = "Writing SQL"
+
+            markdown("Queries") { queries() }
 
             directory("statements") {
                 label = "Statements"

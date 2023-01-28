@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Expressions
@@ -36,7 +36,7 @@ check(type == "GROCERIES")
 ```
 
 </TabItem>
-<TabItem value="sql" label="Sql">
+<TabItem value="sql" label="SQL">
 
 ```sql
 SELECT CASE T0."id"
@@ -78,7 +78,7 @@ check(type == "GROCERIES")
 ```
 
 </TabItem>
-<TabItem value="sql" label="Sql">
+<TabItem value="sql" label="SQL">
 
 ```sql
 SELECT CASE
@@ -112,7 +112,7 @@ check(hardwareStoreId == row.getValue(ShopTable.id))
 ```
 
 </TabItem>
-<TabItem value="sql" label="Sql">
+<TabItem value="sql" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -148,7 +148,7 @@ check("HELEN'S HARDWARE" == upperName)
 ```
 
 </TabItem>
-<TabItem value="sql" label="Sql">
+<TabItem value="sql" label="SQL">
 
 ```sql
 SELECT LOWER(T0."name") c0

@@ -1,11 +1,15 @@
 ---
-title: Queries
-sidebar_position: 4
+sidebar_position: 1
 ---
+
+# Queries
+
 ## Selects
+
 ### Selecting all columns
 
 Use `.selectAll()` to select all columns from a query.
+
 ````mdx-code-block
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -19,7 +23,8 @@ val allSelected = ShopTable
     .selectAll()
     .perform(db)
 
-assertContentEquals(ShopTable.columns, allSelected.columns)
+check(ShopTable.columns.deepEquals(allSelected.columns))
+check("Helen's Hardware" == allSelected.first()[ShopTable.name])
 ```
 
 </TabItem>
@@ -37,9 +42,10 @@ WHERE T0."id" = 1
 </TabItem>
 </Tabs>
 ````
-In most cases `.selectAll()` can be omitted:
-````mdx-code-block
 
+In most cases `.selectAll()` can be omitted:
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -48,7 +54,7 @@ val implicitSelectAll = ShopTable
     .where(ShopTable.id eq hardwareStoreId)
     .perform(db)
 
-assertContentEquals(allSelected.columns, implicitSelectAll.columns)
+check(ShopTable.columns.deepEquals(implicitSelectAll.columns))
 ```
 
 </TabItem>
@@ -61,25 +67,34 @@ SELECT T0."id" c0
 , T0."established" c3
 FROM "Shop" T0
 WHERE T0."id" = 1
+
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+WHERE T0."id" = 1
 ```
 
 </TabItem>
 </Tabs>
 ````
+
 :::info
 
 `SELECT * FROM` will never appear in generated SQL.
 The generated SQL for these queries will name columns explicitly.
 
 :::
+
 ### Individual columns
 
 Selecting a small number of fixed columns gives you a specialized
 query with statically typed rows of ordered columns.
 You can use Kotlin's destructuring or call positional
 methods to access these fields in a type safe way.
-````mdx-code-block
 
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -92,15 +107,13 @@ val row: RowOfTwo<String, String> = ShopTable
 
 val (name, address) = row // destructuring support
 
-assertEquals(
-    name,
-    row.first() // using positional methods also works
-)
+// using positional methods also works
+check(name == row.first())
 
-assertEquals(row[ShopTable.name], name)
-assertEquals(row[ShopTable.address], address)
+check(row[ShopTable.name] == name)
+check(row[ShopTable.address] == address)
 
-assertEquals("Helen's Hardware @ 63 Smith Street, Caledonia, 62281D", "$name @ $address")
+check("Helen's Hardware @ 63 Smith Street, Caledonia, 62281D" == "$name @ $address")
 ```
 
 </TabItem>
@@ -116,11 +129,12 @@ WHERE T0."id" = 1
 </TabItem>
 </Tabs>
 ````
+
 ### All columns of a Table
 
 Passing a `Table` to `.select` will automatically select all fields from that `Table`:
-````mdx-code-block
 
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -132,7 +146,7 @@ val hardwareCustomers = ShopTable
     .select(CustomerTable) // select only fields from CustomerTable
     .perform(db)
 
-assertContentEquals(CustomerTable.columns, hardwareCustomers.columns)
+check(CustomerTable.columns.deepEquals(hardwareCustomers.columns))
 ```
 
 </TabItem>
@@ -152,9 +166,10 @@ ORDER BY T0."name" ASC
 </TabItem>
 </Tabs>
 ````
-You can pass multiple `Table`s to select:
-````mdx-code-block
 
+You can pass multiple `Table`s to select:
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -170,6 +185,15 @@ ShopTable
 
 ```sql
 SELECT T0."id" c0
+, T0."shop" c1
+, T0."name" c2
+, T0."spent" c3
+FROM "Shop" T1
+INNER JOIN "Customer" T0 ON T1."id" = T0."shop"
+WHERE T1."id" = 1
+ORDER BY T0."name" ASC
+
+SELECT T0."id" c0
 , T0."name" c1
 , T0."address" c2
 , T0."established" c3
@@ -184,8 +208,15 @@ INNER JOIN "Customer" T1 ON T0."id" = T1."shop"
 </TabItem>
 </Tabs>
 ````
+
 ### Select distinct
+
 All `.select(...)` methods have a corresponding `.selectDistinct(...)`.
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val distinctShopIds = CustomerTable
     .selectDistinct(CustomerTable.shop)
@@ -193,17 +224,37 @@ val distinctShopIds = CustomerTable
     .map { it.first() }
     .toList()
 
-assertContentEquals(distinctShopIds, distinctShopIds.distinct())
+check(distinctShopIds.deepEquals(distinctShopIds.distinct()))
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT DISTINCT T0."shop" c0
+FROM "Customer" T0
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Expressions and labels
 
 Expressions can be selected by using `as_` to label them.
 You can use an existing column name as a label or create an anonymous label:
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val lowercaseName = label<String>()
-```
+
+/*
 Here we select `LOWER(ShopTable.name)` in SQL and label it:
-```kotlin
+*/
+
 val row = ShopTable
     .where(ShopTable.id eq hardwareStoreId)
     .select(
@@ -212,14 +263,39 @@ val row = ShopTable
     )
     .perform(db)
     .single()
-```
+
+/*
 The label can then be used to access the result of the expression:
-```kotlin
-assertEquals("helen's hardware", row[lowercaseName])
-assertEquals(row[ShopTable.name].lowercase(), row[lowercaseName])
+ */
+
+check("helen's hardware" == row[lowercaseName])
+check(row[ShopTable.name].lowercase() == row[lowercaseName])
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+, LOWER(T0."name") c4
+FROM "Shop" T0
+WHERE T0."id" = 1
+```
+
+</TabItem>
+</Tabs>
+````
+
 For convenience you can use the labeled expression to refer to the label.
 Here is another way of writing the code from above:
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val lowerName = lower(ShopTable.name) as_ label()
 
@@ -229,14 +305,32 @@ val row = ShopTable
     .perform(db)
     .single()
 
-assertEquals("helen's hardware", row[lowerName])
-assertEquals(row[ShopTable.name].lowercase(), row[lowerName])
+check("helen's hardware" == row[lowerName])
+check(row[ShopTable.name].lowercase() == row[lowerName])
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+, LOWER(T0."name") c4
+FROM "Shop" T0
+WHERE T0."id" = 1
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Empty selections
 
 Selects can be empty. This will generate SQL with `SELECT 1`
-````mdx-code-block
 
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -246,12 +340,12 @@ val emptySelect = ShopTable
     .select()
     .perform(db)
 
-assertEquals(0, emptySelect.columns.size)
+check(emptySelect.columns.isEmpty())
 
 val rowCount = emptySelect
     .count()
 
-assertEquals(2, rowCount)
+check(2 == rowCount)
 ```
 
 </TabItem>
@@ -266,11 +360,17 @@ WHERE T0."id" IN (1, 2)
 </TabItem>
 </Tabs>
 ````
+
 ### Expecting columns
 
 If you know the exact columns a query will have at runtime,
 you can convert it to a query of statically typed rows.
 This is sometimes necessary when using subqueries in expressions.
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val columnsList = listOf(ShopTable.address, ShopTable.name)
 
@@ -287,28 +387,77 @@ val staticallyTypedRow: RowOfTwo<String, String> = query
     .perform(db)
     .single()
 
-assertEquals(
-    genericRow[ShopTable.name],
-    staticallyTypedRow.first()
-)
+check(genericRow[ShopTable.name] == staticallyTypedRow.first())
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."address" c0
+, T0."name" c1
+FROM "Shop" T0
+WHERE T0."id" = 1
+
+SELECT T0."name" c0
+, T0."address" c1
+FROM "Shop" T0
+WHERE T0."id" = 1
+```
+
+</TabItem>
+</Tabs>
+````
+
 This will not work if the columns sets do not match at runtime. The following code will fail:
+
 ```kotlin
-assertFails {
-    ShopTable
-        .where(ShopTable.id eq hardwareStoreId)
-        .select(listOf(ShopTable.address, ShopTable.name))
-        .expecting(ShopTable.name)
-}
+ShopTable
+    .where(ShopTable.id eq hardwareStoreId)
+    .select(listOf(ShopTable.address, ShopTable.name))
+    .expecting(ShopTable.name)
 ```
+
 ## Joins
-### Inner join
+
+### Inner Join
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 CustomerTable
     .innerJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."shop" c1
+, T0."name" c2
+, T0."spent" c3
+, T1."id" c4
+, T1."name" c5
+, T1."address" c6
+, T1."established" c7
+FROM "Customer" T0
+INNER JOIN "Shop" T1 ON T1."id" = T0."shop"
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Left and right join
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 CustomerTable
     .leftJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
@@ -318,14 +467,78 @@ CustomerTable
     .rightJoin(ShopTable, ShopTable.id eq CustomerTable.shop)
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."shop" c1
+, T0."name" c2
+, T0."spent" c3
+, T1."id" c4
+, T1."name" c5
+, T1."address" c6
+, T1."established" c7
+FROM "Customer" T0
+LEFT JOIN "Shop" T1 ON T1."id" = T0."shop"
+
+SELECT T0."id" c0
+, T0."shop" c1
+, T0."name" c2
+, T0."spent" c3
+, T1."id" c4
+, T1."name" c5
+, T1."address" c6
+, T1."established" c7
+FROM "Customer" T0
+RIGHT JOIN "Shop" T1 ON T1."id" = T0."shop"
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Cross join
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 ShopTable
     .crossJoin(CustomerTable)
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+, T1."id" c4
+, T1."shop" c5
+, T1."name" c6
+, T1."spent" c7
+FROM "Shop" T0
+CROSS JOIN "Customer" T1
+```
+
+</TabItem>
+</Tabs>
+````
+
 ## Aliases
+
 ### Self-join with alias
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val alias = alias()
 
@@ -335,11 +548,39 @@ val row = ShopTable
     .perform(db)
     .single()
 
-assertEquals("Helen's Hardware", row[ShopTable.name])
-assertEquals("24 Hr Groceries", row[alias[ShopTable.name]])
+check("Helen's Hardware" == row[ShopTable.name])
+check("24 Hr Groceries" == row[alias[ShopTable.name]])
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+, T1."id" c4
+, T1."name" c5
+, T1."address" c6
+, T1."established" c7
+FROM "Shop" T0
+INNER JOIN "Shop" T1 ON T1."id" = 2
+WHERE T0."id" = 1
+```
+
+</TabItem>
+</Tabs>
+````
+
 ## Where
+
 ### Chaining wheres
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 ShopTable
     .where(ShopTable.id eq hardwareStoreId)
@@ -347,8 +588,31 @@ ShopTable
     .perform(db)
     .single()
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+WHERE (T0."id" = 1) AND (T0."name" = 'Helen\'s Hardware')
+```
+
+</TabItem>
+</Tabs>
+````
+
 ## Group By
+
 ### Group by
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val customerCount = label<Int>()
 
@@ -357,10 +621,26 @@ CustomerTable
     .select(CustomerTable.shop, count() as_ customerCount)
     .perform(db)
 ```
-## Windows
-### Window clause
-````mdx-code-block
 
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."shop" c0
+, COUNT(*) c1
+FROM "Customer" T0
+GROUP BY T0."shop"
+```
+
+</TabItem>
+</Tabs>
+````
+
+## Windows
+
+### Window clause
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -384,16 +664,17 @@ val rankings = ShopTable
     .perform(db)
     .map { row ->
         "${row[CustomerTable.name]} #${row[rank]} at ${row[ShopTable.name]} " +
-        "spent $${row[CustomerTable.spent]} of $${row[totalSpent]}"
+                "spent $${row[CustomerTable.spent]} of $${row[totalSpent]}"
     }
     .toList()
 
-assertContentEquals(
-    rankings,
-    listOf(
-        "Angela Abara #1 at 24 Hr Groceries spent $79.99 of $79.99",
-        "Michael M. Michael #1 at Helen's Hardware spent $125.00 of $145.50",
-        "Maria Robinson #2 at Helen's Hardware spent $20.50 of $145.50"
+check(
+    rankings.deepEquals(
+        listOf(
+            "Angela Abara #1 at 24 Hr Groceries spent $79.99 of $79.99",
+            "Michael M. Michael #1 at Helen's Hardware spent $125.00 of $145.50",
+            "Maria Robinson #2 at Helen's Hardware spent $20.50 of $145.50"
+        )
     )
 )
 ```
@@ -416,10 +697,12 @@ ORDER BY T0."name" ASC, c3 ASC
 </TabItem>
 </Tabs>
 ````
-## Values
-### From rows
-````mdx-code-block
 
+## Values
+
+### From rows
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -433,7 +716,7 @@ val result = values(fakeShop)
     .perform(db)
     .single()
 
-assertEquals("Fake Shop", result[ShopTable.name])
+check("Fake Shop" == result[ShopTable.name])
 ```
 
 </TabItem>
@@ -446,9 +729,10 @@ VALUES ('Fake Shop', '79 Fake Street, Fakesville')
 </TabItem>
 </Tabs>
 ````
-### From a collection
-````mdx-code-block
 
+### From a collection
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -479,9 +763,10 @@ VALUES ('Dylan', 2, 10.80)
 </TabItem>
 </Tabs>
 ````
-### Using labels
-````mdx-code-block
 
+### Using labels
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -501,8 +786,8 @@ val (firstName, firstAge) = names
     .perform(db)
     .first()
 
-assertEquals(firstName, "SOFIA")
-assertEquals(firstAge, 29)
+check(firstName == "SOFIA")
+check(firstAge == 29)
 ```
 
 </TabItem>
@@ -519,9 +804,17 @@ ORDER BY T0."name" DESC
 </TabItem>
 </Tabs>
 ````
+
 ## Unions
+
 ## Order By
+
 ### Order by
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val alphabetical = ShopTable
     .orderBy(ShopTable.name)
@@ -531,7 +824,36 @@ val reverseAlphabetical = ShopTable
     .orderBy(ShopTable.name.desc())
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."name" ASC
+
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."name" DESC
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Nulls first and last
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 ShopTable
     .orderBy(ShopTable.established.desc().nullsLast())
@@ -541,7 +863,36 @@ ShopTable
     .orderBy(ShopTable.established.asc().nullsFirst())
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."established" DESC NULLS LAST
+
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."established" ASC NULLS FIRST
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Compound order
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 ShopTable
     .orderBy(
@@ -550,15 +901,61 @@ ShopTable
     )
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."established" DESC NULLS LAST, T0."name" ASC
+```
+
+</TabItem>
+</Tabs>
+````
+
 ## Limits
+
 ### Limit
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val firstByName = ShopTable
     .orderBy(ShopTable.name)
     .limit(1)
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."name" ASC
+LIMIT 1
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Offset
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 val thirdByName = ShopTable
     .orderBy(ShopTable.name)
@@ -566,17 +963,60 @@ val thirdByName = ShopTable
     .limit(1)
     .perform(db)
 ```
+
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."name" ASC
+LIMIT 1
+OFFSET 2
+```
+
+</TabItem>
+</Tabs>
+````
+
 ### Offset without limit
+
+````mdx-code-block
+<Tabs>
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 ShopTable
     .orderBy(ShopTable.name)
     .offset(2)
     .perform(db)
 ```
-## Locking
-### For update
-````mdx-code-block
 
+</TabItem>
+<TabItem value="sql" label="SQL">
+
+```sql
+SELECT T0."id" c0
+, T0."name" c1
+, T0."address" c2
+, T0."established" c3
+FROM "Shop" T0
+ORDER BY T0."name" ASC
+OFFSET 2
+```
+
+</TabItem>
+</Tabs>
+````
+
+## Locking
+
+### For update
+
+````mdx-code-block
 <Tabs>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -603,4 +1043,5 @@ FOR UPDATE
 </TabItem>
 </Tabs>
 ````
+
 ## With
