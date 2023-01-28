@@ -1,7 +1,6 @@
 package io.koalaql.docs
 
 import io.koalaql.kapshot.CapturedBlock
-import io.koalaql.markout.MarkoutDsl
 import io.koalaql.markout.md.Markdown
 import io.koalaql.markout.md.markdownString
 
@@ -57,7 +56,7 @@ ${tabs.joinToString("\n")}
 
         tabs {
             kotlin(kotlin)
-            sql(popGenerated())
+            sql(popGeneratedSql())
         }
     }
 }

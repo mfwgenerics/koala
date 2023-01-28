@@ -67,13 +67,6 @@ SELECT T0."id" c0
 , T0."established" c3
 FROM "Shop" T0
 WHERE T0."id" = 1
-
-SELECT T0."id" c0
-, T0."name" c1
-, T0."address" c2
-, T0."established" c3
-FROM "Shop" T0
-WHERE T0."id" = 1
 ```
 
 </TabItem>
@@ -184,15 +177,6 @@ ShopTable
 <TabItem value="sql" label="SQL">
 
 ```sql
-SELECT T0."id" c0
-, T0."shop" c1
-, T0."name" c2
-, T0."spent" c3
-FROM "Shop" T1
-INNER JOIN "Customer" T0 ON T1."id" = T0."shop"
-WHERE T1."id" = 1
-ORDER BY T0."name" ASC
-
 SELECT T0."id" c0
 , T0."name" c1
 , T0."address" c2

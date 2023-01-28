@@ -6,7 +6,6 @@ import io.koalaql.docs.tables.ShopTable
 import io.koalaql.docs.testExampleDatabase
 import io.koalaql.dsl.*
 import io.koalaql.markout.docusaurus.DocusaurusMarkdownFile
-import io.koalaql.markout.md.markdownString
 
 fun DocusaurusMarkdownFile.expressions() {
     h1("Expressions")
@@ -40,7 +39,7 @@ fun DocusaurusMarkdownFile.expressions() {
 
         tabbedBlocks.tabs {
             kotlin(kotlin)
-            sql(popGenerated())
+            sql(popGeneratedSql())
         }
     }
 

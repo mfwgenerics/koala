@@ -46,8 +46,14 @@ class ExampleData(
         return "$rebuilt"
     }
 
-    fun popGenerated(): String = logged
-        .asSequence()
-        .map { it.unparameterize() }
-        .joinToString("\n\n")
+    fun popGeneratedSql(): String {
+        val result = logged
+            .asSequence()
+            .map { it.unparameterize() }
+            .joinToString("\n\n")
+
+        logged.clear()
+
+        return result
+    }
 }
