@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 15
+          java-version: 17
       - name: Ensure docs are up-to-date
         run: ./gradlew :docs:markoutCheck
       - name: Set up Node.js
