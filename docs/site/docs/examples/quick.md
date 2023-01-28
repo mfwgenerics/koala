@@ -4,8 +4,6 @@ sidebar_position: 1
 
 # Quick Example
 
-this is a test
-
 ```kotlin title="Main.kt"
 object ShopTable: Table("Shop") {
     val id = column("id", INTEGER.autoIncrement().primaryKey())
