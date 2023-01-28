@@ -25,9 +25,3 @@ dependencies {
     testImplementation(project(":testing"))
     testImplementation(project(":testing", "testArchive"))
 }
-
-tasks.register<DocGenTask>("generate") {
-    dependsOn("test")
-
-    finalizedBy("markout")
-}
