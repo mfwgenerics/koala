@@ -289,6 +289,8 @@ class PostgresSchemaDiff(
 
         while (rs.next()) {
             val schema = rs.getString("TABLE_SCHEM")
+                .takeIf { it != "public" } /* Koala's null schema is mapped to Pg's public schema */
+
             val name = rs.getString("TABLE_NAME")
 
             toCreate.remove(TableName(schema, name))?.let {
