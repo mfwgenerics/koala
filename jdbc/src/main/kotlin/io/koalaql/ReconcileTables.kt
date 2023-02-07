@@ -50,19 +50,19 @@ data class ReconcileTables(
             .altered
             .forEach { (name, diff) ->
                 diff.indexes.created.forEach { (iname, def) ->
-                    addIndexesDest.getOrPut(iname) { TableDiff(diff.newTable) }
+                    addIndexesDest.getOrPut(name) { TableDiff(diff.newTable) }
                         .indexes
                         .created[iname] = def
                 }
 
                 diff.indexes.altered.forEach { (iname, def) ->
-                    dropIndexesDest.getOrPut(iname) { TableDiff(diff.newTable) }
+                    dropIndexesDest.getOrPut(name) { TableDiff(diff.newTable) }
                         .indexes
                         .created[iname] = def
                 }
 
                 diff.indexes.dropped.forEach { iname ->
-                    dropIndexesDest.getOrPut(iname) { TableDiff(diff.newTable) }
+                    dropIndexesDest.getOrPut(name) { TableDiff(diff.newTable) }
                         .indexes
                         .dropped
                         .add(iname)

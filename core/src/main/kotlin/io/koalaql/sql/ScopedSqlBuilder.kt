@@ -2,6 +2,7 @@ package io.koalaql.sql
 
 import io.koalaql.Assignment
 import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.TableName
 import io.koalaql.dsl.value
 import io.koalaql.expr.*
 import io.koalaql.identifier.Named
@@ -426,11 +427,19 @@ class ScopedSqlBuilder(
         columns.forEach { output.addMapping(it.builtDef.columnType) }
     }
 
+    fun addTableName(name: TableName) {
+        name.schema?.let {
+            addIdentifier(it)
+            addSql(".")
+        }
+        addIdentifier(name.name)
+    }
+
     fun addIdentifier(id: String) = output.addIdentifier(Named(id))
 
     fun addTableReference(table: TableRelation) {
         addColumnMappings(table.columns)
-        addIdentifier(table.tableName)
+        addTableName(table.tableName)
     }
 
     fun compileOnConflict(

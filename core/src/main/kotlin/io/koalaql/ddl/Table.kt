@@ -14,8 +14,14 @@ import io.koalaql.query.built.BuiltRelation
 import kotlin.reflect.jvm.jvmName
 
 abstract class Table protected constructor(
-    override val tableName: String
+    override val tableName: TableName
 ): TableRelation {
+    constructor(tableName: String):
+        this(TableName(null, tableName))
+
+    constructor(schema: String, tableName: String):
+        this(TableName(schema, tableName))
+
     private val alias = Alias()
 
     override fun BuiltRelation.buildIntoRelation() {
@@ -158,7 +164,7 @@ abstract class Table protected constructor(
     protected fun index(vararg keys: Expr<*>): BuiltNamedIndex =
         index(KeyList(keys.asList()))
 
-    override fun toString(): String = tableName
+    override fun toString(): String = "$tableName"
 
     companion object {
         fun <T : Any> DataType<*, T>.autoIncrement() = BaseColumnType(this).autoIncrement()

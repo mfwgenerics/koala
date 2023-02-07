@@ -68,7 +68,7 @@ class MysqlSchemaDiff(
             .includingUnused()
             .associateByTo(expectedColumnsByName) { it.symbol }
 
-        val columns = metadata.getColumns(dbName, null, tableName, null)
+        val columns = metadata.getColumns(dbName, tableName.schema, tableName.name, null)
 
         while (columns.next()) {
             val name = columns.getString("COLUMN_NAME")
@@ -154,8 +154,8 @@ class MysqlSchemaDiff(
         }
     }
 
-    private fun fetchExistingPrimaryKey(tableName: String): IndexWithKeyNames? {
-        val pkResults = metadata.getPrimaryKeys(dbName, null, tableName)
+    private fun fetchExistingPrimaryKey(tableName: TableName): IndexWithKeyNames? {
+        val pkResults = metadata.getPrimaryKeys(dbName, tableName.schema, tableName.name)
 
         val pkParts = arrayListOf<PrimaryKeyPart>()
 
@@ -185,7 +185,7 @@ class MysqlSchemaDiff(
 
         val existingPrimaryKey = fetchExistingPrimaryKey(tableName)
 
-        val indexResults = metadata.getIndexInfo(dbName, null, tableName, false, false)
+        val indexResults = metadata.getIndexInfo(dbName, tableName.schema, tableName.name, false, false)
 
         val indexInfosByName = hashMapOf<String, ArrayList<IndexPart>>()
 
@@ -277,9 +277,10 @@ class MysqlSchemaDiff(
         )
 
         while (rs.next()) {
+            val schema = rs.getString("TABLE_SCHEM")
             val name = rs.getString("TABLE_NAME")
 
-            toCreate.remove(name)?.let {
+            toCreate.remove(TableName(schema, name))?.let {
                 toDiff.add(it)
             }
         }
