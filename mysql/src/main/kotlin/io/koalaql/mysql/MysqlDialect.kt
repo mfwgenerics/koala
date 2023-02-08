@@ -125,7 +125,7 @@ class MysqlDialect: SqlDialect {
         change.tables.dropped.forEach { table ->
             results.add { sql ->
                 sql.addSql("DROP TABLE ")
-                sql.addIdentifier(table)
+                sql.addTableName(table)
             }
         }
 
@@ -476,7 +476,7 @@ class MysqlDialect: SqlDialect {
         compileOnConflict = {
             val relvar = insert.unwrapTable()
 
-            val sql = withColumns(relvar.columns, alias(relvar.tableName))
+            val sql = withColumns(relvar.columns, alias(relvar.tableName.name))
 
             sql.compileOnConflict(it) {
                 sql.compileAssignment(it)

@@ -1,6 +1,7 @@
 package io.koalaql.query
 
 import io.koalaql.ddl.TableColumn
+import io.koalaql.ddl.TableName
 import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.identifier.Unnamed
 import io.koalaql.query.built.*
@@ -23,7 +24,7 @@ sealed interface Relation: AliasableRelation {
 object EmptyRelation: Relation
 
 interface TableRelation: Relation {
-    val tableName: String
+    val tableName: TableName
 
     val columns: List<TableColumn<*>>
 }
