@@ -2,7 +2,7 @@ package io.koalaql.docs
 
 import io.koalaql.kapshot.CapturedBlock
 import io.koalaql.markout.md.Markdown
-import io.koalaql.markout.md.markdownString
+import io.koalaql.markout.md.markdown
 
 interface TabBuilder {
     fun tab(label: String, lang: String, block: String)
@@ -23,7 +23,7 @@ class TabbedBlocks {
                 tabs.add("""
 <TabItem value="$lang" label="$label">
 
-${markdownString { code(lang, block) }}
+${markdown { code(lang, block) }}
 
 </TabItem>
             """.trim())
