@@ -1,5 +1,4 @@
 // @ts-check
-// Note: type annotations allow type checking and IDEs autocompletion
 
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
@@ -11,35 +10,45 @@ const config = {
   baseUrl: '/koala/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  organizationName: 'mfwgenerics',
-  projectName: 'koala',
-  trailingSlash: false,
-
+  favicon: 'img/favicon.ico',
+  
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en'],
+  },
+  
   presets: [
     [
-      '@docusaurus/preset-classic',
+      'classic',
+      /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
           routeBasePath: '/',
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/mfwgenerics/koala/blob/examples/docs/src/main/kotlin/io/koalaql/',
         },
+        blog: false
       }),
     ],
   ],
-
-  themeConfig:
-    ({
-      navbar: {
-        title: 'Koala Docs',
-        items: [],
-      },
-      prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-        additionalLanguages: ['kotlin'],
-      },
-    }),
+  
+themeConfig:
+  /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+  ({
+    navbar: {
+      title: 'Koala Docs',
+      items: [
+        {
+          href: 'https://github.com/mfwgenerics/koala',
+          label: 'GitHub',
+          position: 'right',
+        },
+      ],
+    },
+    prism: {
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
+      additionalLanguages: ["kotlin", "java"],
+    },
+  }),
 };
-
 module.exports = config;

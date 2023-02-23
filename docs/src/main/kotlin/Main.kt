@@ -7,70 +7,80 @@ import io.koalaql.docs.writing.expressions
 import io.koalaql.docs.writing.queries
 import io.koalaql.markout.docusaurus.docusaurus
 import io.koalaql.markout.markout
-import kotlin.io.path.Path
 
-fun main() = markout(Path("site/docs")) {
-    docusaurus {
-        markdown("intro") {
-            slug = "/"
-
-            h1("Introduction")
-        }
-
-        directory("about") {
-            label = "About Koala"
-
-            markdown("placeholder") {
-                h1("Under Construction")
+fun main() = markout {
+    directory("docs") {
+        docusaurus("site") {
+            configure {
+                title = "Koala Docs"
+                url = "https://mfwgenerics.github.io/"
+                baseUrl = "/koala/"
+                github = "https://github.com/mfwgenerics/koala"
             }
-        }
 
-        directory("schema") {
-            label = "Declaring Schema"
+            docs {
+                markdown("intro") {
+                    slug = "/"
 
-            markdown("placeholder") {
-                h1("Under Construction")
-            }
-        }
+                    h1("Introduction")
+                }
 
-        directory("writing") {
-            label = "Writing SQL"
+                directory("about") {
+                    label = "About Koala"
 
-            markdown("Queries") { queries() }
+                    markdown("placeholder") {
+                        h1("Under Construction")
+                    }
+                }
 
-            directory("statements") {
-                label = "Statements"
+                directory("schema") {
+                    label = "Declaring Schema"
 
-                markdown("update") {
-                    h1("Updates")
+                    markdown("placeholder") {
+                        h1("Under Construction")
+                    }
+                }
 
-                    h3("Empty Updates")
+                directory("writing") {
+                    label = "Writing SQL"
 
-                    val db = ExampleDatabase().db
+                    markdown("Queries") { queries() }
 
-                    code("kotlin", execBlock {
-                        val updated = ShopTable
-                            .update()
-                            .perform(db)
+                    directory("statements") {
+                        label = "Statements"
 
-                        check(0 == updated)
-                    })
+                        markdown("update") {
+                            h1("Updates")
+
+                            h3("Empty Updates")
+
+                            val db = ExampleDatabase().db
+
+                            code("kotlin", execBlock {
+                                val updated = ShopTable
+                                    .update()
+                                    .perform(db)
+
+                                check(0 == updated)
+                            })
+                        }
+                    }
+
+                    markdown("expressions") { expressions() }
+                }
+
+                directory("executing") {
+                    label = "Executing SQL"
+
+                    markdown("results") { resultSets() }
+                }
+
+                directory("examples") {
+                    label = "Examples"
+
+                    markdown("quick") { quickExample() }
                 }
             }
-
-            markdown("expressions") { expressions() }
-        }
-
-        directory("executing") {
-            label = "Executing SQL"
-
-            markdown("results") { resultSets() }
-        }
-
-        directory("examples") {
-            label = "Examples"
-
-            markdown("quick") { quickExample() }
         }
     }
 }
