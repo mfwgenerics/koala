@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("conventions")
 
-    id("io.koalaql.markout-docusaurus") version "0.0.9"
+    id("io.koalaql.markout-docusaurus") version "0.0.11"
 }
 
 val compileKotlin: KotlinCompile by tasks
@@ -18,8 +18,6 @@ dependencies {
     api(project(":h2"))
 
     implementation("com.h2database:h2:2.1.210")
-    implementation("io.koalaql:markout:0.0.6")
-    implementation("io.koalaql:markout-docusaurus:0.0.6")
 
     testImplementation(project(":testing"))
     testImplementation(project(":testing", "testArchive"))
