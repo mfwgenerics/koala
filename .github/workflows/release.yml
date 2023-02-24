@@ -39,3 +39,10 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
+      - name: Release Sonatype Repo
+        uses: nexus-actions/release-nexus-staging-repo@main
+        with:
+          username: ${{ secrets.SONATYPE_USERNAME }}
+          password: ${{ secrets.SONATYPE_PASSWORD }}
+          staging_repository_id: ${{ needs.staging_repository.outputs.repository_id }}
+          base_url: https://s01.oss.sonatype.org/service/local/
