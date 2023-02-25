@@ -2,7 +2,9 @@
 sidebar_position: 1
 ---
 
-# Quick Example
+# Quick example
+
+## Under construction
 
 ```kotlin title="Main.kt"
 object ShopTable: Table("Shop") {

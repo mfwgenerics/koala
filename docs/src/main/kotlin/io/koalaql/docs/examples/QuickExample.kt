@@ -54,7 +54,9 @@ fun main() {
 }
 
 fun DocusaurusMarkdownFile.quickExample() {
-    h1("Quick Example")
+    h1("Quick example")
+
+    h2("Under construction")
 
     main()
 

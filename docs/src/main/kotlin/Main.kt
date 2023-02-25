@@ -19,26 +19,12 @@ fun main() = markout {
             }
 
             docs {
-                markdown("intro") {
-                    slug = "/"
+                introduction()
 
-                    h1("Introduction")
-                }
+                directory("getting-started") {
+                    label = "Getting started"
 
-                directory("about") {
-                    label = "About Koala"
-
-                    markdown("placeholder") {
-                        h1("Under Construction")
-                    }
-                }
-
-                directory("schema") {
-                    label = "Declaring Schema"
-
-                    markdown("placeholder") {
-                        h1("Under Construction")
-                    }
+                    markdown("quick") { quickExample() }
                 }
 
                 directory("writing") {
@@ -73,12 +59,6 @@ fun main() = markout {
                     label = "Executing SQL"
 
                     markdown("results") { resultSets() }
-                }
-
-                directory("examples") {
-                    label = "Examples"
-
-                    markdown("quick") { quickExample() }
                 }
             }
         }
