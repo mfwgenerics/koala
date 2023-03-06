@@ -6,6 +6,14 @@ sidebar_position: 1
 
 ## Under construction
 
+```kotlin title="build.gradle.kt"
+dependencies {
+    implementation("io.koalaql:koala-core:0.0.9")
+    implementation("io.koalaql:koala-jdbc:0.0.9")
+    implementation("io.koalaql:koala-h2:0.0.9")
+}
+```
+
 ```kotlin title="Main.kt"
 object ShopTable: Table("Shop") {
     val id = column("id", INTEGER.autoIncrement().primaryKey())

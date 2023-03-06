@@ -4,6 +4,7 @@ import io.koalaql.ddl.DATE
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
+import io.koalaql.docs.KOALA_PUBLISHED_VERSION
 import io.koalaql.docs.execBlock
 import io.koalaql.dsl.*
 import io.koalaql.h2.H2DataSource
@@ -57,6 +58,14 @@ fun DocusaurusMarkdownFile.quickExample() {
     h1("Quick example")
 
     h2("Under construction")
+
+    code("kotlin", "build.gradle.kt", """
+        dependencies {
+            implementation("io.koalaql:koala-core:$KOALA_PUBLISHED_VERSION")
+            implementation("io.koalaql:koala-jdbc:$KOALA_PUBLISHED_VERSION")
+            implementation("io.koalaql:koala-h2:$KOALA_PUBLISHED_VERSION")
+        }
+    """.trimIndent())
 
     main()
 
