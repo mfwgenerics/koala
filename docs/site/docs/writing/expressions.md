@@ -15,7 +15,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val shopType = case(
@@ -36,7 +36,7 @@ check(type == "GROCERIES")
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT CASE T0."id"
@@ -59,7 +59,7 @@ The case expression will then match the first true condition.
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val shopType = case(
@@ -78,7 +78,7 @@ check(type == "GROCERIES")
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT CASE
@@ -99,7 +99,7 @@ WHERE T0."id" = 2
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val row = ShopTable
@@ -112,7 +112,7 @@ check(hardwareStoreId == row.getValue(ShopTable.id))
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -131,7 +131,7 @@ WHERE (T0."name" LIKE '%Hardware%') AND (T0."name" NOT LIKE '%Groceries%')
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val (lowerName, upperName) = ShopTable
@@ -148,7 +148,7 @@ check("HELEN'S HARDWARE" == upperName)
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT LOWER(T0."name") c0

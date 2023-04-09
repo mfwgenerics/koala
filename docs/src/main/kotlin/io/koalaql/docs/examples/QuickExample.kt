@@ -4,6 +4,7 @@ import io.koalaql.ddl.DATE
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
+import io.koalaql.docs.KOALA_PUBLISHED_VERSION
 import io.koalaql.docs.execBlock
 import io.koalaql.dsl.*
 import io.koalaql.h2.H2DataSource

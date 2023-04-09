@@ -21,7 +21,7 @@ class TabbedBlocks {
         object : TabBuilder {
             override fun tab(label: String, lang: String, block: String) {
                 tabs.add("""
-<TabItem value="$lang" label="$label">
+<TabItem value="$label" label="$label">
 
 ${markdown { code(lang, block) }}
 
