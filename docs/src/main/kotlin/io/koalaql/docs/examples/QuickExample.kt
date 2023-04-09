@@ -59,14 +59,6 @@ fun DocusaurusMarkdownFile.quickExample() {
 
     h2("Under construction")
 
-    code("kotlin", "build.gradle.kt", """
-        dependencies {
-            implementation("io.koalaql:koala-core:$KOALA_PUBLISHED_VERSION")
-            implementation("io.koalaql:koala-jdbc:$KOALA_PUBLISHED_VERSION")
-            implementation("io.koalaql:koala-h2:$KOALA_PUBLISHED_VERSION")
-        }
-    """.trimIndent())
-
     main()
 
     code("kotlin", "Main.kt", "${sourceOf<ShopTable>()}\n\n${sourceOf(::main)}")

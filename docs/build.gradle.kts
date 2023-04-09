@@ -16,6 +16,8 @@ markout {
 
 dependencies {
     api(project(":h2"))
+    api(project(":mysql"))
+    api(project(":postgres"))
 
     implementation("com.h2database:h2:2.1.210")
 

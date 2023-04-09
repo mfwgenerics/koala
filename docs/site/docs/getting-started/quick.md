@@ -1,18 +1,10 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Quick example
 
 ## Under construction
-
-```kotlin title="build.gradle.kt"
-dependencies {
-    implementation("io.koalaql:koala-core:0.0.9")
-    implementation("io.koalaql:koala-jdbc:0.0.9")
-    implementation("io.koalaql:koala-h2:0.0.9")
-}
-```
 
 ```kotlin title="Main.kt"
 object ShopTable: Table("Shop") {

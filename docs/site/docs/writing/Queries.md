@@ -15,7 +15,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val allSelected = ShopTable
@@ -28,7 +28,7 @@ check("Helen's Hardware" == allSelected.first()[ShopTable.name])
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -47,7 +47,7 @@ In most cases `.selectAll()` can be omitted:
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val implicitSelectAll = ShopTable
@@ -58,7 +58,7 @@ check(ShopTable.columns.deepEquals(implicitSelectAll.columns))
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -89,7 +89,7 @@ methods to access these fields in a type safe way.
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val row: RowOfTwo<String, String> = ShopTable
@@ -110,7 +110,7 @@ check("Helen's Hardware @ 63 Smith Street, Caledonia, 62281D" == "$name @ $addre
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."name" c0
@@ -129,7 +129,7 @@ Passing a `Table` to `.select` will automatically select all fields from that `T
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val hardwareCustomers = ShopTable
@@ -143,7 +143,7 @@ check(CustomerTable.columns.deepEquals(hardwareCustomers.columns))
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -164,7 +164,7 @@ You can pass multiple `Table`s to select:
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -174,7 +174,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -199,7 +199,7 @@ All `.select(...)` methods have a corresponding `.selectDistinct(...)`.
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val distinctShopIds = CustomerTable
@@ -212,7 +212,7 @@ check(distinctShopIds.deepEquals(distinctShopIds.distinct()))
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT DISTINCT T0."shop" c0
@@ -230,7 +230,7 @@ You can use an existing column name as a label or create an anonymous label:
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val lowercaseName = label<String>()
@@ -257,7 +257,7 @@ check(row[ShopTable.name].lowercase() == row[lowercaseName])
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -278,7 +278,7 @@ Here is another way of writing the code from above:
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val lowerName = lower(ShopTable.name) as_ label()
@@ -294,7 +294,7 @@ check(row[ShopTable.name].lowercase() == row[lowerName])
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -316,7 +316,7 @@ Selects can be empty. This will generate SQL with `SELECT 1`
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val emptySelect = ShopTable
@@ -333,7 +333,7 @@ check(2 == rowCount)
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT 1 c0
@@ -353,7 +353,7 @@ This is sometimes necessary when using subqueries in expressions.
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val columnsList = listOf(ShopTable.address, ShopTable.name)
@@ -375,7 +375,7 @@ check(genericRow[ShopTable.name] == staticallyTypedRow.first())
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."address" c0
@@ -408,7 +408,7 @@ ShopTable
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 CustomerTable
@@ -417,7 +417,7 @@ CustomerTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -440,7 +440,7 @@ INNER JOIN "Shop" T1 ON T1."id" = T0."shop"
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 CustomerTable
@@ -453,7 +453,7 @@ CustomerTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -487,7 +487,7 @@ RIGHT JOIN "Shop" T1 ON T1."id" = T0."shop"
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -496,7 +496,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -521,7 +521,7 @@ CROSS JOIN "Customer" T1
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val alias = alias()
@@ -537,7 +537,7 @@ check("24 Hr Groceries" == row[alias[ShopTable.name]])
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -563,7 +563,7 @@ WHERE T0."id" = 1
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -574,7 +574,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -595,7 +595,7 @@ WHERE (T0."id" = 1) AND (T0."name" = 'Helen\'s Hardware')
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val customerCount = label<Int>()
@@ -607,7 +607,7 @@ CustomerTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."shop" c0
@@ -626,7 +626,7 @@ GROUP BY T0."shop"
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val shopsWindow = window() as_ all().partitionBy(ShopTable.id)
@@ -664,7 +664,7 @@ check(
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."name" c0
@@ -688,7 +688,7 @@ ORDER BY T0."name" ASC, c3 ASC
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val fakeShop = rowOf(
@@ -704,7 +704,7 @@ check("Fake Shop" == result[ShopTable.name])
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 VALUES ('Fake Shop', '79 Fake Street, Fakesville')
@@ -718,7 +718,7 @@ VALUES ('Fake Shop', '79 Fake Street, Fakesville')
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val names = listOf("Dylan", "Santiago", "Chloe")
@@ -735,7 +735,7 @@ CustomerTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 INSERT INTO "Customer"("name", "shop", "spent")
@@ -752,7 +752,7 @@ VALUES ('Dylan', 2, 10.80)
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val name = label<String>("name")
@@ -775,7 +775,7 @@ check(firstAge == 29)
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT UPPER(T0."name") "name"
@@ -797,7 +797,7 @@ ORDER BY T0."name" DESC
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val alphabetical = ShopTable
@@ -810,7 +810,7 @@ val reverseAlphabetical = ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -836,7 +836,7 @@ ORDER BY T0."name" DESC
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -849,7 +849,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -875,7 +875,7 @@ ORDER BY T0."established" ASC NULLS FIRST
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -887,7 +887,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -908,7 +908,7 @@ ORDER BY T0."established" DESC NULLS LAST, T0."name" ASC
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val firstByName = ShopTable
@@ -918,7 +918,7 @@ val firstByName = ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -938,7 +938,7 @@ LIMIT 1
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 val thirdByName = ShopTable
@@ -949,7 +949,7 @@ val thirdByName = ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -970,7 +970,7 @@ OFFSET 2
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -980,7 +980,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
@@ -1002,7 +1002,7 @@ OFFSET 2
 
 ````mdx-code-block
 <Tabs>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="Kotlin" label="Kotlin">
 
 ```kotlin
 ShopTable
@@ -1012,7 +1012,7 @@ ShopTable
 ```
 
 </TabItem>
-<TabItem value="sql" label="SQL">
+<TabItem value="SQL" label="SQL">
 
 ```sql
 SELECT T0."id" c0
