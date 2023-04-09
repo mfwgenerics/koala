@@ -1,5 +1,11 @@
 name: Build and test
 on: [push, pull_request]
+env:
+  GRADLE_CACHE_USERNAME: apikey
+  GRADLE_CACHE_PUSH: true
+  GRADLE_CACHE_LOCAL: false
+  GRADLE_CACHE_REMOTE: true
+  BUILDLESS_APIKEY: ${{ secrets.BUILDLESS_APIKEY }}
 jobs:
   build:
     name: Build and test
@@ -16,5 +22,8 @@ jobs:
         run: sudo postgres/setup.sh
       - name: Setup MySQL
         run: sudo mysql/setup.sh
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
       - name: Gradle check
-        run: ./gradlew check
+        run: ./gradlew check --scan
+
