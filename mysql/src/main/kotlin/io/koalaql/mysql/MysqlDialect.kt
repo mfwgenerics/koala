@@ -51,7 +51,7 @@ class MysqlDialect: SqlDialect {
 
         override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
             when {
-                expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+                expr is OperationExpr<*> && expr.type == StandardOperationType.CURRENT_TIMESTAMP -> {
                     check(expr.args.isEmpty())
 
                     builder.parenthesize(emitParens) {
