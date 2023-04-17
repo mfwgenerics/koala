@@ -59,6 +59,7 @@ enum class OperationType(
     NOT_IN("NOT IN", OperationFixity.INFIX),
 
     LIKE("LIKE", OperationFixity.INFIX),
+    ILIKE("ILIKE", OperationFixity.INFIX),
     NOT_LIKE("NOT LIKE", OperationFixity.INFIX),
 
     IS_NULL("IS NULL", OperationFixity.POSTFIX),
