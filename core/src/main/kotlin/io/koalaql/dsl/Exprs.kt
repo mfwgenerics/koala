@@ -155,6 +155,11 @@ infix fun Expr<String>.like(expr: Expr<String>): Expr<Boolean> =
 
 infix fun Expr<String>.like(expr: String) = like(value(expr))
 
+infix fun Expr<String>.iLike(expr: Expr<String>): Expr<Boolean> =
+    StandardOperationType.ILIKE(this, expr)
+
+infix fun Expr<String>.iLike(expr: String) = iLike(value(expr))
+
 infix fun Expr<String>.notLike(expr: Expr<String>): Expr<Boolean> =
     StandardOperationType.NOT_LIKE(this, expr)
 

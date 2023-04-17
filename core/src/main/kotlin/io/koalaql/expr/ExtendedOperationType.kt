@@ -1,3 +1,6 @@
 package io.koalaql.expr
 
-interface ExtendedOperationType: OperationType
+class ExtendedOperationType(
+    override val sql: String,
+    override val fixity: OperationFixity
+): OperationType

@@ -57,6 +57,8 @@ enum class StandardOperationType(
     NOT_IN("NOT IN", OperationFixity.INFIX),
 
     LIKE("LIKE", OperationFixity.INFIX),
+    ILIKE("ILIKE", OperationFixity.INFIX),
+
     NOT_LIKE("NOT LIKE", OperationFixity.INFIX),
 
     IS_NULL("IS NULL", OperationFixity.POSTFIX),
@@ -93,7 +95,4 @@ enum class StandardOperationType(
     FIRST_VALUE("FIRST_VALUE", OperationFixity.APPLY),
     LAST_VALUE("LAST_VALUE", OperationFixity.APPLY),
     NTH_VALUE("NTH_VALUE", OperationFixity.APPLY);
-
-    operator fun <T : Any> invoke(vararg args: QuasiExpr): OperationExpr<T> =
-        OperationExpr(this, args.toList())
 }
