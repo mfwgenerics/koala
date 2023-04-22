@@ -66,7 +66,7 @@ class PostgresSchemaDiff(
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
             is RAW -> false
-            else -> error("Unsupported type $dataType")
+            else -> info.name != "json"
         }
     }
 
