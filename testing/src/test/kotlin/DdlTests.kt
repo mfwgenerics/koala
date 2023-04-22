@@ -130,7 +130,8 @@ abstract class DdlTests: ProvideTestDatabase {
             VARCHAR(150),
             VARCHAR(200),
             VARCHAR(250),
-            VARBINARY(200)
+            VARBINARY(200),
+            JSON
         )
 
         val filteredColumnTypes = columnTypes
