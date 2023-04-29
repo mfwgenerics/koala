@@ -14,11 +14,12 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
 import java.time.format.DateTimeFormatterBuilder
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @Suppress("RemoveExplicitTypeArguments")
 class JdbcTypeMappings {
-    private val mappings = hashMapOf<KClass<*>, JdbcMappedType<*>>()
+    private val mappings = hashMapOf<KType, JdbcMappedType<*>>()
 
     private val localDateTime = DateTimeFormatterBuilder()
         .parseCaseInsensitive()
@@ -114,17 +115,17 @@ class JdbcTypeMappings {
         )
     }
 
-    fun <T : Any> register(type: KClass<T>, mapping: JdbcMappedType<T>) {
+    fun <T : Any> register(type: KType, mapping: JdbcMappedType<T>) {
         mappings[type] = mapping
     }
 
-    private fun <F : Any, T : Any> derived(from: KClass<F>, mapped: TypeMapping<F, T>): JdbcMappedType<T> =
-        mappingFor(from).derive(mapped)
+    private fun <F : Any, T : Any> derived(from: KType, mapped: TypeMapping<F, T>): JdbcMappedType<T> =
+        mappingFor<F>(from).derive(mapped)
 
     inline fun <reified T : Any> register(
         crossinline writeJdbc: (stmt: PreparedStatement, index: Int, value: T) -> Unit,
         crossinline readJdbc: (rs: ResultSet, index: Int) -> T?
-    ) = register(T::class, object : JdbcMappedType<T> {
+    ) = register(typeOf<T>(), object : JdbcMappedType<T> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: T) =
             writeJdbc(stmt, index, value)
 
@@ -132,12 +133,12 @@ class JdbcTypeMappings {
     })
 
     @Suppress("unchecked_cast")
-    fun <T : Any> mappingFor(type: KClass<T>): JdbcMappedType<T> =
+    fun <T : Any> mappingFor(type: KType): JdbcMappedType<T> =
         checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
 
     @Suppress("unchecked_cast")
-    fun <T : Any> deriveFor(type: KClass<T>, mappings: TypeMappings): JdbcMappedType<T> {
-        val mapping = mappings[type] ?: return mappingFor(type)
+    fun <T : Any> deriveFor(type: KType, mappings: TypeMappings): JdbcMappedType<T> {
+        val mapping = mappings.get<T>(type) ?: return mappingFor(type)
 
         mapping as MappedDataType<Any, T>
 

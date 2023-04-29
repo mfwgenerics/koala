@@ -7,11 +7,12 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.Instant
+import kotlin.reflect.typeOf
 
 fun PostgresTypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()
 
-    result.register(Instant::class, object : JdbcMappedType<Instant> {
+    result.register(typeOf<Instant>(), object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {
             stmt.setTimestamp(index, Timestamp.from(value))
         }
@@ -21,7 +22,7 @@ fun PostgresTypeMappings(): JdbcTypeMappings {
         }
     })
 
-    result.register(JsonData::class, object : JdbcMappedType<JsonData> {
+    result.register(typeOf<JsonData>(), object : JdbcMappedType<JsonData> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
             stmt.setObject(index, value.asString, java.sql.Types.OTHER)
         }

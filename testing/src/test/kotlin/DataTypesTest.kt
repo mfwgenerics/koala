@@ -36,7 +36,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     }
 
     private fun <T : Any> selectData(cxn: DataConnection, values: DataTypeWithValues<T>) {
-        val label = Label(values.type.type, Unnamed())
+        val label = Label<T>(values.type.type, Unnamed())
         val casted = cast(cast(label, values.type), values.type)
 
         val rows = values(values.values) { this[label] = it }
@@ -139,7 +139,7 @@ abstract class DataTypesTest : ProvideTestDatabase {
     @Test
     fun `read and write null`() = withCxn { cxn ->
         examples().entries().forEach {
-            val name = Label(it.type.type, Unnamed())
+            val name = Label<Any>(it.type.type, Unnamed())
             val wasNull = name.isNull() as_ label()
 
             val row = values(listOf(1)) { this[name] = null }

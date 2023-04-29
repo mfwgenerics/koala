@@ -28,7 +28,7 @@ object PostgresDdlEscapes: SqlEscapes {
                 Utils.escapeLiteral(sql, literal.value as String, true)
                 sql.append("'")
             }
-            else -> error("${literal.type.simpleName} literals are not supported in Postgres DDL")
+            else -> error("${literal.type} literals are not supported in Postgres DDL")
         }
     }
 }

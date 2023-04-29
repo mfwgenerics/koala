@@ -15,7 +15,7 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.*
 import io.koalaql.window.LabeledWindow
 import io.koalaql.window.built.BuiltWindow
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class MysqlDialect: SqlDialect {
     private val compiler = object : Compiler {
@@ -187,7 +187,7 @@ class MysqlDialect: SqlDialect {
             val finalExpr = when (default) {
                 is ColumnDefaultExpr -> default.expr
                 is ColumnDefaultValue -> Literal(
-                    def.columnType.type as KClass<Any>,
+                    def.columnType.type,
                     default.value
                 )
             }

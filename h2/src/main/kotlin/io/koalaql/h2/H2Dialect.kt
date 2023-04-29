@@ -14,7 +14,7 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.*
 import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class H2Dialect(
     private val compatibilityMode: H2CompatibilityMode? = null
@@ -109,7 +109,7 @@ class H2Dialect(
             val finalExpr = when (default) {
                 is ColumnDefaultExpr -> default.expr
                 is ColumnDefaultValue -> Literal(
-                    def.columnType.type as KClass<Any>,
+                    def.columnType.type,
                     default.value
                 )
             }
