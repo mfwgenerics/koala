@@ -15,8 +15,6 @@ fun DocusaurusMarkdownFile.projectSetup(
 
     code("kotlin", "build.gradle.kts", """
         dependencies {
-            implementation("io.koalaql:koala-core:$KOALA_PUBLISHED_VERSION")
-            implementation("io.koalaql:koala-jdbc:$KOALA_PUBLISHED_VERSION")
             implementation("io.koalaql:koala-$suffix:$KOALA_PUBLISHED_VERSION")
         }
     """.trimIndent())
