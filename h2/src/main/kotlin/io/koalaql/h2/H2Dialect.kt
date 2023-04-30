@@ -15,6 +15,7 @@ import io.koalaql.sql.*
 import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
 import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 class H2Dialect(
     private val compatibilityMode: H2CompatibilityMode? = null
@@ -23,7 +24,7 @@ class H2Dialect(
         override fun addLiteral(builder: ScopedSqlBuilder, value: Literal<*>?) {
             builder.output.addLiteral(value)
 
-            if (value?.type == JsonData::class && value.value != null) {
+            if (value?.type == typeOf<JsonData>() && value.value != null) {
                 builder.output.addSql(" FORMAT JSON")
             }
         }

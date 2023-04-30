@@ -4,6 +4,7 @@ import io.koalaql.expr.Literal
 import io.koalaql.identifier.Named
 import io.koalaql.sql.SqlEscapes
 import org.postgresql.core.Utils
+import kotlin.reflect.typeOf
 
 object PostgresDdlEscapes: SqlEscapes {
     override fun identifier(sql: StringBuilder, identifier: Named) {
@@ -17,13 +18,13 @@ object PostgresDdlEscapes: SqlEscapes {
         }
 
         when (literal.type) {
-            Byte::class -> sql.append("${literal.value as Byte}")
-            Short::class -> sql.append("${literal.value as Short}")
-            Int::class -> sql.append("${literal.value as Int}")
-            Long::class -> sql.append("${literal.value as Long}")
-            Float::class -> sql.append("${literal.value as Float}")
-            Double::class -> sql.append("${literal.value as Double}")
-            String::class -> {
+            typeOf<Byte>() -> sql.append("${literal.value as Byte}")
+            typeOf<Short>() -> sql.append("${literal.value as Short}")
+            typeOf<Int>() -> sql.append("${literal.value as Int}")
+            typeOf<Long>() -> sql.append("${literal.value as Long}")
+            typeOf<Float>() -> sql.append("${literal.value as Float}")
+            typeOf<Double>() -> sql.append("${literal.value as Double}")
+            typeOf<String>() -> {
                 sql.append("'")
                 Utils.escapeLiteral(sql, literal.value as String, true)
                 sql.append("'")
