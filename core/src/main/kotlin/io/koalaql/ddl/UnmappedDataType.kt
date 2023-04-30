@@ -6,10 +6,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 sealed class UnmappedDataType<T : Any>(
-    override val type: KClass<T>
+    override val type: KType
 ): DataType<T, T>() {
     override val mapping: TypeMapping<T, T>? get() = null
 
@@ -58,36 +59,36 @@ sealed class UnmappedDataType<T : Any>(
 }
 
 sealed class PrimitiveDataType<T : Any>(
-    type: KClass<T>
+    type: KType
 ): UnmappedDataType<T>(type) {
     override fun equals(other: Any?): Boolean = this === other
     override fun hashCode(): Int = System.identityHashCode(this)
 }
 
-object FLOAT : PrimitiveDataType<Float>(Float::class)
-object DOUBLE : PrimitiveDataType<Double>(Double::class)
+object FLOAT : PrimitiveDataType<Float>(typeOf<Float>())
+object DOUBLE : PrimitiveDataType<Double>(typeOf<Double>())
 
-object TINYINT: PrimitiveDataType<Byte>(Byte::class) {
-    object UNSIGNED: PrimitiveDataType<UByte>(UByte::class)
+object TINYINT: PrimitiveDataType<Byte>(typeOf<Byte>()) {
+    object UNSIGNED: PrimitiveDataType<UByte>(typeOf<UByte>())
 }
 
-object SMALLINT: PrimitiveDataType<Short>(Short::class) {
-    object UNSIGNED: PrimitiveDataType<UShort>(UShort::class)
+object SMALLINT: PrimitiveDataType<Short>(typeOf<Short>()) {
+    object UNSIGNED: PrimitiveDataType<UShort>(typeOf<UShort>())
 }
 
-object INTEGER: PrimitiveDataType<Int>(Int::class) {
-    object UNSIGNED: PrimitiveDataType<UInt>(UInt::class)
+object INTEGER: PrimitiveDataType<Int>(typeOf<Int>()) {
+    object UNSIGNED: PrimitiveDataType<UInt>(typeOf<UInt>())
 }
 
-object BIGINT: PrimitiveDataType<Long>(Long::class) {
-    object UNSIGNED: PrimitiveDataType<ULong>(ULong::class)
+object BIGINT: PrimitiveDataType<Long>(typeOf<Long>()) {
+    object UNSIGNED: PrimitiveDataType<ULong>(typeOf<ULong>())
 }
 
-object DATE: PrimitiveDataType<LocalDate>(LocalDate::class)
+object DATE: PrimitiveDataType<LocalDate>(typeOf<LocalDate>())
 
 open class TIMESTAMP(
     val precision: Int? = null
-): UnmappedDataType<Instant>(Instant::class) {
+): UnmappedDataType<Instant>(typeOf<Instant>()) {
     companion object : TIMESTAMP()
 
     override fun equals(other: Any?): Boolean =
@@ -96,12 +97,12 @@ open class TIMESTAMP(
     override fun hashCode(): Int = precision.hashCode()
 }
 
-object TEXT: PrimitiveDataType<String>(String::class)
-object BOOLEAN: PrimitiveDataType<Boolean>(Boolean::class)
+object TEXT: PrimitiveDataType<String>(typeOf<String>())
+object BOOLEAN: PrimitiveDataType<Boolean>(typeOf<Boolean>())
 
 open class TIME(
     val precision: Int? = null
-): UnmappedDataType<LocalTime>(LocalTime::class) {
+): UnmappedDataType<LocalTime>(typeOf<LocalTime>()) {
     companion object : TIME()
 
     override fun equals(other: Any?): Boolean =
@@ -112,7 +113,7 @@ open class TIME(
 
 open class DATETIME(
     val precision: Int? = null
-): UnmappedDataType<LocalDateTime>(LocalDateTime::class) {
+): UnmappedDataType<LocalDateTime>(typeOf<LocalDateTime>()) {
     companion object : DATETIME()
 
     override fun equals(other: Any?): Boolean =
@@ -123,7 +124,7 @@ open class DATETIME(
 
 class VARCHAR(
     val maxLength: Int
-): UnmappedDataType<String>(String::class) {
+): UnmappedDataType<String>(typeOf<String>()) {
     override fun equals(other: Any?): Boolean = other is VARCHAR && maxLength == other.maxLength
     override fun hashCode(): Int = maxLength.hashCode()
 
@@ -132,7 +133,7 @@ class VARCHAR(
 
 class VARBINARY(
     val maxLength: Int
-): UnmappedDataType<ByteArray>(ByteArray::class) {
+): UnmappedDataType<ByteArray>(typeOf<ByteArray>()) {
     override fun equals(other: Any?): Boolean = other is VARBINARY && maxLength == other.maxLength
     override fun hashCode(): Int = maxLength.hashCode()
 }
@@ -141,7 +142,7 @@ class DECIMAL(
     val precision: Int,
     val scale: Int
 ): UnmappedDataType<BigDecimal>(
-    BigDecimal::class
+    typeOf<BigDecimal>()
 ) {
     override fun equals(other: Any?): Boolean = other is DECIMAL
         && precision == other.precision
@@ -151,11 +152,11 @@ class DECIMAL(
 }
 
 class RAW<T : Any>(
-    type: KClass<T>,
+    type: KType,
     override val sql: String,
 ): UnmappedDataType<T>(type), StandardSql {
     companion object {
-        inline operator fun <reified T : Any> invoke(sql: String) = RAW(T::class, sql)
+        inline operator fun <reified T : Any> invoke(sql: String) = RAW<T>(typeOf<T>(), sql)
     }
 
     override fun equals(other: Any?): Boolean = other is RAW<*>
@@ -165,4 +166,4 @@ class RAW<T : Any>(
     override fun hashCode(): Int = sql.hashCode()
 }
 
-object JSON: PrimitiveDataType<JsonData>(JsonData::class)
+object JSON: PrimitiveDataType<JsonData>(typeOf<JsonData>())

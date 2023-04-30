@@ -7,14 +7,14 @@ import io.koalaql.identifier.Named
 import io.koalaql.identifier.SqlIdentifier
 import io.koalaql.identifier.Unquoted
 import io.koalaql.sql.token.*
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class CompiledSqlBuilder(
     private val escapes: SqlEscapes
 ) {
     private val tokens = arrayListOf<SqlToken>()
 
-    private val mappings = hashMapOf<KClass<*>, MappedDataType<*, *>>()
+    private val mappings = hashMapOf<KType, MappedDataType<*, *>>()
 
     fun beginAbridgement() {
         tokens.add(BeginAbridgement)

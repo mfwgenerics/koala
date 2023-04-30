@@ -2,10 +2,10 @@ package io.koalaql.expr
 
 import io.koalaql.identifier.LabelIdentifier
 import io.koalaql.query.Alias
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 sealed interface Reference<T : Any>: SelectOperand<T> {
-    val type: KClass<T>
+    val type: KType
 
     val identifier: LabelIdentifier?
 
@@ -20,7 +20,7 @@ sealed interface Reference<T : Any>: SelectOperand<T> {
 }
 
 class AliasedReference<T : Any>(
-    override val type: KClass<T>,
+    override val type: KType,
     private val alias: Alias,
     private val reference: Reference<T>
 ): Reference<T> {
@@ -38,7 +38,7 @@ class AliasedReference<T : Any>(
 }
 
 abstract class NamedReference<T : Any>(
-    override val type: KClass<T>,
+    override val type: KType,
     override val identifier: LabelIdentifier
 ): Reference<T> {
     override fun equals(other: Any?): Boolean =

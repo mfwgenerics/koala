@@ -8,6 +8,7 @@ import io.koalaql.expr.*
 import io.koalaql.query.Subqueryable
 import io.koalaql.query.built.BuilderContext
 import io.koalaql.sql.RawSqlBuilder
+import kotlin.reflect.typeOf
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
@@ -83,7 +84,7 @@ fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
     CastExpr(from, to)
 
 inline fun <reified T : Any> value(value: T?): Literal<T> =
-    Literal(T::class, value)
+    Literal(typeOf<T>(), value)
 
 fun <T : Any> all(subquery: ExprQueryable<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ALL, with (subquery) { BuilderContext.buildQuery() })
