@@ -152,4 +152,61 @@ abstract class DataTypesTest : ProvideTestDatabase {
             assert(row.getValue(wasNull))
         }
     }
+
+    private object ConcreteColumns: Table("ConcreteColumns") {
+        val ints = column("ints", VARCHAR(256).map(
+            to = { it.split(",").map(String::toInt) },
+            from = { it.joinToString(",") }
+        ))
+
+        val bools = column("bools", VARCHAR(256).map(
+            to = { it.split(",").map(String::toBooleanStrict) },
+            from = { it.joinToString(",") }
+        ))
+    }
+
+    @Test
+    fun `type mappings support generics on pure columns`() = withCxn(ConcreteColumns) { cxn ->
+        val expectedInts = listOf(2,4,6)
+        val expectedBools = listOf(true,false,true)
+
+        ConcreteColumns
+            .insert(rowOf(
+                ConcreteColumns.ints setTo expectedInts,
+                ConcreteColumns.bools setTo expectedBools
+            ))
+            .perform(cxn)
+
+        val (ints, bools) = ConcreteColumns
+            .select(ConcreteColumns.ints, ConcreteColumns.bools)
+            .perform(cxn)
+            .single()
+
+        assertListEquals(ints, expectedInts)
+        assertListEquals(bools, expectedBools)
+    }
+
+    @Test
+    fun `type mappings support generics on expressions`() = withCxn(ConcreteColumns) { cxn ->
+        val expectedInts = listOf(2,4,6)
+        val expectedBools = listOf(true,false,true)
+
+        ConcreteColumns
+            .insert(rowOf(
+                ConcreteColumns.ints setTo expectedInts,
+                ConcreteColumns.bools setTo expectedBools
+            ))
+            .perform(cxn)
+
+        val (ints, bools) = ConcreteColumns
+            .select(
+                coalesce(ConcreteColumns.ints) as_ label(),
+                coalesce(ConcreteColumns.bools) as_ label()
+            )
+            .perform(cxn)
+            .single()
+
+        assertListEquals(ints, expectedInts)
+        assertListEquals(bools, expectedBools)
+    }
 }
