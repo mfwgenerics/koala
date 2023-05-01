@@ -44,6 +44,9 @@ themeConfig:
         },
       ],
     },
+    metadata: [
+      {"name": "google-site-verification", "content": "E-XuQoF0UqA8bzoXL3yY7bs9KuQFsQ2yrSkYuIp6Gqs"}
+    ],
     prism: {
       theme: lightCodeTheme,
       darkTheme: darkCodeTheme,
