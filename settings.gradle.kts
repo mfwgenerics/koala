@@ -39,7 +39,7 @@ buildCache {
     remote<HttpBuildCache> {
       isEnabled = true
       isUseExpectContinue = true
-      isPush = System.getenv("GRADLE_CACHE_PUSH") == "true" || System.getenv("CI") == "true"
+      isPush = System.getenv("GRADLE_CACHE_PUSH") != "false" || System.getenv("CI") == "true"
 
       url = uri(System.getenv("CACHE_ENDPOINT") ?: "https://gradle.less.build/cache/generic/")
       credentials {
