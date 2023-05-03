@@ -5,7 +5,7 @@ plugins {
 }
 
 repositories {
-    mavenCentral()
+    maven("https://maven.pkg.st/")
 }
 
 dependencies {

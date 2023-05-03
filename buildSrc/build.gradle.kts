@@ -3,7 +3,7 @@ plugins {
 }
 
 repositories {
-    gradlePluginPortal()
+    maven("https://gradle.pkg.st/")
 }
 
 dependencies {
