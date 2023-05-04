@@ -1,7 +1,6 @@
 package io.koalaql
 
 import io.koalaql.ddl.Table
-import io.koalaql.ddl.Table.Companion.primaryKey
 import io.koalaql.ddl.VARCHAR
 import kotlin.test.Test
 import kotlin.test.assertEquals

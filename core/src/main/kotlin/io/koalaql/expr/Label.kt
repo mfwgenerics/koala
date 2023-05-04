@@ -1,13 +1,13 @@
 package io.koalaql.expr
 
 import io.koalaql.identifier.LabelIdentifier
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class Label<T : Any>(
-    type: KClass<T>,
+    type: KType,
     identifier: LabelIdentifier
 ): NamedReference<T>(type, identifier) {
     override fun toString(): String {
-        return "label_of_${type.simpleName?.lowercase()}($identifier)"
+        return "label of `$identifier`, $type"
     }
 }

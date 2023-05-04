@@ -14,7 +14,7 @@ import io.koalaql.query.built.*
 import io.koalaql.sql.*
 import io.koalaql.window.*
 import io.koalaql.window.built.BuiltWindow
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 private fun UnmappedDataType<*>.toRawSql(): String = when (this) {
     DOUBLE -> "DOUBLE PRECISION"
@@ -55,7 +55,7 @@ class PostgresDialect: SqlDialect {
 
         override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
             when {
-                expr is OperationExpr<*> && expr.type == OperationType.CURRENT_TIMESTAMP -> {
+                expr is OperationExpr<*> && expr.type == StandardOperationType.CURRENT_TIMESTAMP -> {
                     check(expr.args.isEmpty())
 
                     builder.parenthesize(emitParens) {
@@ -138,11 +138,10 @@ class PostgresDialect: SqlDialect {
         val def = column.builtDef
 
         def.default?.let { default ->
-            @Suppress("unchecked_cast")
             val finalExpr = when (default) {
                 is ColumnDefaultExpr -> default.expr
                 is ColumnDefaultValue -> Literal(
-                    def.columnType.type as KClass<Any>,
+                    def.columnType.type,
                     default.value
                 )
             }

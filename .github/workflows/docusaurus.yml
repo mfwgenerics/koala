@@ -24,20 +24,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 19
-      - name: Ensure docs are up-to-date
-        run: ./gradlew :docs:markoutCheck
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          cache: yarn
-          cache-dependency-path: docs/site/yarn.lock
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile --non-interactive
-        working-directory: docs/site
-      - name: Build
-        run: yarn build
-        working-directory: docs/site
+      - name: Build pages
+        run: ./gradlew :docs:docusaurusBuild
       - name: Setup Pages
         uses: actions/configure-pages@v1
       - name: Upload artifact

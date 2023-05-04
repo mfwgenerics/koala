@@ -10,6 +10,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
 import java.time.format.DateTimeFormatterBuilder
+import kotlin.reflect.typeOf
 
 fun H2TypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()
@@ -22,7 +23,7 @@ fun H2TypeMappings(): JdbcTypeMappings {
         .appendOffset("+HH:mm", "")
         .toFormatter()
 
-    result.register(JsonData::class, object : JdbcMappedType<JsonData> {
+    result.register(typeOf<JsonData>(), object : JdbcMappedType<JsonData> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
             stmt.setBytes(index, value.asString.toByteArray())
         }
@@ -31,7 +32,7 @@ fun H2TypeMappings(): JdbcTypeMappings {
             rs.getBytes(index)?.let { JsonData(it.toString(Charsets.UTF_8)) }
     })
 
-    result.register(Instant::class, object : JdbcMappedType<Instant> {
+    result.register(typeOf<Instant>(), object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {
             stmt.setObject(index, value)
         }

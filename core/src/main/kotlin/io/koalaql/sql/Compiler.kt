@@ -36,7 +36,7 @@ interface Compiler {
                         prefix("", ", ").forEach(aggregated.expr.args) {
                             compiler.aggregatable(this, false, it)
                         }
-                    } else if (aggregated.expr.type == OperationType.COUNT) {
+                    } else if (aggregated.expr.type == StandardOperationType.COUNT) {
                         addSql("*")
                     }
                 }

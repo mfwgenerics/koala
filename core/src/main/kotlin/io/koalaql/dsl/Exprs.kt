@@ -8,6 +8,7 @@ import io.koalaql.expr.*
 import io.koalaql.query.Subqueryable
 import io.koalaql.query.built.BuilderContext
 import io.koalaql.sql.RawSqlBuilder
+import kotlin.reflect.typeOf
 
 infix fun <T : Any> Expr<T>.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(this, reference)
@@ -19,54 +20,54 @@ inline fun <reified T : Any> Expr<T>.labeled(): SelectedExpr<T> =
 inline infix fun <reified T : Comparable<*>> T.as_(reference: Reference<T>): SelectedExpr<T> =
     SelectedExpr(value(this), reference)
 
-infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.EQ(this, rhs)
+infix fun <T : Any> Expr<T>.eq(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.EQ(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.eq(rhs: T): Expr<Boolean> = eq(value(rhs))
 
-infix fun <T : Any> Expr<T>.neq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.NEQ(this, rhs)
+infix fun <T : Any> Expr<T>.neq(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.NEQ(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.neq(rhs: T): Expr<Boolean> = neq(value(rhs))
 
-infix fun <T : Any> Expr<T>.less(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.LT(this, rhs)
+infix fun <T : Any> Expr<T>.less(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.LT(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.less(rhs: T): Expr<Boolean> = less(value(rhs))
 
-infix fun <T : Any> Expr<T>.lessOrEq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.LTE(this, rhs)
+infix fun <T : Any> Expr<T>.lessOrEq(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.LTE(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.lessOrEq(rhs: T): Expr<Boolean> = lessOrEq(value(rhs))
 
-infix fun <T : Any> Expr<T>.greater(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.GT(this, rhs)
+infix fun <T : Any> Expr<T>.greater(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.GT(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.greater(rhs: T): Expr<Boolean> = greater(value(rhs))
 
-infix fun <T : Any> Expr<T>.greaterOrEq(rhs: ComparisonOperand<T>): Expr<Boolean> = OperationType.GTE(this, rhs)
+infix fun <T : Any> Expr<T>.greaterOrEq(rhs: ComparisonOperand<T>): Expr<Boolean> = StandardOperationType.GTE(this, rhs)
 inline infix fun <reified T : Any> Expr<T>.greaterOrEq(rhs: T): Expr<Boolean> = greaterOrEq(value(rhs))
 
-infix fun Expr<Boolean>.and(rhs: Expr<Boolean>): Expr<Boolean> = OperationType.AND(this, rhs)
-infix fun Expr<Boolean>.or(rhs: Expr<Boolean>): Expr<Boolean> = OperationType.OR(this, rhs)
+infix fun Expr<Boolean>.and(rhs: Expr<Boolean>): Expr<Boolean> = StandardOperationType.AND(this, rhs)
+infix fun Expr<Boolean>.or(rhs: Expr<Boolean>): Expr<Boolean> = StandardOperationType.OR(this, rhs)
 
-fun not(expr: Expr<Boolean>): Expr<Boolean> = OperationType.NOT(expr)
+fun not(expr: Expr<Boolean>): Expr<Boolean> = StandardOperationType.NOT(expr)
 
-fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = OperationType.IS_NULL(this)
-fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = OperationType.IS_NOT_NULL(this)
+fun <T : Any> Expr<T>.isNull(): Expr<Boolean> = StandardOperationType.IS_NULL(this)
+fun <T : Any> Expr<T>.isNotNull(): Expr<Boolean> = StandardOperationType.IS_NOT_NULL(this)
 
-fun <T : Any> null_(): Expr<T> = OperationType.NULL()
+fun <T : Any> null_(): Expr<T> = StandardOperationType.NULL()
 
 fun exists(query: Subqueryable<*>): Expr<Boolean> =
-    OperationType.EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
+    StandardOperationType.EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
 fun notExists(query: Subqueryable<*>): Expr<Boolean> =
-    OperationType.NOT_EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
+    StandardOperationType.NOT_EXISTS(SubqueryQuasiExpr(with (query) { BuilderContext.buildQuery() }))
 
 infix fun <T : Any> Expr<T>.inQuery(query: ExprQueryable<T>): Expr<Boolean> =
-    OperationType.IN(this, query)
+    StandardOperationType.IN(this, query)
 infix fun <T : Any> Expr<T>.notInQuery(query: ExprQueryable<T>): Expr<Boolean> =
-    OperationType.NOT_IN(this, query)
+    StandardOperationType.NOT_IN(this, query)
 
 infix fun <T : Any> Expr<T>.inExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
     value(false)
 } else {
-    OperationType.IN(this, ExprListExpr(values))
+    StandardOperationType.IN(this, ExprListExpr(values))
 }
 
 infix fun <T : Any> Expr<T>.notInExprs(values: Collection<Expr<T>>): Expr<Boolean> = if (values.isEmpty()) {
     value(true)
 } else {
-    OperationType.NOT_IN(this, ExprListExpr(values))
+    StandardOperationType.NOT_IN(this, ExprListExpr(values))
 }
 
 inline infix fun <reified T : Any> Expr<T>.inValues(values: Collection<T?>): Expr<Boolean> =
@@ -83,7 +84,7 @@ fun <T : Any> cast(from: Expr<*>, to: UnmappedDataType<T>): Expr<T> =
     CastExpr(from, to)
 
 inline fun <reified T : Any> value(value: T?): Literal<T> =
-    Literal(T::class, value)
+    Literal(typeOf<T>(), value)
 
 fun <T : Any> all(subquery: ExprQueryable<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ALL, with (subquery) { BuilderContext.buildQuery() })
@@ -92,34 +93,34 @@ fun <T : Any> any(subquery: ExprQueryable<T>): ComparisonOperand<T> =
     ComparedQuery(ComparedQueryType.ANY, with (subquery) { BuilderContext.buildQuery() })
 
 operator fun <T : Number> Expr<T>.div(rhs: Expr<T>): Expr<T> =
-    OperationType.DIVIDE(this, rhs)
+    StandardOperationType.DIVIDE(this, rhs)
 
 inline operator fun <reified T : Number> Expr<T>.div(rhs: T): Expr<T> =
     this / value(rhs)
 
 operator fun <T : Number> Expr<T>.rem(rhs: Expr<T>): Expr<T> =
-    OperationType.MOD(this, rhs)
+    StandardOperationType.MOD(this, rhs)
 
 inline operator fun <reified T : Number> Expr<T>.rem(rhs: T): Expr<T> =
     this % value(rhs)
 
 operator fun <T : Number> Expr<T>.times(rhs: Expr<T>): Expr<T> =
-    OperationType.MULTIPLY(this, rhs)
+    StandardOperationType.MULTIPLY(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.times(rhs: T): Expr<T> =
     this * value(rhs)
 
 operator fun <T : Number> Expr<T>.plus(rhs: Expr<T>): Expr<T> =
-    OperationType.PLUS(this, rhs)
+    StandardOperationType.PLUS(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.plus(rhs: T): Expr<T> =
     this + value(rhs)
 
 operator fun <T : Number> Expr<T>.minus(rhs: Expr<T>): Expr<T> =
-    OperationType.MINUS(this, rhs)
+    StandardOperationType.MINUS(this, rhs)
 inline operator fun <reified T : Number> Expr<T>.minus(rhs: T): Expr<T> =
     this - value(rhs)
 
 operator fun <T : Number> Expr<T>.unaryMinus(): Expr<T> =
-    OperationType.UNARY_MINUS(this)
+    StandardOperationType.UNARY_MINUS(this)
 
 fun <R : Any> case(whens: List<WhenThen<Boolean, R>>, else_: Expr<R>? = null): Expr<R> =
     BuiltCaseExpr<R>().apply {
@@ -148,15 +149,20 @@ fun <T : Any> when_(expr: Expr<T>): When<T> = When(expr)
 inline fun <reified T : Any> when_(expr: T): When<T> = When(value(expr))
 
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
-    OperationType.COALESCE(expr, *operands)
+    StandardOperationType.COALESCE(expr, *operands)
 
 infix fun Expr<String>.like(expr: Expr<String>): Expr<Boolean> =
-    OperationType.LIKE(this, expr)
+    StandardOperationType.LIKE(this, expr)
 
 infix fun Expr<String>.like(expr: String) = like(value(expr))
 
+infix fun Expr<String>.iLike(expr: Expr<String>): Expr<Boolean> =
+    StandardOperationType.ILIKE(this, expr)
+
+infix fun Expr<String>.iLike(expr: String) = iLike(value(expr))
+
 infix fun Expr<String>.notLike(expr: Expr<String>): Expr<Boolean> =
-    OperationType.NOT_LIKE(this, expr)
+    StandardOperationType.NOT_LIKE(this, expr)
 
 infix fun Expr<String>.notLike(expr: String) = notLike(value(expr))
 
@@ -169,8 +175,8 @@ infix fun <T : Any> Reference<T>.setTo(rhs: Expr<T>): Assignment<T> =
 inline infix fun <reified T : Any> Reference<T>.setTo(rhs: T?): LiteralAssignment<T> =
     LiteralAssignment(this, rhs)
 
-fun lower(expr: Expr<String>): Expr<String> = OperationType.LOWER(expr)
-fun upper(expr: Expr<String>): Expr<String> = OperationType.UPPER(expr)
+fun lower(expr: Expr<String>): Expr<String> = StandardOperationType.LOWER(expr)
+fun upper(expr: Expr<String>): Expr<String> = StandardOperationType.UPPER(expr)
 
 fun <T : Any> Expr<T>.between(lhs: Expr<T>, rhs: Expr<T>): Expr<Boolean> =
     BetweenExpr(this, lhs, rhs)

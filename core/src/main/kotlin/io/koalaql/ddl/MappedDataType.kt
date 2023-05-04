@@ -1,10 +1,10 @@
 package io.koalaql.ddl
 
 import io.koalaql.expr.Literal
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class MappedDataType<F : Any, T : Any>(
-    override val type: KClass<T>,
+    override val type: KType,
     override val dataType: UnmappedDataType<F>,
     override val mapping: TypeMapping<F, T>
 ): DataType<F, T>() {

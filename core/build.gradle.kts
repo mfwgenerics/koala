@@ -4,5 +4,4 @@ plugins {
 
 dependencies {
     api(kotlin("stdlib"))
-    api(kotlin("reflect"))
 }
