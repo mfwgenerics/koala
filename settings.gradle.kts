@@ -1,3 +1,21 @@
+pluginManagement {
+  repositories {
+    maven("https://gradle.pkg.st/")
+  }
+}
+
+plugins {
+  id("com.gradle.enterprise") version("3.13")
+  id("org.gradle.toolchains.foojay-resolver-convention") version("0.5.0")
+}
+
+gradleEnterprise {
+  buildScan {
+    termsOfServiceUrl = "https://gradle.com/terms-of-service"
+    termsOfServiceAgree = "yes"
+  }
+}
+
 include("core")
 include("jdbc")
 include("testing")
@@ -19,11 +37,11 @@ buildCache {
 
   if (remoteCache) {
     remote<HttpBuildCache> {
-      isEnabled = remoteCache
+      isEnabled = true
       isUseExpectContinue = true
-      isPush = System.getenv("GRADLE_CACHE_PUSH") == "true" || System.getenv("CI") == "true"
+      isPush = System.getenv("GRADLE_CACHE_PUSH") != "false" || System.getenv("CI") == "true"
 
-      url = uri(System.getenv("CACHE_ENDPOINT") ?: "https://global.less.build/cache/generic/")
+      url = uri(System.getenv("CACHE_ENDPOINT") ?: "https://gradle.less.build/cache/generic/")
       credentials {
         username = "apikey"
         password = System.getenv("BUILDLESS_APIKEY")
@@ -31,4 +49,3 @@ buildCache {
     }
   }
 }
-
