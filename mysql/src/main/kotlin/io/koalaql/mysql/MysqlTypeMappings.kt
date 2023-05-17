@@ -8,11 +8,12 @@ import java.sql.ResultSet
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.reflect.typeOf
 
 fun MysqlTypeMappings(): JdbcTypeMappings {
     val result = JdbcTypeMappings()
 
-    result.register(Instant::class, object : JdbcMappedType<Instant> {
+    result.register(typeOf<Instant>(), object : JdbcMappedType<Instant> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: Instant) {
             stmt.setObject(index, value.atOffset(ZoneOffset.UTC).toLocalDateTime())
         }
@@ -22,7 +23,7 @@ fun MysqlTypeMappings(): JdbcTypeMappings {
         }
     })
 
-    result.register(JsonData::class, object : JdbcMappedType<JsonData> {
+    result.register(typeOf<JsonData>(), object : JdbcMappedType<JsonData> {
         override fun writeJdbc(stmt: PreparedStatement, index: Int, value: JsonData) {
             stmt.setString(index, value.asString)
         }

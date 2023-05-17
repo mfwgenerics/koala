@@ -1,10 +1,10 @@
 package io.koalaql.expr
 
-import kotlin.reflect.KClass
+import kotlin.reflect.KType
 
 class Literal<T : Any>(
-    val type: KClass<T>,
+    val type: KType,
     val value: T?
 ): Expr<T> {
-    override fun toString(): String = "${type.simpleName}($value)"
+    override fun toString(): String = "($value): $type"
 }

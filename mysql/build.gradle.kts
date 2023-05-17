@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":jdbc"))
+    api(project(":jdbc"))
 
     testImplementation("mysql:mysql-connector-java:8.0.26")
 

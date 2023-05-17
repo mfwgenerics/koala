@@ -8,7 +8,7 @@ import io.koalaql.transact
 import io.koalaql.values.ResultRow
 
 fun DocusaurusMarkdownFile.resultSets() {
-    h1("Result Sets")
+    h1("Result sets")
 
     val db = ExampleDatabase().db
 

@@ -2,7 +2,10 @@ package io.koalaql.docs
 
 import io.koalaql.DataSource
 import io.koalaql.sql.CompiledSql
+import java.math.BigDecimal
+import java.math.BigInteger
 import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.typeOf
 
 class ExampleData(
     val db: DataSource,
@@ -28,13 +31,16 @@ class ExampleData(
                 val type = param.type
                 val value = param.value
 
-                when {
-                    type.isSubclassOf(Number::class) -> {
-                        "$value"
-                    }
-                    type.isSubclassOf(CharSequence::class) -> {
-                        "'${value.toString().replace("'", "\\'")}'"
-                    }
+                when (type) {
+                    typeOf<Byte>(),
+                    typeOf<Short>(),
+                    typeOf<Int>(),
+                    typeOf<Long>(),
+                    typeOf<Float>(),
+                    typeOf<Double>(),
+                    typeOf<BigInteger>(),
+                    typeOf<BigDecimal>() -> "$value"
+                    typeOf<String>() -> "'${value.toString().replace("'", "\\'")}'"
                     else -> error("can't unparameterize $this")
                 }
             }
