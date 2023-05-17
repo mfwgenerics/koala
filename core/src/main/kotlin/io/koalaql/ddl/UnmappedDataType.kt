@@ -34,6 +34,7 @@ sealed class UnmappedDataType<T : Any>(
             "TIMESTAMP$suffix WITH TIME ZONE"
         }
         JSON -> "JSON"
+        JSONB -> "JSONB"
         TINYINT -> "TINYINT"
         SMALLINT -> "SMALLINT"
         INTEGER -> "INTEGER"
@@ -167,3 +168,5 @@ class RAW<T : Any>(
 }
 
 object JSON: PrimitiveDataType<JsonData>(typeOf<JsonData>())
+
+object JSONB: PrimitiveDataType<JsonData>(typeOf<JsonData>())
