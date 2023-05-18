@@ -2,6 +2,7 @@ package io.koalaql.postgres
 
 import io.koalaql.DeclareStrategy
 import io.koalaql.JdbcSchemaDetection
+import io.koalaql.data.JdbcTypeMappings
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.diff.SchemaChange
 import io.koalaql.event.DataSourceEvent
@@ -12,7 +13,8 @@ import java.sql.DatabaseMetaData
 fun PostgresDataSource(
     provider: JdbcProvider,
     declareBy: DeclareStrategy = DeclareStrategy.DoNothing,
-    events: DataSourceEvent = DataSourceEvent.DISCARD
+    events: DataSourceEvent = DataSourceEvent.DISCARD,
+    typeMappings: JdbcTypeMappings = PostgresTypeMappings()
 ): JdbcDataSource = JdbcDataSource(
     object : JdbcSchemaDetection {
         override fun detectChanges(dbName: String, metadata: DatabaseMetaData, tables: List<Table>): SchemaChange {
@@ -21,7 +23,7 @@ fun PostgresDataSource(
     },
     PostgresDialect(),
     provider,
-    PostgresTypeMappings(),
+    typeMappings,
     declareBy,
     events
 )
