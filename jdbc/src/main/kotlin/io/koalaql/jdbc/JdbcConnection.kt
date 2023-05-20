@@ -35,7 +35,7 @@ class JdbcConnection(
 
         sql.parameters.forEachIndexed { ix, literal ->
             @Suppress("unchecked_cast")
-            val mapping = typeMappings.mappingFor<Any>(literal.type)
+            val mapping = typeMappings.mappingFor(literal.type, sql.mappings[literal.type]) as JdbcMappedType<Any>
 
             literal.value
                 ?.let { mapping.writeJdbc(result, ix + 1, it) }

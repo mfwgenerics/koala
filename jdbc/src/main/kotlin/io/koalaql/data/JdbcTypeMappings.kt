@@ -1,8 +1,6 @@
 package io.koalaql.data
 
-import io.koalaql.ddl.MappedDataType
-import io.koalaql.ddl.TableColumn
-import io.koalaql.ddl.TypeMapping
+import io.koalaql.ddl.*
 import io.koalaql.expr.Reference
 import io.koalaql.sql.TypeMappings
 import java.math.BigDecimal
@@ -119,9 +117,6 @@ class JdbcTypeMappings {
         mappings[type] = mapping
     }
 
-    private fun <F : Any, T : Any> derived(from: KType, mapped: TypeMapping<F, T>): JdbcMappedType<T> =
-        mappingFor<F>(from).derive(mapped)
-
     inline fun <reified T : Any> register(
         crossinline writeJdbc: (stmt: PreparedStatement, index: Int, value: T) -> Unit,
         crossinline readJdbc: (rs: ResultSet, index: Int) -> T?
@@ -133,34 +128,17 @@ class JdbcTypeMappings {
     })
 
     @Suppress("unchecked_cast")
-    fun <T : Any> mappingFor(type: KType): JdbcMappedType<T> =
+    private fun <T : Any> mappingFor(type: KType): JdbcMappedType<T> =
         checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
 
     @Suppress("unchecked_cast")
-    fun <T : Any> deriveFor(type: KType, mappings: TypeMappings): JdbcMappedType<T> {
-        val mapping = mappings.get<T>(type) ?: return mappingFor(type)
+    fun <T : Any> mappingFor(ktype: KType, dataType: DataType<*, T>?): JdbcMappedType<T> =
+        when (dataType) {
+            is MappedDataType -> {
+                dataType as MappedDataType<Any, T>
 
-        mapping as MappedDataType<Any, T>
-
-        return derived(mapping.dataType.type, mapping.mapping)
-    }
-
-    /*
-    specialized deriveFor uses TableColumn's data mapping directly.
-    allows simple queries to work even when there are multiple
-    MappedDataTypes in scope for the same type
-    */
-    @Suppress("unchecked_cast")
-    fun <T : Any> deriveForReference(
-        reference: Reference<T>,
-        mappings: TypeMappings
-    ): JdbcMappedType<T> {
-        val mapping = (reference as? TableColumn<*>)?.builtDef?.columnType
-
-        if (mapping !is MappedDataType<*, *>) return deriveFor(reference.type, mappings)
-
-        mapping as MappedDataType<Any, T>
-
-        return derived(mapping.dataType.type, mapping.mapping)
-    }
+                mappingFor<Any>(dataType.dataType.type).derive(dataType.mapping)
+            }
+            else -> mappingFor(ktype)
+        }
 }

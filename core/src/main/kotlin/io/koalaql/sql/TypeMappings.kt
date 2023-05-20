@@ -1,12 +1,11 @@
 package io.koalaql.sql
 
-import io.koalaql.ddl.MappedDataType
+import io.koalaql.ddl.DataType
 import kotlin.reflect.KType
 
 class TypeMappings(
-    private val mappings: Map<KType, MappedDataType<*, *>>
+    private val mappings: Map<KType, DataType<*, *>>
 ) {
-    @Suppress("unchecked_cast")
-    operator fun <T : Any> get(type: KType): MappedDataType<*, T>? =
-        mappings[type] as? MappedDataType<*, T>
+    operator fun get(type: KType): DataType<*, *>? =
+        mappings[type]
 }
