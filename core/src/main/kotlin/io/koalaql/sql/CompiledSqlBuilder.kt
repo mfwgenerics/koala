@@ -45,7 +45,7 @@ class CompiledSqlBuilder(
     }
 
     fun addMapping(type: DataType<*, *>) {
-        if (type is MappedDataType) mappings.putIfAbsent(type.type, type)
+        mappings.putIfAbsent(type.type, type)
     }
 
     fun addLiteral(value: Literal<*>?) {

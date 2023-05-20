@@ -128,17 +128,18 @@ class JdbcTypeMappings {
     })
 
     @Suppress("unchecked_cast")
-    private fun <T : Any> mappingFor(type: KType): JdbcMappedType<T> =
-        checkNotNull(mappings[type]) { "no JDBC mapping for $type" } as JdbcMappedType<T>
-
-    @Suppress("unchecked_cast")
     fun <T : Any> mappingFor(ktype: KType, dataType: DataType<*, T>?): JdbcMappedType<T> =
         when (dataType) {
             is MappedDataType -> {
                 dataType as MappedDataType<Any, T>
 
-                mappingFor<Any>(dataType.dataType.type).derive(dataType.mapping)
+                mappingFor<Any>(dataType.dataType.type, dataType.dataType).derive(dataType.mapping)
             }
-            else -> mappingFor(ktype)
+            is JdbcExtendedDataType<*> -> {
+                dataType as JdbcExtendedDataType<T>
+
+                dataType.jdbc
+            }
+            else -> checkNotNull(mappings[ktype]) { "no JDBC mapping for $ktype" } as JdbcMappedType<T>
         }
 }
