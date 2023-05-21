@@ -79,7 +79,7 @@ VALUES ('Emanuel Smith', 'e.smith@example.com')
 ### Enum columns
 
 A common use case for mapped columns is storing and working with enums as strings.
-There is a method for easily creating enum mappings. Enum mappings can use any column
+Koala provides a method for easily creating enum mappings. Enum mappings can use any column
 type as a base.
 
 ```kotlin
@@ -95,3 +95,9 @@ val TSHIRT_AS_INTEGER = INTEGER.mapToEnum<TShirtEnum> { tshirt ->
     tshirt.ordinal
 }
 ```
+
+:::caution
+
+Storing enums as ints using `Enum.ordinal` can introduce backwards compatibility problems.
+
+:::
