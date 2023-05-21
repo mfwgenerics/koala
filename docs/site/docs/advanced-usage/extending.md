@@ -4,6 +4,11 @@ sidebar_position: 1
 
 # Extending the DSL
 
+In practice, it is necessary to extend Koala to support a larger set of SQL
+and to better integrate with user-defined data types. Koala provides
+different mechanisms to extend the library without having to revert to
+raw queries.
+
 ## Mapped columns
 
 Mapped columns are an easy way to support user defined types that can be expressed

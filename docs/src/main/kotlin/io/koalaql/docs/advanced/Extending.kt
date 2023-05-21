@@ -46,9 +46,14 @@ enum class TShirtEnum {
 }
 
 fun DocusaurusMarkdownFile.extending() {
+    val tabbedBlocks = TabbedBlocks()
+
     h1("Extending the DSL")
 
-    val tabbedBlocks = TabbedBlocks()
+    -"In practice, it is necessary to extend Koala to support a larger set of SQL"
+    -"and to better integrate with user-defined data types. Koala provides"
+    -"different mechanisms to extend the library without having to revert to"
+    -"raw queries."
 
     h2("Mapped columns")
 
