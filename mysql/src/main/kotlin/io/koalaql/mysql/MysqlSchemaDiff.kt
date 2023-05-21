@@ -56,6 +56,7 @@ class MysqlSchemaDiff(
                 || info.columnSize != dataType.maxLength
             is ExtendedDataType -> false
             is JSON -> info.name != "JSON"
+            is JSONB -> info.name != "JSONB"
         }
     }
 
