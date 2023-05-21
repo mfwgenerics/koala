@@ -1,5 +1,8 @@
 package io.koalaql.docs.advanced
 
+import io.koalaql.data.JdbcExtendedDataType
+import io.koalaql.data.JdbcMappedType
+import io.koalaql.ddl.ExtendedDataType
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.ddl.VARCHAR
@@ -12,6 +15,9 @@ import io.koalaql.kapshot.CaptureSource
 import io.koalaql.kapshot.CapturedBlock
 import io.koalaql.kapshot.sourceOf
 import io.koalaql.markout.docusaurus.DocusaurusMarkdownFile
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.util.UUID
 
 @CaptureSource
 data class Email(
@@ -97,6 +103,30 @@ fun DocusaurusMarkdownFile.extending() {
 
         caution {
             -"Storing enums as ints using `Enum.ordinal` can introduce backwards compatibility problems."
+        }
+
+        h2("New column types")
+
+        -"Koala doesn't natively support all the column types that exist across different SQL dialects."
+        -"We provide `${JdbcExtendedDataType::class.simpleName}` to support column types that are not"
+        -"included in the library."
+
+        p {
+            -"The code below creates a new column of H2's UUID type."
+        }
+
+        code {
+            val UUID_H2 = JdbcExtendedDataType(
+                sql = "UUID", /* The raw SQL name of the column */
+                jdbc = object : JdbcMappedType<UUID> { /* JDBC bindings for writing and reading UUIDs */
+                    override fun writeJdbc(stmt: PreparedStatement, index: Int, value: UUID) {
+                        stmt.setObject(index, value)
+                    }
+
+                    override fun readJdbc(rs: ResultSet, index: Int): UUID? =
+                        rs.getObject(index) as? UUID /* We need to handle the NULL case */
+                }
+            )
         }
     }
 }

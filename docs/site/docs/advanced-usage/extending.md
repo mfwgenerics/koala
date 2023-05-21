@@ -101,3 +101,25 @@ val TSHIRT_AS_INTEGER = INTEGER.mapToEnum<TShirtEnum> { tshirt ->
 Storing enums as ints using `Enum.ordinal` can introduce backwards compatibility problems.
 
 :::
+
+## New column types
+
+Koala doesn't natively support all the column types that exist across different SQL dialects.
+We provide `JdbcExtendedDataType` to support column types that are not
+included in the library.
+
+The code below creates a new column of H2's UUID type.
+
+```kotlin
+val UUID_H2 = JdbcExtendedDataType(
+    sql = "UUID", /* The raw SQL name of the column */
+    jdbc = object : JdbcMappedType<UUID> { /* JDBC bindings for writing and reading UUIDs */
+        override fun writeJdbc(stmt: PreparedStatement, index: Int, value: UUID) {
+            stmt.setObject(index, value)
+        }
+
+        override fun readJdbc(rs: ResultSet, index: Int): UUID? =
+            rs.getObject(index) as? UUID /* We need to handle the NULL case */
+    }
+)
+```
