@@ -108,7 +108,7 @@ Koala doesn't natively support all the column types that exist across different 
 We provide `JdbcExtendedDataType` to support column types that are not
 included in the library.
 
-The code below creates a new column of H2's UUID type.
+The code below represents H2's UUID column type as a `java.util.UUID`.
 
 ```kotlin
 val UUID_H2 = JdbcExtendedDataType(

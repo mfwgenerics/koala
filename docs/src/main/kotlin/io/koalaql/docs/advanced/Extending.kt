@@ -112,7 +112,7 @@ fun DocusaurusMarkdownFile.extending() {
         -"included in the library."
 
         p {
-            -"The code below creates a new column of H2's UUID type."
+            -"The code below represents H2's UUID column type as a `java.util.UUID`."
         }
 
         code {
