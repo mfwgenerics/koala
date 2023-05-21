@@ -5,12 +5,11 @@ import io.koalaql.dsl.*
 import io.koalaql.expr.Expr
 import io.koalaql.expr.ExtendedOperationType
 import io.koalaql.expr.OperationFixity
-import io.koalaql.expr.RawExpr
 import io.koalaql.test.data.DataTypeValuesMap
 import org.junit.Test
-import org.postgresql.util.PGobject
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import kotlin.test.assertContentEquals
 
 class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
     override fun compatibilityAdjustment(values: DataTypeValuesMap) {
@@ -23,34 +22,32 @@ class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
         values.remove(VARBINARY(200))
     }
 
+    private object TsQuery /* used at type-level only */
+
     private data class TsVector(
-        val text: String
+        val text: String /* read/display only */
     )
 
-    object TsQuery /* used at type-level only */
+    private infix fun Expr<TsVector>.`@@`(other: Expr<TsQuery>): Expr<Boolean> =
+        ExtendedOperationType("@@", OperationFixity.INFIX)(this, other)
 
-    companion object {
+    private fun toTsQuery(query: String): Expr<TsQuery> =
+        ExtendedOperationType("to_tsquery", OperationFixity.APPLY)(value(query))
+
+    private fun toTsVector(query: String): Expr<TsVector> =
+        ExtendedOperationType("to_tsvector", OperationFixity.APPLY)(value(query))
+
+    private object TsVectorTable: Table("VectorTest") {
         private val TSVECTOR = JdbcExtendedDataType("tsvector", object : JdbcMappedType<TsVector> {
             override fun writeJdbc(stmt: PreparedStatement, index: Int, value: TsVector) {
-                stmt.setObject(index, PGobject().apply {
-                    type = "tsvector"
-                    this.value = value.text
-                })
+                error("TsVector can not be inserted directly. use toTsVector")
             }
 
             override fun readJdbc(rs: ResultSet, index: Int): TsVector? =
                 rs.getString(index)?.let(::TsVector)
         })
-    }
 
-    private infix fun Expr<TsVector>.`@@`(other: Expr<TsQuery>): Expr<Boolean> =
-        ExtendedOperationType("@@", OperationFixity.INFIX)(this, other)
-
-    private fun to_tsquery(query: String): Expr<TsQuery> =
-        ExtendedOperationType("to_tsquery", OperationFixity.APPLY)(value(query))
-
-    private object TsVectorTable: Table("VectorTest") {
-        val text = column("text", TEXT)
+        val text = column("text", TEXT.nullable())
         val tsvector = column("vector", TSVECTOR.nullable())
     }
 
@@ -60,32 +57,43 @@ class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
             "Koala is a Kotlin JVM library for building and executing SQL.",
             "It is designed to be a more powerful and complete alternative to ...",
             null,
-            "... the SQL DSL layer in ORMs like Ktorm and Exposed.",
+            "... the SQL DSL layer in ORMs like Ktorm and Exposed."
         )
 
         TsVectorTable
             .insert(values(texts.map {
                 rowOf(
-                    TsVectorTable.text setTo "$it",
-                    TsVectorTable.tsvector setTo it?.let(::TsVector)
+                    TsVectorTable.text setTo it,
+                    TsVectorTable.tsvector setTo it?.let(::toTsVector)
                 )
             }))
             .perform(cxn)
 
-        val matched = label<Boolean>()
+        val matchedPower = label<Boolean>()
+        val matchedLibrary = label<Boolean>()
 
-        TsVectorTable
+        val results = TsVectorTable
+            .orderBy(TsVectorTable.text.nullsFirst())
             .select(
-                TsVectorTable.tsvector,
-                (TsVectorTable.tsvector `@@` to_tsquery("powerful")) as_ matched
+                TsVectorTable.text,
+                (TsVectorTable.tsvector `@@` toTsQuery("power")) as_ matchedPower,
+                (TsVectorTable.tsvector `@@` toTsQuery("library")) as_ matchedLibrary
             )
-            .also {
-                println(it.generateSql(cxn))
-                println()
-            }
             .perform(cxn)
-            .forEach {
-                println("${it[TsVectorTable.tsvector]}, ${it[matched]}")
+            .onEach {
+                println(it[TsVectorTable.text])
             }
+            .map { Pair(it[matchedPower], it[matchedLibrary]) }
+            .toList()
+
+        assertContentEquals(
+            listOf(
+                Pair(null, null),
+                Pair(true, false),
+                Pair(false, true),
+                Pair(false, false)
+            ),
+            results
+        )
     }
 }
