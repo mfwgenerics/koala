@@ -52,6 +52,8 @@ ${tabs.joinToString("\n")}
 
     context(Markdown, ExampleData)
     fun withGeneratedSql(block: CapturedBlock<Unit>) {
+        popGeneratedSql()
+
         val kotlin = execBlock(block)
 
         tabs {

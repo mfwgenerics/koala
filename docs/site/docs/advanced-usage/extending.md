@@ -1,0 +1,97 @@
+---
+sidebar_position: 1
+---
+
+# Extending the DSL
+
+## Mapped columns
+
+Mapped columns are an easy way to support user defined types that can be expressed
+in terms of existing column types.
+This is useful for supporting wrapper types, enums and serialized data.
+
+The code below establishes a user-defined `Email` data type and a corresponding `EMAIL`
+column type by creating a mapping from the `VARCHAR(256)` column type.
+
+```kotlin
+data class Email(
+    val asString: String
+)
+
+object CustomerTable : Table("Emails") {
+    /*
+    EMAIL will be treated as a VARCHAR(256) in generated SQL.
+    Here we provide mappings between Email and the base type of String.
+    */
+    val EMAIL = VARCHAR(256).map(
+        to = { string -> Email(string) },
+        from = { email -> email.asString }
+    )
+
+    /* EMAIL can be treated like any other column type. Here we use it as a primary key. */
+    val email = column("email", EMAIL.primaryKey())
+    val name = column("name", VARCHAR(256))
+}
+```
+
+Generated SQL will treat mapped column types the exact same way as their unmapped counterparts.
+
+```sql title="SQL"
+CREATE TABLE IF NOT EXISTS "Emails"(
+"email" VARCHAR(256) NOT NULL,
+"name" VARCHAR(256) NOT NULL,
+CONSTRAINT "Emails_email_pkey" PRIMARY KEY ("email")
+)
+```
+
+In the code below, we see our `Email` values become plain strings in the generated SQL.
+
+````mdx-code-block
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="Kotlin" label="Kotlin">
+
+```kotlin
+CustomerTable
+    .insert(
+        rowOf(
+            CustomerTable.name setTo "Emanuel Smith",
+            CustomerTable.email setTo Email("e.smith@example.com")
+        )
+    )
+    .perform(db)
+```
+
+</TabItem>
+<TabItem value="SQL" label="SQL">
+
+```sql
+INSERT INTO "Emails"("name", "email")
+VALUES ('Emanuel Smith', 'e.smith@example.com')
+```
+
+</TabItem>
+</Tabs>
+````
+
+### Enum columns
+
+A common use case for mapped columns is storing and working with enums as strings.
+There is a method for easily creating enum mappings. Enum mappings can use any column
+type as a base.
+
+```kotlin
+enum class TShirtEnum {
+    XS, S, M, L, XL;
+}
+
+val TSHIRT_AS_VARCHAR = VARCHAR(256).mapToEnum<TShirtEnum> { tshirt ->
+    tshirt.name
+}
+
+val TSHIRT_AS_INTEGER = INTEGER.mapToEnum<TShirtEnum> { tshirt ->
+    tshirt.ordinal
+}
+```

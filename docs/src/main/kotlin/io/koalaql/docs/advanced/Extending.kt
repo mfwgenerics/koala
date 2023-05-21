@@ -1,0 +1,98 @@
+package io.koalaql.docs.advanced
+
+import io.koalaql.ddl.INTEGER
+import io.koalaql.ddl.Table
+import io.koalaql.ddl.VARCHAR
+import io.koalaql.docs.TabbedBlocks
+import io.koalaql.docs.testExampleDatabase
+import io.koalaql.dsl.rowOf
+import io.koalaql.dsl.setTo
+import io.koalaql.dsl.values
+import io.koalaql.kapshot.CaptureSource
+import io.koalaql.kapshot.CapturedBlock
+import io.koalaql.kapshot.sourceOf
+import io.koalaql.markout.docusaurus.DocusaurusMarkdownFile
+
+@CaptureSource
+data class Email(
+    val asString: String
+)
+
+@CaptureSource
+object CustomerTable : Table("Emails") {
+    /*
+    EMAIL will be treated as a VARCHAR(256) in generated SQL.
+    Here we provide mappings between Email and the base type of String.
+    */
+    val EMAIL = VARCHAR(256).map(
+        to = { string -> Email(string) },
+        from = { email -> email.asString }
+    )
+
+    /* EMAIL can be treated like any other column type. Here we use it as a primary key. */
+    val email = column("email", EMAIL.primaryKey())
+    val name = column("name", VARCHAR(256))
+}
+
+@CaptureSource
+enum class TShirtEnum {
+    XS, S, M, L, XL;
+}
+
+fun DocusaurusMarkdownFile.extending() {
+    h1("Extending the DSL")
+
+    val tabbedBlocks = TabbedBlocks()
+
+    h2("Mapped columns")
+
+    -"Mapped columns are an easy way to support user defined types that can be expressed"
+    -"in terms of existing column types."
+    -"This is useful for supporting wrapper types, enums and serialized data."
+
+    p {
+        -"The code below establishes a user-defined `Email` data type and a corresponding `EMAIL`"
+        -"column type by creating a mapping from the `VARCHAR(256)` column type."
+    }
+
+    testExampleDatabase {
+        code("kotlin", "${sourceOf<Email>().text}\n\n${sourceOf<CustomerTable>().text}")
+
+        -"Generated SQL will treat mapped column types the exact same way as their unmapped counterparts."
+
+        db.declareTables(CustomerTable)
+
+        code("sql", "SQL", popGeneratedSql())
+
+        -"In the code below, we see our `Email` values become plain strings in the generated SQL."
+
+        tabbedBlocks.withGeneratedSql {
+            CustomerTable
+                .insert(
+                    rowOf(
+                        CustomerTable.name setTo "Emanuel Smith",
+                        CustomerTable.email setTo Email("e.smith@example.com")
+                    )
+                )
+                .perform(db)
+        }
+
+        h3("Enum columns")
+
+        -"A common use case for mapped columns is storing and working with enums as strings."
+        -"There is a method for easily creating enum mappings. Enum mappings can use any column"
+        -"type as a base."
+
+        code("kotlin",
+            sourceOf<TShirtEnum>().text + "\n\n" + CapturedBlock {
+                val TSHIRT_AS_VARCHAR = VARCHAR(256).mapToEnum<TShirtEnum> { tshirt ->
+                    tshirt.name
+                }
+
+                val TSHIRT_AS_INTEGER = INTEGER.mapToEnum<TShirtEnum> { tshirt ->
+                    tshirt.ordinal
+                }
+            }.source.text
+        )
+    }
+}
