@@ -49,7 +49,7 @@ CONSTRAINT "Emails_email_pkey" PRIMARY KEY ("email")
 )
 ```
 
-In the code below, we see our `Email` values become plain strings in the generated SQL.
+In the code below, we see our `Email` values are treated the same way as plain strings in generated SQL.
 
 ````mdx-code-block
 import Tabs from '@theme/Tabs';
@@ -80,6 +80,13 @@ VALUES ('Emanuel Smith', 'e.smith@example.com')
 </TabItem>
 </Tabs>
 ````
+
+:::info
+
+The examples on this page show generated SQL with raw values included. This is for display purposes.
+Generated SQL in application code always uses parameterized queries to avoid SQL injection.
+
+:::
 
 ### Enum columns
 

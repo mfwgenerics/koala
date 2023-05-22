@@ -75,7 +75,7 @@ fun DocusaurusMarkdownFile.extending() {
 
         code("sql", "SQL", popGeneratedSql())
 
-        -"In the code below, we see our `Email` values become plain strings in the generated SQL."
+        -"In the code below, we see our `Email` values are treated the same way as plain strings in generated SQL."
 
         tabbedBlocks.withGeneratedSql {
             CustomerTable
@@ -86,6 +86,11 @@ fun DocusaurusMarkdownFile.extending() {
                     )
                 )
                 .perform(db)
+        }
+
+        info {
+            -"The examples on this page show generated SQL with raw values included. This is for display purposes."
+            -"Generated SQL in application code always uses parameterized queries to avoid SQL injection."
         }
 
         h3("Enum columns")
