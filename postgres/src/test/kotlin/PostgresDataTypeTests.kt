@@ -1,15 +1,23 @@
+import io.koalaql.ReconciledChanges
+import io.koalaql.ReconciledDdl
 import io.koalaql.data.JdbcExtendedDataType
 import io.koalaql.data.JdbcMappedType
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
+import io.koalaql.event.ConnectionEventWriter
+import io.koalaql.event.DataSourceChangeEvent
+import io.koalaql.event.DataSourceEvent
 import io.koalaql.expr.Expr
 import io.koalaql.expr.ExtendedOperationType
 import io.koalaql.expr.OperationFixity
+import io.koalaql.query.Alias
+import io.koalaql.sql.CompiledSql
 import io.koalaql.test.data.DataTypeValuesMap
 import org.junit.Test
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 
 class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
     override fun compatibilityAdjustment(values: DataTypeValuesMap) {
@@ -20,10 +28,6 @@ class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
         values.remove(INTEGER.UNSIGNED)
         values.remove(BIGINT.UNSIGNED)
         values.remove(VARBINARY(200))
-    }
-
-    object JsonBTable: Table("JsonBTable") {
-        val jsonb = column("jsonb", JSONB)
     }
 
     private object TsQuery /* used at type-level only */
@@ -84,9 +88,6 @@ class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
                 (TsVectorTable.tsvector `@@` toTsQuery("library")) as_ matchedLibrary
             )
             .perform(cxn)
-            .onEach {
-                println(it[TsVectorTable.text])
-            }
             .map { Pair(it[matchedPower], it[matchedLibrary]) }
             .toList()
 
@@ -101,19 +102,91 @@ class PostgresDataTypeTests: DataTypesTest(), PostgresTestProvider {
         )
     }
 
+    object JsonBTable: Table("JsonBTable") {
+        val jsont = column("jsont", JSON)
+        val jsonb = column("jsonb", JSONB)
+    }
+
     @Test
-    fun `jsonb works`() = withCxn(JsonBTable) { cxn ->
-        val label = label<JsonData>()
+    fun `jsonb works`() {
+        val ddls = arrayListOf<CompiledSql>()
 
-        JsonBTable
-            .insert(rowOf(JsonBTable.jsonb setTo JsonData("""{"items":[{"test":{}}]}""")))
-            .perform(cxn)
+        withDb(
+            events = object : DataSourceEvent {
+                override fun changes(changes: ReconciledChanges, ddl: ReconciledDdl) = object : DataSourceChangeEvent {
+                    override fun applied(ddl: List<CompiledSql>) {
+                        ddls.addAll(ddl)
+                    }
+                }
 
-        val result = JsonBTable
-            .select(JsonBTable.jsonb, cast(JsonBTable.jsonb, JSONB) as_ label)
-            .perform(cxn)
-            .first()
+                override fun connect() = ConnectionEventWriter.Discard
+            }
+        ) { db ->
+            ddls.clear()
 
-        println("${result.first()}, ${result.second()}")
+            db.declareTables(JsonBTable)
+
+            val createTable = ddls.single().parameterizedSql
+
+            assertEquals(
+                """
+                CREATE TABLE IF NOT EXISTS "JsonBTable"(
+                "jsont" JSON NOT NULL,
+                "jsonb" JSONB NOT NULL
+                )
+                """.trimIndent(),
+                createTable
+            )
+
+            val castJson = label<JsonData>()
+            val castJsonB = label<JsonData>()
+
+            /* the unusual whitespace here is being used to functionally test JSON vs JSONB storage */
+            val jsonText = """{"items"  :  [{"test":{}}]}"""
+
+            JsonBTable
+                .insert(
+                    rowOf(
+                        JsonBTable.jsont setTo JsonData(jsonText),
+                        JsonBTable.jsonb setTo JsonData(jsonText),
+                    )
+                )
+                .perform(db)
+
+            val query = JsonBTable
+                .select(
+                    JsonBTable.jsont, JsonBTable.jsonb,
+                    cast(JsonBTable.jsonb, JSON) as_ castJson,
+                    cast(JsonBTable.jsont, JSONB) as_ castJsonB
+                )
+
+            val sql = query
+                .generateSql(db)
+                ?.parameterizedSql
+
+            /*
+            Currently, the best way to check the correct use of JSON
+            vs JSONB column type is asserting against generated SQL
+            */
+            assertEquals(
+                """
+                SELECT T0."jsont" c0
+                , T0."jsonb" c1
+                , CAST(T0."jsonb" AS JSON) c2
+                , CAST(T0."jsont" AS JSONB) c3
+                FROM "JsonBTable" T0
+                """.trimIndent(),
+                sql
+            )
+
+            val row = query
+                .perform(db)
+                .single()
+
+            assertEquals(jsonText, row[JsonBTable.jsont].asString)
+            assertEquals("""{"items": [{"test": {}}]}""", row[JsonBTable.jsonb].asString)
+            assertEquals("""{"items": [{"test": {}}]}""", row.getValue(castJson).asString)
+            assertEquals("""{"items": [{"test": {}}]}""", row.getValue(castJsonB).asString)
+        }
     }
 }
