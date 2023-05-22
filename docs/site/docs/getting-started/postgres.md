@@ -8,7 +8,7 @@ sidebar_position: 2
 
 ```kotlin title="build.gradle.kts"
 dependencies {
-    implementation("io.koalaql:koala-postgres:0.0.9")
+    implementation("io.koalaql:koala-postgres:0.0.11")
 }
 ```
 
