@@ -10,6 +10,7 @@ import io.koalaql.event.DataSourceEvent
 import io.koalaql.expr.Expr
 import io.koalaql.expr.ExtendedOperationType
 import io.koalaql.expr.OperationFixity
+import io.koalaql.postgres.ddl.JSONB
 import io.koalaql.query.Alias
 import io.koalaql.sql.CompiledSql
 import io.koalaql.test.data.DataTypeValuesMap
