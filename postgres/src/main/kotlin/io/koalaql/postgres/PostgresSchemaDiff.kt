@@ -65,7 +65,7 @@ class PostgresSchemaDiff(
                 && info.columnSize != 8 + timeLength(dataType.precision!!)))
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
-            is RAW -> false
+            is ExtendedDataType -> false
             else -> info.name != "json"
         }
     }

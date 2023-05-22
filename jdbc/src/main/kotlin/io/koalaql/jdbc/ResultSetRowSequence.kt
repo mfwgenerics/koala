@@ -1,6 +1,8 @@
 package io.koalaql.jdbc
 
 import io.koalaql.data.JdbcTypeMappings
+import io.koalaql.ddl.DataType
+import io.koalaql.ddl.TableColumn
 import io.koalaql.event.QueryEventWriter
 import io.koalaql.expr.Reference
 import io.koalaql.query.LabelList
@@ -24,7 +26,14 @@ class ResultSetRowSequence(
     private var readCount = 0
 
     private val columnMappings = columns.map {
-        sharedMappings.deriveForReference(it, localMappings)
+        /*
+        using TableColumn's data mapping directly allows simple queries to work
+        even when there are multiple MappedDataTypes in scope for the same type
+        */
+        val dt = (it as? TableColumn<*>)?.builtDef?.columnType
+            ?: localMappings[it.type]
+
+        sharedMappings.mappingFor(it.type, dt)
     }
 
     override val row: RawResultRow get() = this

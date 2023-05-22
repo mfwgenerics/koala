@@ -1,3 +1,4 @@
+import io.koalaql.docs.advanced.extending
 import io.koalaql.docs.examples.quickExample
 import io.koalaql.docs.executing.resultSets
 import io.koalaql.docs.expressions.case
@@ -100,6 +101,12 @@ fun main() = markout {
 
                     markdown("case") { case() }
                     markdown("strings") { strings() }
+                }
+
+                directory("advanced-usage") {
+                    label = "Advanced usage"
+
+                    markdown("extending") { extending() }
                 }
             }
         }

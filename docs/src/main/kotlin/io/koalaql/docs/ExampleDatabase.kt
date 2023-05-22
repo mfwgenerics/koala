@@ -1,14 +1,13 @@
 package io.koalaql.docs
 
+import io.koalaql.ReconciledChanges
+import io.koalaql.ReconciledDdl
 import io.koalaql.docs.tables.CustomerTable
 import io.koalaql.docs.tables.ShopTable
 import io.koalaql.dsl.rowOf
 import io.koalaql.dsl.setTo
 import io.koalaql.dsl.values
-import io.koalaql.event.ConnectionEventWriter
-import io.koalaql.event.ConnectionQueryType
-import io.koalaql.event.DataSourceEvent
-import io.koalaql.event.QueryEventWriter
+import io.koalaql.event.*
 import io.koalaql.h2.H2DataSource
 import io.koalaql.sql.CompiledSql
 import java.math.BigDecimal
@@ -30,6 +29,15 @@ private class SqlLogger: DataSourceEvent by DataSourceEvent.DISCARD {
 
         override fun closed() { }
     }
+
+    private val changed = object : DataSourceChangeEvent {
+        override fun applied(ddl: List<CompiledSql>) {
+            logged.addAll(ddl)
+        }
+    }
+
+    override fun changes(changes: ReconciledChanges, ddl: ReconciledDdl): DataSourceChangeEvent =
+        changed
 
     override fun connect(): ConnectionEventWriter = connection
 }

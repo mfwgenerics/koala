@@ -54,7 +54,7 @@ class MysqlSchemaDiff(
                 && info.columnSize != 8 + timeLength(dataType.precision!!)))
             is VARBINARY -> info.tag != Types.VARBINARY
                 || info.columnSize != dataType.maxLength
-            is RAW -> false
+            is ExtendedDataType -> false
             is JSON -> info.name != "JSON"
         }
     }

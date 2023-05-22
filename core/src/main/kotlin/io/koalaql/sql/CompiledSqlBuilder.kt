@@ -14,7 +14,7 @@ class CompiledSqlBuilder(
 ) {
     private val tokens = arrayListOf<SqlToken>()
 
-    private val mappings = hashMapOf<KType, MappedDataType<*, *>>()
+    private val mappings = hashMapOf<KType, DataType<*, *>>()
 
     fun beginAbridgement() {
         tokens.add(BeginAbridgement)
@@ -45,7 +45,7 @@ class CompiledSqlBuilder(
     }
 
     fun addMapping(type: DataType<*, *>) {
-        if (type is MappedDataType) mappings.putIfAbsent(type.type, type)
+        mappings.putIfAbsent(type.type, type)
     }
 
     fun addLiteral(value: Literal<*>?) {
@@ -54,6 +54,21 @@ class CompiledSqlBuilder(
         } else {
             tokens.add(LiteralToken(value))
         }
+    }
+
+    private fun toUnmappedLiteral(
+        from: Literal<*>
+    ): Literal<*> = when (val typeMapping = mappings[from.type]) {
+        is MappedDataType<*, *> -> {
+            @Suppress("unchecked_cast")
+            typeMapping as MappedDataType<Any, Any>
+
+            Literal(
+                type = typeMapping.dataType.type,
+                value = from.value?.let { typeMapping.mapping.unconvert(it) }
+            )
+        }
+        else -> from
     }
 
     fun toSql(): CompiledSql {
@@ -89,12 +104,7 @@ class CompiledSqlBuilder(
                     is Named -> escapes.identifier(contents, id)
                 }
                 is LiteralToken -> {
-                    val value = token.value
-                    val mappedValue = mappings[value.type]
-                        ?.unconvertLiteralUnchecked(value)
-                        ?: value
-
-                    escapes.literal(contents, params, mappedValue)
+                    escapes.literal(contents, params, toUnmappedLiteral(token.value))
                 }
                 is RawSqlToken -> {
                     contents.append(token.sql)

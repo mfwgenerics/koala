@@ -8,6 +8,8 @@ import io.koalaql.identifier.Unnamed
 class Alias(
     val identifier: LabelIdentifier = Unnamed()
 ): GetsAliasedReference {
+    constructor(identifier: String): this(LabelIdentifier(identifier))
+
     override fun <T : Any> get(reference: AsReference<T>): AliasedReference<T> {
         val actual = reference.asReference()
 

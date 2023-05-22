@@ -38,7 +38,7 @@ sealed class UnmappedDataType<T : Any>(
         SMALLINT -> "SMALLINT"
         INTEGER -> "INTEGER"
         BIGINT -> "BIGINT"
-        is RAW -> sql
+        is ExtendedDataType -> sql
         is TIME -> {
             val suffix = precision?.let { "($precision)" }?:""
             "TIME$suffix WITHOUT TIME ZONE"
@@ -151,15 +151,15 @@ class DECIMAL(
     override fun hashCode(): Int = precision.hashCode() xor scale.hashCode()
 }
 
-class RAW<T : Any>(
+open class ExtendedDataType<T : Any>(
     type: KType,
     override val sql: String,
 ): UnmappedDataType<T>(type), StandardSql {
     companion object {
-        inline operator fun <reified T : Any> invoke(sql: String) = RAW<T>(typeOf<T>(), sql)
+        inline operator fun <reified T : Any> invoke(sql: String) = ExtendedDataType<T>(typeOf<T>(), sql)
     }
 
-    override fun equals(other: Any?): Boolean = other is RAW<*>
+    override fun equals(other: Any?): Boolean = other is ExtendedDataType<*>
         && type == other.type
         && sql == other.sql
 
