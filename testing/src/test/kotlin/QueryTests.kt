@@ -1225,7 +1225,7 @@ abstract class QueryTests: ProvideTestDatabase {
 
         val myTable = object : Table("Example") {
             val id = column("id", INTEGER.primaryKey())
-`            val nullable = column("nullable", VARCHAR(100).nullable())
+            val nullable = column("nullable", VARCHAR(100).nullable())
         }
 
         myTable.insert(rowOf(myTable.id setTo 1, myTable.nullable setTo null)).perform(db)
