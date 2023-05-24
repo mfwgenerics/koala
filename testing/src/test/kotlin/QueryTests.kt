@@ -1211,23 +1211,18 @@ abstract class QueryTests: ProvideTestDatabase {
         assertEquals(data1.normalized, y.normalized)
     }
 
+    object SettingNullTable : Table("Example") {
+        val id = column("id", INTEGER.primaryKey())
+        val nullable = column("nullable", VARCHAR(100).nullable())
+    }
+
     @Test
-    fun `support setting value to null`() = withDb { db ->
-        db.connect(Isolation.READ_COMMITTED).use { cxn ->
-            cxn.jdbc.prepareStatement("""
-                CREATE TABLE IF NOT EXISTS "Example"(
-                    "id" INTEGER NOT NULL,
-                    "nullable" VARCHAR(100)
-                )
-            """.trimIndent()).execute()
-            cxn.jdbc.commit()
-        }
-
-        val myTable = object : Table("Example") {
-            val id = column("id", INTEGER.primaryKey())
-            val nullable = column("nullable", VARCHAR(100).nullable())
-        }
-
-        myTable.insert(rowOf(myTable.id setTo 1, myTable.nullable setTo null)).perform(db)
+    fun `support setting value to null`() = withCxn(SettingNullTable) { cxn ->
+        SettingNullTable
+            .insert(rowOf(
+                SettingNullTable.id setTo 1,
+                SettingNullTable.nullable setTo null
+            ))
+            .perform(cxn)
     }
 }
