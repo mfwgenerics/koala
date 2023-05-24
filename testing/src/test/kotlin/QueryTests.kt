@@ -1,4 +1,5 @@
 import io.koalaql.DataConnection
+import io.koalaql.Isolation
 import io.koalaql.ddl.*
 import io.koalaql.dsl.*
 import io.koalaql.expr.Reference
@@ -1208,5 +1209,20 @@ abstract class QueryTests: ProvideTestDatabase {
 
         assertEquals(data1.normalized, x.normalized)
         assertEquals(data1.normalized, y.normalized)
+    }
+
+    object SettingNullTable : Table("Example") {
+        val id = column("id", INTEGER.primaryKey())
+        val nullable = column("nullable", VARCHAR(100).nullable())
+    }
+
+    @Test
+    fun `support setting value to null`() = withCxn(SettingNullTable) { cxn ->
+        SettingNullTable
+            .insert(rowOf(
+                SettingNullTable.id setTo 1,
+                SettingNullTable.nullable setTo null
+            ))
+            .perform(cxn)
     }
 }

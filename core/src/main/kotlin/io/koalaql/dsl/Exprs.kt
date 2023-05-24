@@ -169,6 +169,9 @@ infix fun Expr<String>.notLike(expr: String) = notLike(value(expr))
 fun <T : Any> rawExpr(build: RawSqlBuilder.() -> Unit): Expr<T> =
     RawExpr(build)
 
+infix fun <T : Any> Reference<T>.setTo(rhs: Nothing?): Assignment<T> =
+    ExprAssignment(this, null_())
+
 infix fun <T : Any> Reference<T>.setTo(rhs: Expr<T>?): Assignment<T> =
     ExprAssignment(this, rhs ?: null_())
 
