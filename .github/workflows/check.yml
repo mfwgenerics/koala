@@ -1,5 +1,5 @@
 name: Build and test
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 env:
   GRADLE_CACHE_USERNAME: apikey
   GRADLE_CACHE_PUSH: true
