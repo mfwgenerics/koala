@@ -487,6 +487,13 @@ class MysqlDialect: SqlDialect {
     private fun ScopedSqlBuilder.compileUpdate(update: BuiltUpdate) = compileUpdate(update,
         compileWiths = { compileWiths(it) },
         compileRelation = { compileRelation(it) },
+        compileJoins = { joins ->
+            compileJoins(
+                joins = joins,
+                compileRelation = { compileRelation(it) },
+                compileExpr = { compileExpr(it, false) }
+            )
+        },
         compileAssignment = { compileAssignment(it) },
         compileExpr = { compileExpr(it, false) }
     )

@@ -71,6 +71,9 @@ class Values(
 class Cte(
     val identifier: LabelIdentifier = Unnamed()
 ): Relation {
+    infix fun as_(queryable: Subqueryable<*>): CtedQueryable =
+        CtedQueryable(this, queryable)
+
     override fun BuiltRelation.buildIntoRelation() {
         relation = this@Cte
         setAliases(null, Alias(identifier))

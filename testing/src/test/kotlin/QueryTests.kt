@@ -13,6 +13,7 @@ import io.koalaql.test.shops.PurchaseTable
 import io.koalaql.test.shops.ShopTable
 import io.koalaql.test.shops.createAndPopulate
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
@@ -1224,5 +1225,62 @@ abstract class QueryTests: ProvideTestDatabase {
                 SettingNullTable.nullable setTo null
             ))
             .perform(cxn)
+    }
+
+
+    private object UpdateTo: Table("UpdateTo") {
+        val id = column("id", INTEGER)
+        val field = column("field", INTEGER.nullable())
+    }
+
+    private object UpdateFrom: Table("UpdateFrom") {
+        val id = column("id", INTEGER)
+        val field = column("field", INTEGER)
+    }
+
+    @Test
+    fun `update from cte subquery`() = withCxn(
+        UpdateTo,
+        UpdateFrom
+    ) { cxn ->
+        UpdateFrom
+            .insert(values(0..2) {
+                this[UpdateFrom.id] = it
+                this[UpdateFrom.field] = it*it
+            })
+            .perform(cxn)
+
+        UpdateTo
+            .insert(values(0..5) {
+                this[UpdateTo.id] = it
+            })
+            .perform(cxn)
+
+        val cte = cte()
+
+        UpdateTo
+            .update(UpdateTo.field setTo coalesce(cte
+                .where(UpdateFrom.id eq UpdateTo.id)
+                .select(UpdateFrom.field), 0))
+            .with(cte as_ UpdateFrom
+                .select(UpdateFrom.id, (UpdateFrom.field + 10) as_ UpdateFrom.field)
+            )
+            .perform(cxn)
+
+        assertContentEquals(
+            listOf(
+                Pair(0, 10),
+                Pair(1, 11),
+                Pair(2, 14),
+                Pair(3, 0),
+                Pair(4, 0),
+                Pair(5, 0),
+            ),
+            UpdateTo
+                .select(UpdateTo.id, UpdateTo.field)
+                .perform(cxn)
+                .map { Pair(it.first(), it.second()) }
+                .toList()
+        )
     }
 }

@@ -227,6 +227,7 @@ class ScopedSqlBuilder(
         update: BuiltUpdate,
         compileWiths: (BuiltWithable) -> Unit,
         compileRelation: (BuiltRelation) -> Unit,
+        compileJoins: (List<BuiltJoin>) -> Unit,
         compileAssignment: (Assignment<*>) -> Unit,
         compileExpr: (Expr<*>) -> Unit
     ): Boolean {
@@ -239,12 +240,9 @@ class ScopedSqlBuilder(
         addSql("UPDATE ")
 
         compileRelation(update.query.relation)
+        compileJoins(update.query.joins)
 
         addSql("\nSET ")
-
-        check(query.joins.isEmpty()) {
-            "H2 does not support JOIN in update"
-        }
 
         val wasNonEmpty = if (update.assignments.isEmpty()) {
             addError("empty assignment list")
