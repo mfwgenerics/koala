@@ -14,6 +14,10 @@ class BuiltUpdate: BuiltStatement, BuiltWithable {
     override var withs: List<BuiltWith> = emptyList()
 
     override fun populateScope(scope: Scope) {
+        withs.forEach {
+            scope.cte(it.cte, it.query.columns)
+        }
+
         query.populateScope(scope)
     }
 
