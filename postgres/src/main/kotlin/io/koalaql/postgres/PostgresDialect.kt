@@ -558,7 +558,9 @@ class PostgresDialect: SqlDialect {
 
     fun ScopedSqlBuilder.compileUpdate(update: BuiltUpdate) = compileUpdate(update,
         compileWiths = { compileWiths(it) },
-        compileJoins = { error("Postgres dialect does not support joins in updates") },
+        compileJoins = {
+            check (it.isNotEmpty()) { "Postgres dialect does not support joins in updates" }
+        },
         compileRelation = { compileRelation(it) },
         compileAssignment = { compileAssignment(it) },
         compileExpr = { compileExpr(it, false) }

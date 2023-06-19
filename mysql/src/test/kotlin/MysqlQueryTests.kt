@@ -7,6 +7,7 @@ import io.koalaql.jdbc.JdbcException
 import io.koalaql.mysql.generateMysqlSql
 import java.time.Duration
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 
 class MysqlQueryTests: QueryTests(), MysqlTestProvider {
     @Test
@@ -41,7 +42,7 @@ class MysqlQueryTests: QueryTests(), MysqlTestProvider {
 
     private object UpdateTo: Table("UpdateTo") {
         val id = column("id", INTEGER)
-        val field = column("field", INTEGER.default(-1))
+        val field = column("field", INTEGER.nullable())
     }
 
     private object UpdateFrom: Table("UpdateFrom") {
@@ -55,32 +56,42 @@ class MysqlQueryTests: QueryTests(), MysqlTestProvider {
         UpdateFrom
     ) { cxn ->
         UpdateFrom
-            .insert(values(1..10) {
+            .insert(values(0..2) {
                 this[UpdateFrom.id] = it
                 this[UpdateFrom.field] = it*it
             })
             .perform(cxn)
 
-        val cte = cte()
+        UpdateTo
+            .insert(values(0..5) {
+                this[UpdateTo.id] = it
+            })
+            .perform(cxn)
 
-        println(UpdateTo
-            .leftJoin(cte, UpdateTo.id eq UpdateFrom.id)
-            .update(
-                UpdateTo.field setTo UpdateFrom.field
-            )
-            .with(cte as_ UpdateFrom
-                .select(UpdateFrom.id, (UpdateFrom.field + 10) as_ UpdateFrom.field)
-            )
-            .generateMysqlSql())
+        val cte = cte()
 
         UpdateTo
             .leftJoin(cte, UpdateTo.id eq UpdateFrom.id)
-            .update(
-                UpdateTo.field setTo UpdateFrom.field
-            )
+            .update(UpdateTo.field setTo coalesce(UpdateFrom.field, 0))
             .with(cte as_ UpdateFrom
                 .select(UpdateFrom.id, (UpdateFrom.field + 10) as_ UpdateFrom.field)
             )
             .perform(cxn)
+
+        assertContentEquals(
+            listOf(
+                Pair(0, 10),
+                Pair(1, 11),
+                Pair(2, 14),
+                Pair(3, 0),
+                Pair(4, 0),
+                Pair(5, 0),
+            ),
+            UpdateTo
+                .select(UpdateTo.id, UpdateTo.field)
+                .perform(cxn)
+                .map { Pair(it.first(), it.second()) }
+                .toList()
+        )
     }
 }

@@ -148,8 +148,14 @@ fun <R : Any> case(vararg whens: WhenThen<Boolean, R>, else_: Expr<R>? = null): 
 fun <T : Any> when_(expr: Expr<T>): When<T> = When(expr)
 inline fun <reified T : Any> when_(expr: T): When<T> = When(value(expr))
 
+inline fun <reified T : Any> coalesce(expr: Expr<T>, vararg operands: T): Expr<T> =
+    StandardOperationType.COALESCE(expr, *operands.map { value(it) }.toTypedArray())
+
 fun <T : Any> coalesce(expr: Expr<T>, vararg operands: Expr<T>): Expr<T> =
     StandardOperationType.COALESCE(expr, *operands)
+
+fun <T : Any> coalesce(expr: Expr<T>): Expr<T> =
+    StandardOperationType.COALESCE(expr)
 
 infix fun Expr<String>.like(expr: Expr<String>): Expr<Boolean> =
     StandardOperationType.LIKE(this, expr)
