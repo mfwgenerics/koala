@@ -1,11 +1,7 @@
 import io.koalaql.ddl.INTEGER
 import io.koalaql.ddl.Table
 import io.koalaql.dsl.*
-//import io.koalaql.dsl.*
-import io.koalaql.expr.Expr
 import io.koalaql.jdbc.JdbcException
-import io.koalaql.mysql.generateMysqlSql
-import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
