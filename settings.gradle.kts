@@ -4,6 +4,8 @@ pluginManagement {
   }
 }
 
+import build.less.plugin.settings.buildless
+
 plugins {
   id("build.less") version("1.0.0-beta1")
   id("com.gradle.enterprise") version("3.13")
