@@ -1,11 +1,9 @@
 package io.koalaql.query.fluent
 
 import io.koalaql.Assignment
+import io.koalaql.ddl.TableColumn
 import io.koalaql.ddl.built.BuiltNamedIndex
-import io.koalaql.query.OnConflictIgnore
-import io.koalaql.query.OnConflictOrDuplicateAction
-import io.koalaql.query.OnConflictUpdate
-import io.koalaql.query.OnDuplicateUpdate
+import io.koalaql.query.*
 import io.koalaql.query.built.BuiltInsert
 import io.koalaql.query.built.InsertBuilder
 
@@ -20,15 +18,21 @@ interface OnConflictable: GeneratingKeys {
         }
     }
 
-    fun onConflict(keys: BuiltNamedIndex): OnConflicted {
+    private fun onConflict(key: OnConflictKey): OnConflicted {
         return object : OnConflicted {
             override fun ignore(): GeneratingKeys =
-                OnConflict(this@OnConflictable, OnConflictIgnore(keys))
+                OnConflict(this@OnConflictable, OnConflictIgnore(key))
 
             override fun update(assignments: List<Assignment<*>>): GeneratingKeys =
-                OnConflict(this@OnConflictable, OnConflictUpdate(keys, assignments))
+                OnConflict(this@OnConflictable, OnConflictUpdate(key, assignments))
         }
     }
+
+    fun onConflict(index: BuiltNamedIndex): OnConflicted =
+        onConflict(OnConflictKeyIndex(index))
+
+    fun onConflict(vararg columns: TableColumn<*>): OnConflicted =
+        onConflict(OnConflictKeyColumns(columns.asList()))
 
     fun onDuplicate(): OnDuplicated = object : OnDuplicated {
         override fun update(assignments: List<Assignment<*>>): GeneratingKeys =

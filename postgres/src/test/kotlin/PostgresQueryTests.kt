@@ -49,4 +49,9 @@ class PostgresQueryTests: QueryTests(), PostgresTestProvider {
 
     @Test
     fun `custom ilike operator`() = iLikeTest { x, y -> customIlikeOp(x, value(y)) }
+
+    @Test
+    fun `on conflict where`() = withDb { db ->
+
+    }
 }

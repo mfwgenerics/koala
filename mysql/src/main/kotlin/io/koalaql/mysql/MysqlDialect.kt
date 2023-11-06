@@ -478,9 +478,14 @@ class MysqlDialect: SqlDialect {
 
             val sql = withColumns(relvar.columns, alias(relvar.tableName.name))
 
-            sql.compileOnConflict(it) {
-                sql.compileAssignment(it)
-            }
+            sql.compileOnConflict(it,
+                compileAssignment = { assignment ->
+                    sql.compileAssignment(assignment)
+                },
+                compileExpr = { expr ->
+                    sql.compileExpr(expr, false)
+                }
+            )
         }
     )
 

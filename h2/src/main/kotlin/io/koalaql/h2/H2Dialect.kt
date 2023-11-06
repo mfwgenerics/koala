@@ -338,9 +338,10 @@ class H2Dialect(
 
             val sql = withColumns(relvar.columns)
 
-            sql.compileOnConflict(it) {
-                sql.compileAssignment(it)
-            }
+            sql.compileOnConflict(it,
+                compileAssignment = { sql.compileAssignment(it) },
+                compileExpr = { sql.compileExpr(it, false) }
+            )
         }
     )
 

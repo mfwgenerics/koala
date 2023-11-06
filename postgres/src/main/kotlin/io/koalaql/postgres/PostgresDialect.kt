@@ -521,9 +521,15 @@ class PostgresDialect: SqlDialect {
 
         val builder = withColumns(relvar.columns, insertAlias)
 
-        compileOnConflict(insert.onConflict) { assignment ->
-            builder.compileAssignment(assignment)
-        }
+        compileOnConflict(
+            insert.onConflict,
+            compileAssignment = { assignment ->
+                builder.compileAssignment(assignment)
+            },
+            compileExpr = { expr ->
+                builder.compileExpr(expr, false)
+            }
+        )
 
         return nonEmpty
     }
