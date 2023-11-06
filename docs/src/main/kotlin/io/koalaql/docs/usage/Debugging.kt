@@ -69,7 +69,7 @@ fun DocusaurusMarkdownFile.debugging() {
 
     h3("Example")
 
-    -"Here is an example of using `${PerformableSql::generateMysqlSql.name}`"
+    -"Here is an example of using `${PerformableSql::generatePostgresSql.name}`"
     -"to print some generated SQL"
 
     tabbedBlocks.tabs {

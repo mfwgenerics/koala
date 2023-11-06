@@ -19,7 +19,7 @@ This makes them perfect for locally inspecting generated SQL in your IDE or in u
 
 ### Example
 
-Here is an example of using `generateMysqlSql`
+Here is an example of using `generatePostgresSql`
 to print some generated SQL
 
 ````mdx-code-block
