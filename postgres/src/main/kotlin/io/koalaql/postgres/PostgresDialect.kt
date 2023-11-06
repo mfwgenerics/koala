@@ -53,7 +53,12 @@ class PostgresDialect: SqlDialect {
             builder.compileWindow(window)
         }
 
-        override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
+        override fun compileExpr(
+            builder: ScopedSqlBuilder,
+            expr: QuasiExpr,
+            emitParens: Boolean,
+            emitAliases: Boolean
+        ) {
             when {
                 expr is OperationExpr<*> && expr.type == StandardOperationType.CURRENT_TIMESTAMP -> {
                     check(expr.args.isEmpty())
@@ -62,7 +67,7 @@ class PostgresDialect: SqlDialect {
                         builder.addSql("NOW()")
                     }
                 }
-                else -> super.compileExpr(builder, expr, emitParens)
+                else -> super.compileExpr(builder, expr, emitParens, emitAliases)
             }
         }
     }
@@ -423,8 +428,17 @@ class PostgresDialect: SqlDialect {
         resolveWithoutAlias(expr)
     }
 
-    fun ScopedSqlBuilder.compileExpr(expr: QuasiExpr, emitParens: Boolean = true) {
-        compiler.compileExpr(this, expr, emitParens)
+    fun ScopedSqlBuilder.compileExpr(
+        expr: QuasiExpr,
+        emitParens: Boolean = true,
+        emitAliases: Boolean = true,
+    ) {
+        compiler.compileExpr(
+            this,
+            expr,
+            emitParens,
+            emitAliases
+        )
     }
 
     fun ScopedSqlBuilder.compileRelation(relation: BuiltRelation) {
@@ -521,9 +535,18 @@ class PostgresDialect: SqlDialect {
 
         val builder = withColumns(relvar.columns, insertAlias)
 
-        compileOnConflict(insert.onConflict) { assignment ->
-            builder.compileAssignment(assignment)
-        }
+        compileOnConflict(
+            insert.onConflict,
+            compileAssignment = { assignment ->
+                builder.compileAssignment(assignment)
+            },
+            compileExpr = { expr ->
+                builder.compileExpr(expr,
+                    emitParens = false,
+                    emitAliases = false
+                )
+            }
+        )
 
         return nonEmpty
     }

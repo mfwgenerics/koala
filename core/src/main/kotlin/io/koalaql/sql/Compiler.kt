@@ -4,6 +4,7 @@ import io.koalaql.ddl.UnmappedDataType
 import io.koalaql.expr.*
 import io.koalaql.expr.built.BuiltAggregatable
 import io.koalaql.expr.built.BuiltAggregatedExpr
+import io.koalaql.identifier.Named
 import io.koalaql.query.built.BuilderContext
 import io.koalaql.query.built.BuiltSubquery
 import io.koalaql.window.built.BuiltWindow
@@ -24,7 +25,8 @@ interface Compiler {
     fun compileExpr(
         builder: ScopedSqlBuilder,
         expr: QuasiExpr,
-        emitParens: Boolean
+        emitParens: Boolean,
+        emitAliases: Boolean
     ): Unit = with(builder) {
         val forceExhaustiveWhen = when (expr) {
             is AggregatedExpr<*> -> {
@@ -44,7 +46,7 @@ interface Compiler {
                 aggregated.filter?.let { filter ->
                     addSql(" FILTER(WHERE ")
 
-                    compiler.compileExpr(this@with, filter, false)
+                    compiler.compileExpr(this@with, filter, false, emitAliases)
 
                     addSql(")")
                 }
@@ -58,7 +60,7 @@ interface Compiler {
             is CastExpr<*> -> {
                 addSql("CAST")
                 parenthesize {
-                    compiler.compileExpr(this@with, expr.of, false)
+                    compiler.compileExpr(this@with, expr.of, false, emitAliases)
                     addSql(" AS ")
                     compiler.dataTypeForCast(this, expr.type)
                 }
@@ -70,7 +72,7 @@ interface Compiler {
             is ExprListExpr<*> -> {
                 parenthesize {
                     prefix("", ", ").forEach(expr.exprs) {
-                        compiler.compileExpr(this@with, it, false)
+                        compiler.compileExpr(this@with, it, false, emitAliases)
                     }
                 }
             }
@@ -82,23 +84,23 @@ interface Compiler {
                         addSql(expr.type.sql)
                         addSql(" ")
 
-                        compiler.compileExpr(this@with, expr.args.single(), false)
+                        compiler.compileExpr(this@with, expr.args.single(), false, emitAliases)
                     }
                     OperationFixity.POSTFIX -> parenthesize(emitParens) {
-                        compiler.compileExpr(this@with, expr.args.single(), false)
+                        compiler.compileExpr(this@with, expr.args.single(), false, emitAliases)
                         addSql(" ")
                         addSql(expr.type.sql)
                     }
                     OperationFixity.INFIX -> parenthesize(emitParens) {
                         prefix("", " ${expr.type.sql} ").forEach(expr.args) {
-                            compiler.compileExpr(this@with, it, true)
+                            compiler.compileExpr(this@with, it, true, emitAliases)
                         }
                     }
                     OperationFixity.APPLY -> {
                         addSql(expr.type.sql)
                         parenthesize {
                             prefix("", ", ").forEach(expr.args) {
-                                compiler.compileExpr(this@with, it, false)
+                                compiler.compileExpr(this@with, it, false, emitAliases)
                             }
                         }
                     }
@@ -111,7 +113,13 @@ interface Compiler {
                 if (excluded != null) {
                     compiler.excluded(this, excluded)
                 } else {
-                    compiler.reference(this, false, reference)
+                    if (emitAliases) {
+                        compiler.reference(this, false, reference)
+                    } else if (reference is Column<*>) {
+                        output.addIdentifier(Named(reference.symbol))
+                    } else {
+                        output.addError("expected a column")
+                    }
                 }
             }
             is SubqueryQuasiExpr -> {
@@ -125,19 +133,19 @@ interface Compiler {
 
                 expr.onExpr?.let {
                     addSql(" ")
-                    compiler.compileExpr(this@with, it, true)
+                    compiler.compileExpr(this@with, it, true, emitAliases)
                 }
 
                 expr.whens.forEach { whenThen ->
                     addSql("\nWHEN ")
-                    compiler.compileExpr(this@with, whenThen.whenExpr, false)
+                    compiler.compileExpr(this@with, whenThen.whenExpr, false, emitAliases)
                     addSql(" THEN ")
-                    compiler.compileExpr(this@with, whenThen.thenExpr, true)
+                    compiler.compileExpr(this@with, whenThen.thenExpr, true, emitAliases)
                 }
 
                 expr.elseExpr?.let {
                     addSql("\nELSE ")
-                    compiler.compileExpr(this@with, it, false)
+                    compiler.compileExpr(this@with, it, false, emitAliases)
                 }
 
                 addSql("\nEND")
@@ -148,15 +156,15 @@ interface Compiler {
                 object : RawSqlBuilder {
                     override fun identifier(value: String) { addIdentifier(value) }
                     override fun sql(value: String) { addSql(value) }
-                    override fun expr(expr: QuasiExpr) { compiler.compileExpr(this@with, expr, true) }
+                    override fun expr(expr: QuasiExpr) { compiler.compileExpr(this@with, expr, true, emitAliases) }
                 }.build()
             }
             is BetweenExpr<*> -> {
-                compiler.compileExpr(this@with, expr.value, false)
+                compiler.compileExpr(this@with, expr.value, false, emitAliases)
                 addSql(" BETWEEN ")
-                compiler.compileExpr(this@with, expr.low, true)
+                compiler.compileExpr(this@with, expr.low, true, emitAliases)
                 addSql(" AND ")
-                compiler.compileExpr(this@with, expr.high, true)
+                compiler.compileExpr(this@with, expr.high, true, emitAliases)
             }
         }
     }

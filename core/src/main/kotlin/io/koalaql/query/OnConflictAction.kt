@@ -6,15 +6,15 @@ import io.koalaql.ddl.built.BuiltNamedIndex
 sealed interface OnConflictOrDuplicateAction
 
 sealed interface OnConflictAction: OnConflictOrDuplicateAction {
-    val key: BuiltNamedIndex
+    val key: OnConflictKey
 }
 
 class OnConflictIgnore(
-    override val key: BuiltNamedIndex
+    override val key: OnConflictKey
 ): OnConflictAction
 
 class OnConflictUpdate(
-    override val key: BuiltNamedIndex,
+    override val key: OnConflictKey,
     val assignments: List<Assignment<*>>
 ): OnConflictAction
 

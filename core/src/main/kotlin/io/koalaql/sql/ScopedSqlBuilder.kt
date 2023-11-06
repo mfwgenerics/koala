@@ -440,21 +440,44 @@ class ScopedSqlBuilder(
         addTableName(table.tableName)
     }
 
+    private fun compileOnConflictKey(
+        key: OnConflictKey,
+        compileExpr: (Expr<*>) -> Unit
+    ) {
+        when (key) {
+            is OnConflictKeyIndex -> {
+                addSql("\nON CONFLICT ON CONSTRAINT ")
+                addIdentifier(key.index.name)
+            }
+            is OnConflictKeyColumns -> {
+                addSql("\nON CONFLICT ")
+                parenthesize {
+                    prefix("", ", ").forEach(key.columns) {
+                        compileExpr(it)
+                    }
+                }
+
+                key.where?.let {
+                    addSql("\nWHERE ")
+                    compileExpr(it)
+                }
+            }
+        }
+    }
+
     fun compileOnConflict(
         onConflict: OnConflictOrDuplicateAction?,
-        compileAssignment: (Assignment<*>) -> Unit
+        compileAssignment: (Assignment<*>) -> Unit,
+        compileExpr: (Expr<*>) -> Unit
     ) {
         val assignments = when (onConflict) {
             is OnConflictIgnore -> {
-                addSql("\nON CONFLICT ON CONSTRAINT ")
-                addIdentifier(onConflict.key.name)
+                compileOnConflictKey(onConflict.key, compileExpr)
                 addSql(" DO NOTHING")
                 return
             }
             is OnConflictUpdate -> {
-                addSql("\nON CONFLICT ON CONSTRAINT ")
-                addIdentifier(onConflict.key.name)
-
+                compileOnConflictKey(onConflict.key, compileExpr)
                 addSql(" DO UPDATE SET")
 
                 onConflict.assignments

@@ -84,7 +84,7 @@ class H2Dialect(
     }
 
     private fun ScopedSqlBuilder.compileExpr(expr: Expr<*>, emitParens: Boolean) {
-        compiler.compileExpr(this, expr, emitParens)
+        compiler.compileExpr(this, expr, emitParens, true)
     }
 
     private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {
@@ -338,9 +338,10 @@ class H2Dialect(
 
             val sql = withColumns(relvar.columns)
 
-            sql.compileOnConflict(it) {
-                sql.compileAssignment(it)
-            }
+            sql.compileOnConflict(it,
+                compileAssignment = { sql.compileAssignment(it) },
+                compileExpr = { sql.compileExpr(it, false) }
+            )
         }
     )
 
