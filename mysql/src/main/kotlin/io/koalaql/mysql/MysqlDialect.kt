@@ -49,7 +49,12 @@ class MysqlDialect: SqlDialect {
             }
         }
 
-        override fun compileExpr(builder: ScopedSqlBuilder, expr: QuasiExpr, emitParens: Boolean) {
+        override fun compileExpr(
+            builder: ScopedSqlBuilder,
+            expr: QuasiExpr,
+            emitParens: Boolean,
+            emitAliases: Boolean
+        ) {
             when {
                 expr is OperationExpr<*> && expr.type == StandardOperationType.CURRENT_TIMESTAMP -> {
                     check(expr.args.isEmpty())
@@ -58,7 +63,7 @@ class MysqlDialect: SqlDialect {
                         builder.addSql("UTC_TIMESTAMP")
                     }
                 }
-                else -> super.compileExpr(builder, expr, emitParens)
+                else -> super.compileExpr(builder, expr, emitParens, emitAliases)
             }
         }
     }
@@ -296,7 +301,7 @@ class MysqlDialect: SqlDialect {
                     addSql("UTC_TIMESTAMP")
                 }
             }*/
-            else -> compiler.compileExpr(this, expr, emitParens)
+            else -> compiler.compileExpr(this, expr, emitParens, true)
         }
     }
 

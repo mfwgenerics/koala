@@ -84,7 +84,7 @@ class H2Dialect(
     }
 
     private fun ScopedSqlBuilder.compileExpr(expr: Expr<*>, emitParens: Boolean) {
-        compiler.compileExpr(this, expr, emitParens)
+        compiler.compileExpr(this, expr, emitParens, true)
     }
 
     private fun ScopedSqlBuilder.compileDefaultExpr(expr: Expr<*>) {

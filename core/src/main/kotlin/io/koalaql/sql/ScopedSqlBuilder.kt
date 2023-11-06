@@ -456,6 +456,11 @@ class ScopedSqlBuilder(
                         compileExpr(it)
                     }
                 }
+
+                key.where?.let {
+                    addSql("\nWHERE ")
+                    compileExpr(it)
+                }
             }
         }
     }
