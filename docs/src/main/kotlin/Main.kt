@@ -8,6 +8,7 @@ import io.koalaql.docs.updating.updates
 import io.koalaql.docs.expressions.strings
 import io.koalaql.docs.introduction.overview
 import io.koalaql.docs.introduction.whyKoala
+import io.koalaql.docs.usage.usage
 import io.koalaql.h2.H2DataSource
 import io.koalaql.markout.docusaurus.docusaurus
 import io.koalaql.markout.markout
@@ -73,6 +74,12 @@ fun main() = markout {
                             )
                         }
                     }
+                }
+
+                directory("usage") {
+                    label = "General usage"
+
+                    usage()
                 }
 
                 directory("queries") {
