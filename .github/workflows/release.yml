@@ -32,6 +32,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 19
+      - name: Setup Buildless
+        uses: buildless/setup@v1.0.2
       - name: Gradle publish
         run: ./gradlew publish
         env:

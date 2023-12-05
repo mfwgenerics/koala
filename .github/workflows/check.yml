@@ -1,11 +1,5 @@
 name: Build and test
 on: [push, pull_request, workflow_dispatch]
-env:
-  GRADLE_CACHE_USERNAME: apikey
-  GRADLE_CACHE_PUSH: true
-  GRADLE_CACHE_LOCAL: false
-  GRADLE_CACHE_REMOTE: true
-  BUILDLESS_APIKEY: ${{ secrets.BUILDLESS_APIKEY }}
 jobs:
   build:
     name: Build and test
@@ -18,6 +12,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 19
+      - name: Setup Buildless
+        uses: buildless/setup@v1.0.2
       - name: Setup PostgreSQL
         run: sudo postgres/setup.sh
       - name: Setup MySQL
@@ -26,4 +22,3 @@ jobs:
         uses: gradle/gradle-build-action@v2
       - name: Gradle check
         run: ./gradlew check --scan
-
