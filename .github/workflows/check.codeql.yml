@@ -13,6 +13,10 @@ on:
         description: "Buildless API Key"
         required: true
 
+  push:
+    branches:
+      - main
+
   schedule:
     - cron: "33 9 * * 0"
 
