@@ -33,6 +33,10 @@ jobs:
     name: Publish
     needs: staging_repository
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+        with:
+          egress-policy: audit
       - name: Checkout
         uses: actions/checkout@v4
       - name: Configure JDK
