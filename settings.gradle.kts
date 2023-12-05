@@ -19,6 +19,8 @@ dependencyResolutionManagement {
   }
 }
 
+rootProject.name = "koala"
+
 gradleEnterprise {
   buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
