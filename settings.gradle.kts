@@ -28,12 +28,6 @@ gradleEnterprise {
   }
 }
 
-buildless {
-  local {
-    enabled = true
-  }
-}
-
 listOf(
   "core",
   "jdbc",
