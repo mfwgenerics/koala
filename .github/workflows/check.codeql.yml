@@ -62,16 +62,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+      - name: Setup Buildless
+        uses: buildless/setup@v1.0.2
+        with:
+          agent: false
       - name: "Setup: Initialize CodeQL"
         uses: github/codeql-action/init@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
         with:
           languages: java
-      - name: "Build: Plugin"
+      - name: "Build"
         uses: gradle/gradle-build-action@v2.10.0
         id: gradlebuild
         continue-on-error: true
-        env:
-          CI: true
         with:
           cache-read-only: true
           arguments: build -x test -x check

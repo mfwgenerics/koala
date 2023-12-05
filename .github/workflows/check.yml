@@ -2,6 +2,12 @@ name: CI
 
 on:
   merge_group: {}
+  workflow_dispatch:
+    inputs:
+      enableAgent:
+        type: boolean
+        description: "Buildless Agent"
+        default: false
 
   push:
     branches:
@@ -58,6 +64,8 @@ jobs:
           java-version: 21
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
+        with:
+          agent: ${{ inputs.enableAgent }}
       - name: Gradle check
         uses: gradle/gradle-build-action@v2.10.0
         with:
