@@ -13,6 +13,20 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: mysecretpassword
+        ports:
+          - 5432:5432
+      mysql:
+        image: mysql:8.0.31
+        env:
+          POSTGRES_PASSWORD: my-secret-pw
+        ports:
+          - 3306:3306
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -27,20 +41,27 @@ jobs:
           java-version: 21
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
-      - name: Setup PostgreSQL
-        run: sudo postgres/setup.sh
-      - name: Setup MySQL
-        run: sudo mysql/setup.sh
       - name: Gradle check
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v2.10.0
         with:
           arguments: check --scan
           gradle-home-cache-cleanup: true
           gradle-home-cache-includes: |
             notifications
             jdks
-      - name: "Check: Dependency Review"
-        if: github.event_name == 'pull_request'
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check Dependencies
         uses: actions/dependency-review-action@v3
         continue-on-error: true
         with:
