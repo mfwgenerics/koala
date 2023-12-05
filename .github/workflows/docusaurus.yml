@@ -19,16 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup Actions Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-koala-v1
+        uses: actions/checkout@v4
       - name: Configure JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 19
+          java-version: 21
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
       - name: Gradle check
@@ -40,11 +36,11 @@ jobs:
             notifications
             jdks
       - name: Setup Pages
-        uses: actions/configure-pages@v1
+        uses: actions/configure-pages@v4
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           path: docs/site/build
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v3

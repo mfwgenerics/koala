@@ -1,0 +1,3 @@
+plugins {
+    embeddedKotlin() apply false
+}

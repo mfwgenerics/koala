@@ -7,15 +7,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Actions Cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-koala-v1
       - name: Configure JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 19
+          java-version: 21
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
       - name: Setup PostgreSQL
@@ -26,7 +22,6 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: check --scan
-          dependency-graph: generate
           gradle-home-cache-cleanup: true
           gradle-home-cache-includes: |
             notifications
