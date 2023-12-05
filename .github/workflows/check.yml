@@ -53,6 +53,7 @@ jobs:
   codeql-check:
     name: CodeQL
     uses: "./.github/workflows/check.codeql.yml"
+    secrets: inherit
 
   dependency-check:
     name: Dependency check
