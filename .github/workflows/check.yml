@@ -50,8 +50,12 @@ jobs:
             notifications
             jdks
 
+  codeql-check:
+    name: CodeQL
+    uses: "./.github/workflows/check.codeql.yml"
+
   dependency-check:
-    name: Dependency Check
+    name: Dependency check
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:

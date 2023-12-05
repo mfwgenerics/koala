@@ -13,8 +13,6 @@ on:
         description: "Buildless API Key"
         required: true
 
-  pull_request: {}
-
   schedule:
     - cron: "33 9 * * 0"
 
