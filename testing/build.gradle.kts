@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    api(project(":jdbc"))
+    api(projects.jdbc)
 }
 
 configurations.register(

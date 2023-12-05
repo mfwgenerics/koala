@@ -1,11 +1,10 @@
 plugins {
-    id("publish")
+    publish
 }
 
 dependencies {
-    api(project(":jdbc"))
-    api("org.postgresql:postgresql:42.5.4")
-
-    testImplementation(project(":testing"))
+    api(projects.jdbc)
+    api(libs.postgresql)
+    testImplementation(projects.testing)
     testImplementation(project(":testing", "testArchive"))
 }
