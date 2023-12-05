@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Setup Actions Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-koala-v1
       - name: Configure JDK
         uses: actions/setup-java@v3
         with:
@@ -27,8 +31,14 @@ jobs:
           java-version: 19
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
-      - name: Build pages
-        run: ./gradlew :docs:docusaurusBuild
+      - name: Gradle check
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: :docs:docusaurusBuild
+          gradle-home-cache-cleanup: true
+          gradle-home-cache-includes: |
+            notifications
+            jdks
       - name: Setup Pages
         uses: actions/configure-pages@v1
       - name: Upload artifact

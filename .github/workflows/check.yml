@@ -6,7 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+      - name: Setup Actions Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-koala-v1
       - name: Configure JDK
         uses: actions/setup-java@v3
         with:
@@ -18,7 +22,12 @@ jobs:
         run: sudo postgres/setup.sh
       - name: Setup MySQL
         run: sudo mysql/setup.sh
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
       - name: Gradle check
-        run: ./gradlew check --scan
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check --scan
+          dependency-graph: generate
+          gradle-home-cache-cleanup: true
+          gradle-home-cache-includes: |
+            notifications
+            jdks

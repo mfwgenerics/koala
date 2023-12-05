@@ -5,6 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch: {}
+
+env:
+  REPOSITORY_ID: ${{ needs.staging_repository.outputs.repository_id }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+  GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
+
 jobs:
   staging_repository:
     runs-on: ubuntu-latest
@@ -27,6 +35,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup Actions Cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-koala-v1
       - name: Configure JDK
         uses: actions/setup-java@v3
         with:
@@ -34,14 +46,15 @@ jobs:
           java-version: 19
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
-      - name: Gradle publish
-        run: ./gradlew publish
-        env:
-          REPOSITORY_ID: ${{ needs.staging_repository.outputs.repository_id }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
+      - name: Gradle check
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publish --scan
+          dependency-graph: generate-and-submit
+          gradle-home-cache-cleanup: true
+          gradle-home-cache-includes: |
+            notifications
+            jdks
       - name: Release Sonatype Repo
         uses: nexus-actions/release-nexus-staging-repo@main
         with:
