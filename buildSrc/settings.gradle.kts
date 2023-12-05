@@ -8,7 +8,7 @@ pluginManagement {
 }
 
 plugins {
-  id("build.less") version("1.0.0-beta9")
+  id("build.less")
 }
 
 rootProject.name = "buildSrc"
