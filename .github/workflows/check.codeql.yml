@@ -2,27 +2,12 @@ name: "CodeQL"
 
 on:
   workflow_dispatch:
-    ## Input: Runner to use
-    inputs:
-      runner:
-        description: "Runner"
-        type: string
-        default: "ubuntu-latest"
-        required: false
-
-    ## Secrets: API Key
     secrets:
       BUILDLESS_APIKEY:
         description: "Buildless API Key"
         required: true
 
   workflow_call:
-    inputs:
-      runner:
-        description: "Runner"
-        type: string
-        default: "ubuntu-latest"
-        required: false
     secrets:
       BUILDLESS_APIKEY:
         description: "Buildless API Key"
@@ -40,7 +25,7 @@ jobs:
   analyze:
     name: CodeQL
     continue-on-error: true
-    runs-on: ${{ inputs.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
       actions: read
