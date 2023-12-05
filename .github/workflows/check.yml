@@ -23,7 +23,7 @@ jobs:
       mysql:
         image: mysql:8.0.31
         env:
-          POSTGRES_PASSWORD: my-secret-pw
+          MYSQL_ROOT_PASSWORD: my-secret-pw
         ports:
           - 3306:3306
 
