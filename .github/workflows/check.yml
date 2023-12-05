@@ -1,5 +1,14 @@
 name: Build and test
-on: [push, pull_request, workflow_dispatch]
+
+on:
+  merge_group: {}
+
+  push:
+    branches:
+      - main
+
+  pull_request: {}
+
 jobs:
   build:
     name: Build and test
@@ -26,3 +35,9 @@ jobs:
           gradle-home-cache-includes: |
             notifications
             jdks
+      - name: "Check: Dependency Review"
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v3
+        continue-on-error: true
+        with:
+          config-file: "./.github/dependency-review-config.yml"

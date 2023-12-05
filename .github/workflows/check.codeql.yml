@@ -1,0 +1,78 @@
+name: "CodeQL"
+
+on:
+  workflow_dispatch:
+    ## Input: Runner to use
+    inputs:
+      runner:
+        description: "Runner"
+        type: string
+        default: "ubuntu-latest"
+        required: false
+
+    ## Secrets: API Key
+    secrets:
+      BUILDLESS_APIKEY:
+        description: "Buildless API Key"
+        required: true
+
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner"
+        type: string
+        default: "ubuntu-latest"
+        required: false
+    secrets:
+      BUILDLESS_APIKEY:
+        description: "Buildless API Key"
+        required: true
+
+  pull_request: {}
+
+  schedule:
+    - cron: "33 9 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL
+    continue-on-error: true
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+      - name: "Setup: Initialize CodeQL"
+        uses: github/codeql-action/init@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
+        with:
+          languages: java
+      - name: "Build: Plugin"
+        uses: gradle/gradle-build-action@v2
+        id: gradlebuild
+        continue-on-error: true
+        env:
+          CI: true
+        with:
+          cache-read-only: true
+          arguments: build -x test -x check
+      - name: "Analsis: CodeQL"
+        uses: github/codeql-action/analyze@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
+        continue-on-error: true
+        with:
+          category: "/language:java"
