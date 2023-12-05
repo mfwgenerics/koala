@@ -1,0 +1,34 @@
+name: "Dependency check"
+
+on:
+  workflow_dispatch: {}
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-check:
+    name: Dependency check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+        with:
+          disable-sudo: true
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check Dependencies
+        uses: actions/dependency-review-action@v3
+        continue-on-error: true
+        with:
+          config-file: "./.github/dependency-review-config.yml"

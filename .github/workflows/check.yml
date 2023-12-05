@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:13
@@ -68,28 +69,12 @@ jobs:
             jdks
 
   codeql-check:
-    name: CodeQL
+    name: Checks
     uses: "./.github/workflows/check.codeql.yml"
     secrets:
       BUILDLESS_APIKEY: ${{ secrets.BUILDLESS_APIKEY }}
 
   dependency-check:
-    name: Dependency check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
-            github.com:443
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Check Dependencies
-        uses: actions/dependency-review-action@v3
-        continue-on-error: true
-        with:
-          config-file: "./.github/dependency-review-config.yml"
+    name: Checks
+    uses: "./.github/workflows/check.deps.yml"
+    secrets: inherit
