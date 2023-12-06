@@ -65,7 +65,7 @@ jobs:
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
         with:
-          agent: false
+          agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
       - name: "Setup: Initialize CodeQL"
         uses: github/codeql-action/init@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
         with:
@@ -77,6 +77,11 @@ jobs:
         with:
           cache-read-only: true
           arguments: build -x test -x check
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            jdks
+            wrapper
       - name: "Analsis: CodeQL"
         uses: github/codeql-action/analyze@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
         continue-on-error: true

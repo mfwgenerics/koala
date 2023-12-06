@@ -65,7 +65,7 @@ jobs:
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
         with:
-          agent: ${{ inputs.enableAgent }}
+          agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
       - name: Gradle check
         uses: gradle/gradle-build-action@v2.10.0
         with:
@@ -73,9 +73,10 @@ jobs:
           cache-read-only: false
           gradle-home-cache-cleanup: true
           gradle-home-cache-includes: |
+            caches
             notifications
             jdks
-
+            wrapper
   codeql-check:
     name: Checks
     uses: "./.github/workflows/check.codeql.yml"

@@ -46,14 +46,18 @@ jobs:
           java-version: 21
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
+        with:
+          agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
       - name: Gradle check
         uses: gradle/gradle-build-action@v2.10.0
         with:
           arguments: publish --scan
           dependency-graph: generate-and-submit
           gradle-home-cache-includes: |
+            caches
             notifications
             jdks
+            wrapper
       - name: Release Sonatype Repo
         uses: nexus-actions/release-nexus-staging-repo@main
         with:
