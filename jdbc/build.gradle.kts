@@ -1,7 +1,7 @@
 plugins {
-    id("publish")
+    publish
 }
 
 dependencies {
-    api(project(":core"))
+    api(projects.core)
 }

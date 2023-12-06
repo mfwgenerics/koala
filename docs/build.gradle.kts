@@ -2,12 +2,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("conventions")
-
-    id("io.koalaql.markout-docusaurus") version "0.0.11"
+    alias(libs.plugins.markout)
 }
 
 val compileKotlin: KotlinCompile by tasks
-
 compileKotlin.kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 
 markout {
@@ -15,12 +13,10 @@ markout {
 }
 
 dependencies {
-    api(project(":h2"))
-    api(project(":mysql"))
-    api(project(":postgres"))
-
-    implementation("com.h2database:h2:2.1.210")
-
-    testImplementation(project(":testing"))
+    api(projects.h2)
+    api(projects.mysql)
+    api(projects.postgres)
+    implementation(libs.h2)
+    testImplementation(projects.testing)
     testImplementation(project(":testing", "testArchive"))
 }

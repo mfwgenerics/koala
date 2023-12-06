@@ -1,39 +1,38 @@
-name: CI
+name: "CodeQL"
 
 on:
-  merge_group: {}
   workflow_dispatch:
-    inputs:
-      enableAgent:
-        type: boolean
-        description: "Buildless Agent"
-        default: false
+    secrets:
+      BUILDLESS_APIKEY:
+        description: "Buildless API Key"
+        required: true
+
+  workflow_call:
+    secrets:
+      BUILDLESS_APIKEY:
+        description: "Buildless API Key"
+        required: true
 
   push:
     branches:
       - main
 
-  pull_request: {}
+  schedule:
+    - cron: "33 9 * * 0"
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Build and test
+  analyze:
+    name: CodeQL Analysis
+    continue-on-error: true
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_PASSWORD: mysecretpassword
-        ports:
-          - 5432:5432
-      mysql:
-        image: mysql:8.0.31
-        env:
-          MYSQL_ROOT_PASSWORD: my-secret-pw
-        ports:
-          - 3306:3306
-
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
@@ -45,16 +44,17 @@ jobs:
             cli.less.build:443
             dl.less.build:443
             edge.pkg.st:443
+            maven.pkg.st:443
             github.com:443
             global.less.build:443
             gradle.pkg.st:443
-            maven.pkg.st:443
             jcenter.bintray.com:443
             local.less.build:443
             plugins-artifacts.gradle.org:443
             plugins.gradle.org:443
             repo.maven.apache.org:443
             scans-in.gradle.com:443
+            api.github.com:443
       - name: Checkout
         uses: actions/checkout@v4
       - name: Configure JDK
@@ -66,24 +66,24 @@ jobs:
         uses: buildless/setup@v1.0.2
         with:
           agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
-      - name: Gradle check
-        uses: gradle/gradle-build-action@v2.10.0
+      - name: "Setup: Initialize CodeQL"
+        uses: github/codeql-action/init@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
         with:
-          arguments: check --scan
-          cache-read-only: false
-          gradle-home-cache-cleanup: true
+          languages: java
+      - name: "Build"
+        uses: gradle/gradle-build-action@v2.10.0
+        id: gradlebuild
+        continue-on-error: true
+        with:
+          cache-read-only: true
+          arguments: build -x test -x check
           gradle-home-cache-includes: |
             caches
             notifications
             jdks
             wrapper
-  codeql-check:
-    name: Checks
-    uses: "./.github/workflows/check.codeql.yml"
-    secrets:
-      BUILDLESS_APIKEY: ${{ secrets.BUILDLESS_APIKEY }}
-
-  dependency-check:
-    name: Checks
-    uses: "./.github/workflows/check.deps.yml"
-    secrets: inherit
+      - name: "Analsis: CodeQL"
+        uses: github/codeql-action/analyze@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
+        continue-on-error: true
+        with:
+          category: "/language:java"

@@ -1,12 +1,10 @@
 plugins {
-    id("publish")
+    publish
 }
 
 dependencies {
-    api(project(":jdbc"))
-
-    testImplementation("mysql:mysql-connector-java:8.0.26")
-
-    testImplementation(project(":testing"))
+    api(projects.jdbc)
+    testImplementation(libs.mysql)
+    testImplementation(projects.testing)
     testImplementation(project(":testing", "testArchive"))
 }

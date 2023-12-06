@@ -1,0 +1,13 @@
+[versions]
+h2 = "2.1.210"
+mysql = "8.0.26"
+postgresql = "42.5.4"
+markout = "0.0.11"
+
+[plugins]
+markout = { id = "io.koalaql.markout-docusaurus", version.ref = "markout" }
+
+[libraries]
+h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+mysql = { group = "mysql", name = "mysql-connector-java", version.ref = "mysql" }
+postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }

@@ -5,6 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch: {}
+
+env:
+  REPOSITORY_ID: ${{ needs.staging_repository.outputs.repository_id }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+  GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
+
 jobs:
   staging_repository:
     runs-on: ubuntu-latest
@@ -25,21 +33,31 @@ jobs:
     name: Publish
     needs: staging_repository
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@eb238b55efaa70779f274895e782ed17c84f2895 # v2.6.1
+        with:
+          egress-policy: audit
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Configure JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 19
-      - name: Gradle publish
-        run: ./gradlew publish
-        env:
-          REPOSITORY_ID: ${{ needs.staging_repository.outputs.repository_id }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
+          java-version: 21
+      - name: Setup Buildless
+        uses: buildless/setup@v1.0.2
+        with:
+          agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
+      - name: Gradle check
+        uses: gradle/gradle-build-action@v2.10.0
+        with:
+          arguments: publish --scan
+          dependency-graph: generate-and-submit
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            jdks
+            wrapper
       - name: Release Sonatype Repo
         uses: nexus-actions/release-nexus-staging-repo@main
         with:
