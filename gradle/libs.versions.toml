@@ -1,6 +1,6 @@
 [versions]
 h2 = "2.1.210"
-mysql = "8.0.26"
+mysql = "8.0.33"
 postgresql = "42.5.4"
 markout = "0.0.11"
 
