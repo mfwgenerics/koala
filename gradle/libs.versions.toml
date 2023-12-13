@@ -1,5 +1,5 @@
 [versions]
-h2 = "2.1.210"
+h2 = "2.2.224"
 mysql = "8.0.33"
 postgresql = "42.7.1"
 markout = "0.0.11"
