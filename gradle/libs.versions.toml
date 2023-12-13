@@ -1,7 +1,7 @@
 [versions]
 h2 = "2.1.210"
 mysql = "8.0.33"
-postgresql = "42.7.0"
+postgresql = "42.7.1"
 markout = "0.0.11"
 
 [plugins]
