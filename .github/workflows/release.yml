@@ -49,7 +49,7 @@ jobs:
         with:
           agent: ${{ secrets.BUILDLESS_APIKEY != '' }}
       - name: Gradle check
-        uses: gradle/gradle-build-action@v2.10.0
+        uses: gradle/gradle-build-action@v2.11.0
         with:
           arguments: publish --scan
           dependency-graph: generate-and-submit
