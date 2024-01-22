@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check Dependencies
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
         continue-on-error: true
         with:
           config-file: "./.github/dependency-review-config.yml"
