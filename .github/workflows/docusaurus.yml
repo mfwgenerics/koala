@@ -32,7 +32,7 @@ jobs:
       - name: Setup Buildless
         uses: buildless/setup@v1.0.2
       - name: Gradle check
-        uses: gradle/gradle-build-action@v2.11.1
+        uses: gradle/gradle-build-action@v3.1.0
         with:
           arguments: :docs:docusaurusBuild
           gradle-home-cache-cleanup: true
